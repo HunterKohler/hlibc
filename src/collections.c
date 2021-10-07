@@ -2,8 +2,8 @@
  * Copyright (C) 2021 Hunter Kohler <jhunterkohler@gmail.com>
  */
 
-#include <stdlib.h>
-#include "./collections.h"
+#include <hlibc/def.h>
+#include <hlibc/collections.h>
 
 int basic_cmp(const void *a, const void *b)
 {

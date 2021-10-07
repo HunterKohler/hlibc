@@ -6,7 +6,6 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include <hlibc/io.h>
-#include <hlibc/math.h>
 
 blksize_t io_blksize(struct stat *st)
 {
