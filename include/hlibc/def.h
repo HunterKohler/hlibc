@@ -1,5 +1,5 @@
-#ifndef HLIBC_MACRO_H_
-#define HLIBC_MACRO_H_
+#ifndef HLIBC_DEF_H_
+#define HLIBC_DEF_H_
 
 #include <stdatomic.h>
 #include <stdalign.h>
@@ -13,17 +13,42 @@
 #define static_assert _Static_assert
 #endif
 
-#define TYPE_COMPATABLE(x, y) __builtin_types_compatible_p(typeof(x), typeof(y))
-#define CHOOSE_EXPR(b, x, y) __builtin_choose_expr((b), (x), (y))
-
-#define IS_ARRAY(a) (!TYPE_COMPATABLE((a), &(a)[0]))
-
-#define ARRAY_LENGTH(a)                          \
-    ({                                           \
-        static_assert(IS_ARRAY(a), "non-array"); \
-        sizeof(a) / sizeof((a)[0]);              \
+#define min(a, b)             \
+    ({                        \
+        __auto_type _a = (a); \
+        __auto_type _b = (b); \
+        _a < _b ? _a : _b     \
     })
 
-#define NARGS(...) ARRAY_LENGTH((int[])({ __VA_ARGS__ }))
+#define max(a, b)             \
+    ({                        \
+        __auto_type _a = (a); \
+        __auto_type _b = (b); \
+        _a > _b ? _a : _b     \
+    })
+
+#define clamp(val, low, high) min((__typeof__(val))max(val, low), high)
+
+#define swap(a, b)               \
+    do {                         \
+        __auto_type __tmp = (a); \
+        (a) = (b);               \
+        (b) = __tmp;             \
+    } while (0);
+
+#define IS_ARRAY \
+    (!__builtin_types_compatible_p(__typeof__(a), __typeof__(&(a)[0])))
+
+#define ARRAY_SIZE(a)                                                 \
+    ({                                                                \
+        _Static_assert(IS_ARRAY(a),                                   \
+                       "Cannot call ARRAY_SIZE on non static array"); \
+        sizeof(a) / sizeof((a)[0]);                                   \
+    })
+
+#define _CONCAT(a, b) a##b
+#define CONCAT(a, b) _CONCAT(a, b)
+
+#define N_ARGS(...) ARRAY_SIZE((int[])({ __VA_ARGS__ }))
 
 #endif
