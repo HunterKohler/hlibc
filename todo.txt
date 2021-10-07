@@ -1,0 +1,4 @@
+> checkout these flags
+    CXXFLAGS += -Wpedantic -Warray-bounds -Weffc++
+    CXXFLAGS += -Wextra -Wwrite-strings -Wno-parentheses
+> get c linter
