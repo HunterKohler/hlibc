@@ -85,8 +85,8 @@
 #define ANSI_BG_BRIGHT_WHITE ANSI_SGR("107")
 
 // clang-format off
-#define FMT_SPECIFIER(T)              \
-    _Generic(((T)0),                  \
+#define FORMAT_SPECIFIER(x)           \
+    _Generic((x),                       \
         /* char */                    \
         char: "%c",                   \
                                       \

@@ -23,6 +23,10 @@
 #define static_assert _Static_assert
 #endif
 
+#ifndef noreturn
+#define noreturn _Noreturn
+#endif
+
 #define swap(a, b)               \
     do {                         \
         __auto_type __tmp = (a); \
@@ -39,6 +43,8 @@
                       "Cannot call ARRAY_SIZE on non static array"); \
         sizeof(a) / sizeof((a)[0]);                                  \
     })
+
+#define NARGS(...) sizeof((int[])({ __VA_ARGS__ }))
 
 #define debug_printf(fmt, ...)                                           \
     do {                                                                 \
