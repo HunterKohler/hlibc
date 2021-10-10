@@ -17,8 +17,8 @@ AlwaysBreakBeforeMultilineStrings: false
 AlwaysBreakTemplateDeclarations: Yes
 AttributeMacros:
     - __extension__
-BinPackArguments: false
-BinPackParameters: false
+BinPackArguments: true
+BinPackParameters: true
 BraceWrapping:
     AfterClass: false
     AfterControlStatement: false
@@ -31,11 +31,11 @@ BraceWrapping:
     BeforeCatch: false
     BeforeElse: false
     IndentBraces: false
+BreakStringLiterals: true
 BreakBeforeBinaryOperators: None
 BreakBeforeBraces: Custom
 BreakBeforeConceptDeclarations: true
 BreakBeforeTernaryOperators: true
-BreakStringLiterals: false
 ColumnLimit: 80
 ConstructorInitializerAllOnOneLineOrOnePerLine: false
 ConstructorInitializerIndentWidth: 4
@@ -63,7 +63,11 @@ SpaceAfterCStyleCast: false
 SpaceAfterTemplateKeyword: true
 SpaceBeforeAssignmentOperators: true
 SpaceBeforeParens: ControlStatements
+SpaceBeforeCaseColon: false
+SpaceInEmptyBlock: false
+SpacesInConditionalStatement: false
 SpaceBeforeRangeBasedForLoopColon: false
+UseCRLF: false
 SpaceInEmptyParentheses: false
 SpacesBeforeTrailingComments: 1
 SpacesInAngles: false
@@ -73,3 +77,4 @@ SpacesInParentheses: false
 SpacesInSquareBrackets: false
 Standard: c++20
 UseTab: Never
+WhitespaceSensitiveMacros: [PP_STRINGIZE, STRINGIZE, STRINGIFY]

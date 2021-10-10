@@ -6,6 +6,7 @@ SHELL = bash
 CFLAGS := \
 	-std=c11 \
 	-Wall \
+	-Wno-unused-function \
 	# -Wextra \
 	-fanalyzer \
 	-g
@@ -15,10 +16,12 @@ CPPFLAGS := -MD -MP -I./include
 LDFLAGS :=
 LDLIBS :=
 
-SRC := $(shell find src -name *.c)
-TEST := $(shell find tests -name *.c)
+SRC := $(shell find src -name \*.c)
+TEST := $(shell find tests -name \*.c)
 
 FILES := $(shell find . -regextype egrep -regex ".*\.[ch]([ch]|[xp+]{2})?$$")
+
+GENERATED_HEADERS := ./include/hlibc/generated/pp.h
 
 SRC_OBJ := $(patsubst %.c,build/%.o,$(SRC))
 TEST_OBJ := $(patsubst %.c,build/%.o,$(TEST)) $(SRC_OBJ)
@@ -27,14 +30,16 @@ OBJ := $(sort $(SRC_OBJ) $(TEST_OBJ))
 
 TEST_BIN := bin/test
 
-.PHONY: all clean lint format test
 .ONESHELL:
 
+.PHONY: all
 all: $(TEST_BIN)
 
+.PHONY: clean
 clean:
-	@rm -rf bin build
+	@rm -rf bin build $(GENERATED_HEADERS)
 
+.PHONY: lint
 lint:
 	@if ! cpplint --root=include $(FILES) ; then
 		echo "cpplint found problems, exiting..."
@@ -47,6 +52,7 @@ lint:
 		exit 1
 	fi
 
+.PHONY: format
 format:
 	@while true ; do
 		read -p "Format all files in place? [y/n] " yn
@@ -60,9 +66,7 @@ format:
 		printf "\e[1A\e[2K"
 	done
 
-headers:
-	@./headers.py $(FILES)
-
+.PHONY: test
 test: $(TEST_BIN)
 	@$(TEST_BIN)
 
@@ -70,8 +74,15 @@ $(TEST_BIN): $(TEST_OBJ)
 	@mkdir -p $(@D)
 	@$(CC) $(LDFLAGS) $(LDLIBS) $^ -o $@
 
-$(OBJ): build/%.o : %.c
+
+$(OBJ): build/%.o : %.c $(GENERATED_HEADERS)
 	@mkdir -p $(@D)
 	@$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+
+.PHONY: generated
+generated: $(GENERATED_HEADERS)
+
+$(GENERATED_HEADERS): ./include/hlibc/generated/gen.py
+	@./include/hlibc/generated/gen.py
 
 -include $(shell find build -name *.d 2>/dev/null)

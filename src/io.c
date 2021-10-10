@@ -3,26 +3,25 @@
  */
 
 #include <stdlib.h>
-#include <errno.h>
 #include <sys/stat.h>
+#include <hlibc/def.h>
 #include <hlibc/io.h>
+#include <hlibc/string.h>
+#include <hlibc/math.h>
 
 blksize_t io_blksize(struct stat *st)
 {
     return max(BUFSIZ, st->st_blksize);
 }
 
-bool fgetsize(FILE *stream, off_t *size)
+off_t fgetsize(FILE *stream)
 {
     int fd;
     struct stat st;
-
     if ((fd = fileno(stream)) == -1 || fstat(fd, &st)) {
-        return true;
+        return -1;
     }
-
-    *size = st.st_size;
-    return false;
+    return st.st_size;
 }
 
 int frewind(FILE *stream)
@@ -33,53 +32,49 @@ int frewind(FILE *stream)
 char *readfile(const char *path)
 {
     FILE *stream = fopen(path, "r");
-
     if (!stream) {
         return NULL;
     }
 
-    char *buffer = freadfile(stream);
-    fclose(stream);
-    return buffer;
+    char *buf = freadfile(stream);
+    if (fclose(stream)) {
+        free(buf);
+        return NULL;
+    }
+
+    return buf;
 }
 
 char *freadfile(FILE *stream)
 {
-    off_t pos;
+    off_t pos_i;
     struct stat st;
 
-    if ((pos = ftello(stream)) == -1 || fstat(fileno(stream), &st)) {
+    if ((pos_i = ftello(stream)) == -1 || fstat(fileno(stream), &st)) {
         return NULL;
     }
 
-    size_t buffer_size = st.st_size - pos;
-    char *buffer = malloc(buffer_size + 1);
-    buffer[buffer_size] = '\0';
+    size_t buf_size = st.st_size - pos_i;
+    char *buf = stralloc(buf_size);
 
-    if (!buffer) {
-        if (!errno) {
-            errno = ENOMEM;
-        }
-
+    if (!buf) {
         return NULL;
     }
-
-    char *head = buffer;
-    char *end = buffer + buffer_size;
 
     blksize_t block_size = io_blksize(&st);
     blksize_t read_size = block_size;
 
-    while (head < end && read_size == block_size) {
-        read_size = fread(head, 1, block_size, stream);
-        head += block_size;
+    for (int i = 0; i < buf_size && read_size == block_size; i += block_size) {
+        read_size = fread(buf + i, sizeof *buf, block_size, stream);
     }
 
-    if (!feof(stream) || fseeko(stream, pos, SEEK_SET)) {
-        free(buffer);
-        errno = EIO;
+    if (feof(stream) && !fseeko(stream, pos_i, SEEK_SET)) {
+        return buf;
+    } else {
+        free(buf);
+        if (!errno) {
+            errno = EIO;
+        }
         return NULL;
     }
-
-    return buffer;
 }

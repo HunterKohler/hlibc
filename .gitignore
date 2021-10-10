@@ -1,2 +1,6 @@
 /build
 /bin
+
+temp.*
+temp
+a.out

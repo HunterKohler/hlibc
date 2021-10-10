@@ -6,12 +6,7 @@
 #define HLIBC_IO_H_
 
 #include <stdio.h>
-#include <stdbool.h>
 #include <sys/stat.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /*
  * Get optimal block size to read in file i/o.
@@ -19,33 +14,28 @@ extern "C" {
 blksize_t io_blksize(struct stat *st);
 
 /*
- * Get size of file pointer 'stream', pass to pointer 'size'. Return 'true' and
- * sets 'errno' on error, 'false' otherwise.
+ * Get size of file pointed to by `stream`. Returns `-1` and sets `errno` on
+ * failure.
  */
-bool fgetsize(FILE *stream, off_t *size);
+off_t fgetsize(FILE *stream);
 
 /*
- * Rewind file pointer 'stream' to begining. Return 'true' and sets errno on
- * error, reutrns 'false' otherwise. Used to replace
- * 'void rewind(FILE *stream);', because it doesn't report errors.
+ * Rewind file pointer 'stream' to beginning. Returns -1 on failure and sets
+ * errno. Replacement for `rewind()` for better error-handling.
  */
 int frewind(FILE *stream);
 
 /*
- * Reads file from 'path'. Returns NULL and sets errno on failure, new buffer
- * on success of file contents.
+ * Reads file at path. Returns NULL and sets errno on failure, otherwise
+ * returns a new buffer.
  */
 char *readfile(const char *path);
 
 /*
  * Safely read remaining contents of file pointer 'stream' to a new buffer.
- * Returns NULL and sets errno on faulure. File position is reset to that which
+ * Returns NULL and sets errno on filure. File position is reset to that which
  * was passed.
  */
 char *freadfile(FILE *stream);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

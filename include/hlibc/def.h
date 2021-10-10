@@ -5,9 +5,15 @@
 #ifndef HLIBC_DEF_H_
 #define HLIBC_DEF_H_
 
-#include <stdatomic.h>
 #include <stdalign.h>
+#include <stdatomic.h>
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdnoreturn.h>
+#include <limits.h>
+#include <errno.h>
 
 #ifndef thread_local
 #define thread_local _Thread_local
@@ -17,42 +23,26 @@
 #define static_assert _Static_assert
 #endif
 
-#define min(a, b)             \
-    ({                        \
-        __auto_type _a = (a); \
-        __auto_type _b = (b); \
-        _a < _b ? _a : _b     \
-    })
-
-#define max(a, b)             \
-    ({                        \
-        __auto_type _a = (a); \
-        __auto_type _b = (b); \
-        _a > _b ? _a : _b     \
-    })
-
-#define clamp(val, low, high) min((__typeof__(val))max(val, low), high)
-
 #define swap(a, b)               \
     do {                         \
         __auto_type __tmp = (a); \
         (a) = (b);               \
         (b) = __tmp;             \
-    } while (0);
+    } while (0)
 
-#define IS_ARRAY \
+#define IS_ARRAY(a) \
     (!__builtin_types_compatible_p(__typeof__(a), __typeof__(&(a)[0])))
 
-#define ARRAY_SIZE(a)                                                 \
-    ({                                                                \
-        _Static_assert(IS_ARRAY(a),                                   \
-                       "Cannot call ARRAY_SIZE on non static array"); \
-        sizeof(a) / sizeof((a)[0]);                                   \
+#define ARRAY_SIZE(a)                                                \
+    ({                                                               \
+        static_assert(IS_ARRAY(a),                                   \
+                      "Cannot call ARRAY_SIZE on non static array"); \
+        sizeof(a) / sizeof((a)[0]);                                  \
     })
 
-#define _CONCAT(a, b) a##b
-#define CONCAT(a, b) _CONCAT(a, b)
-
-#define N_ARGS(...) ARRAY_SIZE((int[])({ __VA_ARGS__ }))
+#define debug_printf(fmt, ...)                                           \
+    do {                                                                 \
+        fprintf(stderr, "%s:%d: " fmt, __FILE__, __LINE__, __VA_ARGS__); \
+    } while (0)
 
 #endif

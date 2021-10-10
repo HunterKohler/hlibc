@@ -2,8 +2,8 @@
  * Copyright (C) 2021 Hunter Kohler <jhunterkohler@gmail.com>
  */
 
-#ifndef STYLE_H_
-#define STYLE_H_
+#ifndef HLIBC_TERM_H_
+#define HLIBC_TERM_H_
 
 /*
  * ANSI Control Sequence Indicator
@@ -83,5 +83,43 @@
 #define ANSI_BG_BRIGHT_MAGENTA ANSI_SGR("105")
 #define ANSI_BG_BRIGHT_CYAN ANSI_SGR("106")
 #define ANSI_BG_BRIGHT_WHITE ANSI_SGR("107")
+
+// clang-format off
+#define FMT_SPECIFIER(T)              \
+    _Generic(((T)0),                  \
+        /* char */                    \
+        char: "%c",                   \
+                                      \
+        /* signed integral types */   \
+        signed char: "%d"             \
+        short: "%d"                   \
+        int: "%d"                     \
+        long: "%d"                    \
+        long long: "%d",              \
+        __int128: "%d",               \
+                                      \
+        /* unsigned integral types */ \
+        bool: "%u",                   \
+        unsigned char: "%u",          \
+        unsigned short: "%u",         \
+        unsigned int: "%u",           \
+        unsigned long: "%u",          \
+        unsigned long long: "%u",     \
+        __uint128: "%u",              \
+                                      \
+        /* floating point types */    \
+        float: "%f",                  \
+        double: "%f",                 \
+        long double: "%f",            \
+        _Decimal32: "%f"              \
+        _Decimal64: "%f",             \
+        _Decimal128: "%f"             \
+        float _Complex: "%f",         \
+        double _Complex: "%f",        \
+        long double _Complex: "%f",   \
+        float _Imaginary: "%f",       \
+        double _Imaginary: "%f",      \
+        long double _Imaginary: "%f")
+// clang-format on
 
 #endif
