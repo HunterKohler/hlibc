@@ -2,12 +2,11 @@
  * Copyright (C) 2021 Hunter Kohler <jhunterkohler@gmail.com>
  */
 
-#include <assert.h>
-
-int test_pp();
-int test_vector();
+void test_vector();
+void test_json();
 
 int main()
 {
-    assert(!test_vector());
+    test_vector();
+    test_json();
 }

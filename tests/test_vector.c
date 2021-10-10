@@ -10,7 +10,14 @@
 #include <hlibc/vector.h>
 #include <hlibc/mem.h>
 
-static int test_vector_new()
+static int int_cmp(const void *a, const void *b)
+{
+    const int *_a = a;
+    const int *_b = b;
+    return *_a < *_b ? -1 : *_a > *_b ? 1 : 0;
+}
+
+void test_vector_new()
 {
     struct h_vector *vec = h_vector_new(sizeof(int));
 
@@ -21,18 +28,15 @@ static int test_vector_new()
 
     free(vec->data);
     free(vec);
-
-    return 0;
 }
 
-static int test_vector_destroy()
+void test_vector_destroy()
 {
     struct h_vector *vec = h_vector_new(sizeof(int));
     h_vector_destroy(vec);
-    return 0;
 }
 
-static int test_vector_reserve()
+void test_vector_reserve()
 {
     struct h_vector *vec = h_vector_new(sizeof(int));
     size_t n = 10;
@@ -47,10 +51,9 @@ static int test_vector_reserve()
     assert(!vec->size);
 
     h_vector_destroy(vec);
-    return 0;
 }
 
-static int test_vector_resize()
+void test_vector_resize()
 {
     struct h_vector *vec = h_vector_new(sizeof(int));
     size_t n = 10;
@@ -75,10 +78,9 @@ static int test_vector_resize()
     assert(vec->capacity >= n);
 
     h_vector_destroy(vec);
-    return 0;
 }
 
-static int test_vector_shrink_to_fit()
+void test_vector_shrink_to_fit()
 {
     struct h_vector *vec = h_vector_new(sizeof(int));
     size_t size = 50;
@@ -96,10 +98,9 @@ static int test_vector_shrink_to_fit()
     assert(vec->capacity == cap);
 
     h_vector_destroy(vec);
-    return 0;
 }
 
-static int test_vector_push_back()
+void test_vector_push_back()
 {
     struct h_vector *vec = h_vector_new(sizeof(int));
     int elem_ints[] = { 4846, 74, 83, 42, 62, 36, 73, 7, 722905 };
@@ -126,11 +127,9 @@ static int test_vector_push_back()
     vec = h_vector_new(SIZE_MAX);
     assert(h_vector_push_back(vec, NULL));
     h_vector_destroy(vec);
-
-    return 0;
 }
 
-static int test_vector_pop_back()
+void test_vector_pop_back()
 {
     struct h_vector *vec = h_vector_new(sizeof(int));
     int n = 10;
@@ -139,11 +138,9 @@ static int test_vector_pop_back()
     h_vector_pop_back(vec);
     assert(vec->size == n - 1);
     assert(vec->capacity == n);
-
-    return 0;
 }
 
-static int test_vector_clear()
+void test_vector_clear()
 {
     struct h_vector *vec = h_vector_new(sizeof(int));
 
@@ -151,32 +148,26 @@ static int test_vector_clear()
     h_vector_clear(vec);
     assert(vec->capacity == 10);
     assert(vec->size == 0);
-
-    return 0;
 }
 
-static int test_vector_front()
+void test_vector_front()
 {
     struct h_vector *vec = h_vector_new(sizeof(int));
 
     assert(!h_vector_resize(vec, 10));
     assert(h_vector_front(vec) == vec->data);
-
-    return 0;
 }
 
-static int test_vector_back()
+void test_vector_back()
 {
     struct h_vector *vec = h_vector_new(sizeof(int));
 
     assert(!h_vector_resize(vec, 10));
     assert(!h_vector_reserve(vec, 15));
     assert(h_vector_back(vec) == vec->data + 10 * sizeof(int));
-
-    return 0;
 }
 
-static int test_vector_at()
+void test_vector_at()
 {
     struct h_vector *vec = h_vector_new(sizeof(int));
     size_t n = 10;
@@ -187,17 +178,9 @@ static int test_vector_at()
     }
 
     h_vector_destroy(vec);
-    return 0;
 }
 
-static int int_cmp(const void *a, const void *b)
-{
-    const int *_a = a;
-    const int *_b = b;
-    return *_a < *_b ? -1 : *_a > *_b ? 1 : 0;
-}
-
-static int test_vector_qsort()
+void test_vector_qsort()
 {
     struct h_vector *vec = h_vector_new(sizeof(int));
     int elem_ints[] = { 4846, 74, 83, 42, 62, 36, 73, 7, 722905 };
@@ -212,10 +195,9 @@ static int test_vector_qsort()
     assert(!memcmp(elem_ints_sorted, vec->data, sizeof elem_ints_sorted));
 
     h_vector_destroy(vec);
-    return 0;
 }
 
-static int test_vector_insert()
+void test_vector_insert()
 {
     struct h_vector *vec = h_vector_new(sizeof(int));
     int elem_ints[] = { 4846, 74, 83, 61, 63 };
@@ -246,10 +228,9 @@ static int test_vector_insert()
     assert(!memcmp(vec->data + 100, final, sizeof(final)));
 
     h_vector_destroy(vec);
-    return 0;
 }
 
-static int test_vector_erase()
+void test_vector_erase()
 {
     struct h_vector *vec = h_vector_new(sizeof(int));
     int elems[] = { 80, 1, 2, 4846, 74, 10, 1, 83, 61, 63, 0, 0, 5 };
@@ -266,25 +247,22 @@ static int test_vector_erase()
     assert(vec->size == 3);
     assert(vec->capacity >= ARRAY_SIZE(elems));
     assert(!memcmp(vec->data, final, sizeof final));
-
-    return 0;
 }
 
-int test_vector()
+void test_vector()
 {
-    assert(!test_vector_new());
-    assert(!test_vector_destroy());
-    assert(!test_vector_reserve());
-    assert(!test_vector_resize());
-    assert(!test_vector_shrink_to_fit());
-    assert(!test_vector_push_back());
-    assert(!test_vector_pop_back());
-    assert(!test_vector_clear());
-    assert(!test_vector_front());
-    assert(!test_vector_back());
-    assert(!test_vector_at());
-    assert(!test_vector_qsort());
-    assert(!test_vector_insert());
-    assert(!test_vector_erase());
-    return 0;
+    test_vector_new();
+    test_vector_destroy();
+    test_vector_reserve();
+    test_vector_resize();
+    test_vector_shrink_to_fit();
+    test_vector_push_back();
+    test_vector_pop_back();
+    test_vector_clear();
+    test_vector_front();
+    test_vector_back();
+    test_vector_at();
+    test_vector_qsort();
+    test_vector_insert();
+    test_vector_erase();
 }
