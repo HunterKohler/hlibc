@@ -6,10 +6,10 @@ SHELL = bash
 CFLAGS := \
 	-std=c11 \
 	-Wall \
+	-Wextra \
 	-Wno-unused-function \
-	# -Wextra \
-	-fanalyzer \
-	-g
+	-Wno-sign-compare \
+	-fanalyzer
 
 CPPFLAGS := -MD -MP -I./include
 

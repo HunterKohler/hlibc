@@ -78,3 +78,28 @@ char *freadfile(FILE *stream)
         return NULL;
     }
 }
+
+int fputd(long long d, FILE *stream)
+{
+    // 3 * n always larger than log_10(2 ^ 8 * sizeof(n)) for positive n.
+    char str[3 * sizeof(d) + 1];
+    sprintf(str, "%lld", d);
+    return fputs(str, stream);
+}
+
+int fputf(long double f, FILE *stream)
+{
+    char str[24];
+    sprintf(str, "%Lf", f);
+    return fputs(str, stream);
+}
+
+int putd(long long d)
+{
+    return fputd(d, stdout);
+}
+
+int putf(long double f)
+{
+    return fputf(f, stdout);
+}

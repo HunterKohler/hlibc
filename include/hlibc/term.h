@@ -5,6 +5,8 @@
 #ifndef HLIBC_TERM_H_
 #define HLIBC_TERM_H_
 
+#include <hlibc/def.h>
+
 /*
  * ANSI Control Sequence Indicator
  */
@@ -86,40 +88,34 @@
 
 // clang-format off
 #define FORMAT_SPECIFIER(x)           \
-    _Generic((x),                       \
-        /* char */                    \
+    _Generic((x),                     \
+        const char *: "%s",           \
+        const signed char *: "%s",    \
+        const unsigned char *: "%s",  \
+        char *: "%s",                 \
+        signed char *: "%s",          \
+        unsigned char *: "%s",        \
+                                      \
         char: "%c",                   \
+        signed char: "%d",            \
                                       \
-        /* signed integral types */   \
-        signed char: "%d"             \
-        short: "%d"                   \
-        int: "%d"                     \
-        long: "%d"                    \
-        long long: "%d",              \
-        __int128: "%d",               \
+        short: "%d",                  \
+        int: "%d",                    \
+        long: "%ld",                  \
+        long long: "%lld",            \
                                       \
-        /* unsigned integral types */ \
         bool: "%u",                   \
         unsigned char: "%u",          \
         unsigned short: "%u",         \
         unsigned int: "%u",           \
-        unsigned long: "%u",          \
-        unsigned long long: "%u",     \
-        __uint128: "%u",              \
+        unsigned long: "%lu",         \
+        unsigned long long: "%llu",   \
                                       \
-        /* floating point types */    \
         float: "%f",                  \
         double: "%f",                 \
-        long double: "%f",            \
-        _Decimal32: "%f"              \
-        _Decimal64: "%f",             \
-        _Decimal128: "%f"             \
-        float _Complex: "%f",         \
-        double _Complex: "%f",        \
-        long double _Complex: "%f",   \
-        float _Imaginary: "%f",       \
-        double _Imaginary: "%f",      \
-        long double _Imaginary: "%f")
+        long double: "%Lf",           \
+                                      \
+        void *: "%p")
 // clang-format on
 
 #endif

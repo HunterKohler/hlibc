@@ -19,12 +19,18 @@ enum json_type {
     JSON_ERR
 };
 
-struct json_value {
-    enum json_type type;
-    void *buf;
+struct json_object {
 };
 
-struct json_object {
+struct json_value {
+    enum json_type type;
+    union {
+        void *null;
+        double num;
+        char *str;
+        struct json_object *obj;
+        struct json_value **arr;
+    };
 };
 
 struct json_value *json_load(const char *src);

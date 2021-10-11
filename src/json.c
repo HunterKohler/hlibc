@@ -214,7 +214,7 @@ int _json_get_num(const char *src, struct json_value *json)
         num *= pow(10, exp);
     }
 
-    json->buf = malloc(sizeof(double));
+    json->num = num * (negative ? -1 : 1);
     json->type = JSON_NUM;
 
     return i;

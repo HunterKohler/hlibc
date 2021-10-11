@@ -8,6 +8,9 @@
 #include <stdio.h>
 #include <sys/stat.h>
 
+#include <hlibc/def.h>
+#include <hlibc/term.h>
+
 /*
  * Get optimal block size to read in file i/o.
  */
@@ -37,5 +40,29 @@ char *readfile(const char *path);
  * was passed.
  */
 char *freadfile(FILE *stream);
+
+/*
+ * Write decmial to stream cast as `long long`. Returns non-negative number on
+ * success and EOF on failure, `errno` and the stream error indicator will be
+ * set accordingly.
+ */
+int fputd(long long d, FILE *stream);
+
+/*
+ * Write float to stream cast as `long double`. Returns non-negative number on
+ * success and EOF on failure, `errno` and the stream error indicator will be
+ * set accordingly.
+ */
+int fputf(long double f, FILE *stream);
+
+/*
+ * Alias for `fputd` using stdout.
+ */
+int putd(long long d);
+
+/*
+ * Alias for `fputf` using stdout.
+ */
+int putf(long double f);
 
 #endif
