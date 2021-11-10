@@ -27,7 +27,7 @@
 #define noreturn _Noreturn
 #endif
 
-#define swap(a, b)               \
+#define SWAP(a, b)               \
     do {                         \
         __auto_type __tmp = (a); \
         (a) = (b);               \
