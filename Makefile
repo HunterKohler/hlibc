@@ -18,22 +18,23 @@ LDLIBS :=
 
 SRC := $(shell find src -name \*.c)
 TEST := $(shell find tests -name \*.c)
+MISC := $(shell find misc -name \*.c)
 
 FILES := $(shell find . -regextype egrep -regex ".*\.[ch]([ch]|[xp+]{2})?$$")
 
-GENERATED_HEADERS := ./include/hlibc/generated/pp.h
-
 SRC_OBJ := $(patsubst %.c,build/%.o,$(SRC))
 TEST_OBJ := $(patsubst %.c,build/%.o,$(TEST)) $(SRC_OBJ)
+MISC_OBJ := $(patsubst %.c,build/%.o,$(MISC))
 
-OBJ := $(sort $(SRC_OBJ) $(TEST_OBJ))
+OBJ := $(sort $(SRC_OBJ) $(TEST_OBJ) $(MISC_OBJ))
 
 TEST_BIN := bin/test
+MISC_BIN := $(patsubst %.c,bin/%,$(MISC))
 
 .ONESHELL:
 
 .PHONY: all
-all: $(TEST_BIN)
+all: $(TEST_BIN) $(MISC_BIN)
 
 .PHONY: clean
 clean:
@@ -70,19 +71,21 @@ format:
 test: $(TEST_BIN)
 	@$(TEST_BIN)
 
+.PHONY: misc
+misc: $(MISC_BIN)
+
+$(MISC_BIN): bin/% : build/%.o
+	@mkdir -p $(@D)
+	$(CC) $(LDFLAGS) $(LDLIBS) $^ -o $@
+
 $(TEST_BIN): $(TEST_OBJ)
 	@mkdir -p $(@D)
-	@$(CC) $(LDFLAGS) $(LDLIBS) $^ -o $@
+	$(CC) $(LDFLAGS) $(LDLIBS) $^ -o $@
 
 
-$(OBJ): build/%.o : %.c $(GENERATED_HEADERS)
+$(OBJ): build/%.o : %.c
 	@mkdir -p $(@D)
-	@$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
-.PHONY: generated
-generated: $(GENERATED_HEADERS)
-
-$(GENERATED_HEADERS): ./include/hlibc/generated/gen.py
-	@./include/hlibc/generated/gen.py
 
 -include $(shell find build -name *.d 2>/dev/null)
