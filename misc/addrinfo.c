@@ -5,7 +5,6 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
-#include <stdnoreturn.h>
 #include <errno.h>
 #include <unistd.h>
 #include <sys/socket.h>
