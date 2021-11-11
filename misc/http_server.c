@@ -6,25 +6,15 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
-#include <stdarg.h>
 #include <errno.h>
 #include <unistd.h>
 #include <netdb.h>
 #include <netinet/in.h>
-#include <sys/socket.h>
+
+#include "common.h"
 
 #define PORT 8000
 #define BACKLOG 16
-
-void die(const char *fmt, ...)
-{
-    va_list args;
-    va_start(args, fmt);
-    vfprintf(stderr, fmt, args);
-    va_end(args);
-    fprintf(stderr, ": %s\n", strerror(errno));
-    exit(1);
-}
 
 int main(int argc, char **argv)
 {
