@@ -107,7 +107,7 @@ int ds_cmp(const char *ds_1, const char *ds_2)
     return res ? res : len_2 - len_1;
 }
 
-int ds_append(char **dest, const char *src)
-{
-    ds_reserve(dest, ds_len(*dest) + ds_len(src));
-}
+// int ds_append(char **dest, const char *src)
+// {
+//     ds_reserve(dest, ds_len(*dest) + ds_len(src));
+// }
