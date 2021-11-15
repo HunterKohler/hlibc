@@ -11,12 +11,12 @@ CFLAGS := \
 	-Wno-unused-function \
 	-Wno-sign-compare
 
-CPPFLAGS := -MD -MP -I./include
+CPPFLAGS := -MD -MP -I./
 
 LDFLAGS :=
 LDLIBS :=
 
-SRC := $(shell find src -name \*.c)
+SRC := $(shell find hlibc -name \*.c)
 TEST := $(shell find test -name \*.c)
 MISC := $(shell find misc -name \*.c)
 
@@ -31,14 +31,12 @@ MISC_BIN := $(patsubst %.c,bin/%,$(MISC))
 TEST_BIN := $(patsubst %.c,bin/%,$(TEST))
 BIN := $(sort $(MISC_BIN) $(TEST_BIN))
 
-.ONESHELL:
-
 .PHONY: all clean misc test
 
 all: $(MISC_BIN) $(TEST_BIN)
 
 clean:
-	@rm -rf bin build $(GENERATED_HEADERS)
+	@rm -rf bin build
 
 misc: $(MISC_BIN)
 
