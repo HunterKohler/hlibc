@@ -3,6 +3,7 @@
  */
 #include <assert.h>
 #include <stdio.h>
+#include <errno.h>
 #include "../src/dstring.c"
 
 void test_ds_new()

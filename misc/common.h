@@ -12,8 +12,13 @@
 #include <stdarg.h>
 #include <stdnoreturn.h>
 #include <errno.h>
+#include <math.h>
 
-noreturn static void die(const char *fmt, ...)
+#ifndef thread_local
+#define thread_local _Thread_local
+#endif
+
+static noreturn void die(const char *fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
@@ -21,6 +26,23 @@ noreturn static void die(const char *fmt, ...)
     va_end(args);
     fprintf(stderr, ": %s\n", strerror(errno));
     exit(1);
+}
+
+static size_t core_count()
+{
+    return sysconf(_SC_NPROCESSORS_ONLN);
+}
+
+// Prime Counting Function Bounds:
+// See https://mathworld.wolfram.com/PrimeCountingFunction.html
+static size_t prime_count_upper(size_t n)
+{
+    return (size_t)(1.25506 * n / log(n)) + 1;
+}
+
+static size_t prime_count_lower(size_t n)
+{
+    return (size_t)(n / log(n));
 }
 
 #endif
