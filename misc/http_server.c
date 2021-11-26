@@ -56,7 +56,7 @@ int main(int argc, char **argv)
         while ((n = recv(fd_conn, recvbuf, 4096, 0)) > 0) {
             printf("%.*s", n, recvbuf);
 
-            if (memcmp(recvbuf + n, "\r\n\r\n", 4)) {
+            if (memcmp(recvbuf + n - 4, "\r\n\r\n", 4)) {
                 break;
             }
         }
@@ -66,7 +66,7 @@ int main(int argc, char **argv)
         }
 
         sprintf(sendbuf,
-                "HTTP/1.1 OK 200\r\n"
+                "HTTP/1.1 200 OK\r\n"
                 "Content-Length: %zu\r\n"
                 "Content-Type: text/plain; charset=utf-8\r\n"
                 "\r\n"
