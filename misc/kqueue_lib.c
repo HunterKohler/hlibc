@@ -1,6 +1,8 @@
 #include <stdlib.h>
+#include <string.h>
 #include <errno.h>
 #include <unistd.h>
+#include <time.h>
 #include <sys/event.h>
 
 // struct kevent {
@@ -41,16 +43,27 @@
 //             transitions instead of the current state.  Note that some
 //             filters may automatically set this flag internally.
 
-struct kqueue_table {
-    int kq;
-    pid_t pid;
+typedef void *array_t;
+
+struct kevent_table {
     size_t nchanges;
     size_t nevents;
-    size_t changelist_cap;
-    size_t eventlist_cap;
+    size_t eventlist_size;
+    size_t changelist_size;
     struct kevent *changelist;
     struct kevent *eventlist;
+    struct timespec timeout;
 };
+
+// int kq, const struct kevent *changelist, int nchanges, struct kevent *eventlist,
+//     int nevents,
+//     const struct timespec *timeout
+
+int kevent_table(int kq, int nevents, struct kevent_table *kt)
+{
+    return kevent(kt->kq, kt->changelist, kt->nchanges, kt->eventlist,
+                  kt->nevents, kt->timeout);
+}
 
 void kevent_set(struct kevent *event, uintptr_t ident, int16_t filter,
                 uint16_t flags, uint32_t fflags, intptr_t data, void *udata)
@@ -58,84 +71,36 @@ void kevent_set(struct kevent *event, uintptr_t ident, int16_t filter,
     EV_SET(event, ident, filter, flags, fflags, data, udata);
 }
 
-int kqueue_table_init(struct kqueue_table *kq, pid_t pid)
+int kevent_table_init(struct kevent_table *kt)
 {
-    kq->pid = pid <= 0 ? getpid() : pid;
-    kq->eventlist = malloc(kq->eventlist_cap * sizeof(kq->eventlist));
-
-    if (!kq->eventlist)
-        return -1;
-
-    kq->changelist = malloc(kq->changelist_cap * sizeof(kq->changelist));
-    if (!(kq->changelist)) {
-        free(kq->eventlist);
-        return -1;
-    }
-
-    if ((kq->k = kqueue()) < 0) {
-        free(kq->eventlist);
-        free(kq->changelist);
-        return -1;
-    }
-
+    memset(table, 0, sizeof(*table));
     return 0;
 }
 
-void kqueue_table_destroy(struct kqueue_table *kq)
+void kevent_table_destroy(struct kevent_table *kt)
 {
-    free(kq->eventlist);
-    free(kq->changelist);
+    free(kt->eventlist);
+    free(kt->changelist);
 }
 
-int kqueue_table_change(struct kqueue_table *kq, struct kevent *event,
-                        uintptr_t ident, int16_t filter, uint16_t flags,
-                        uint32_t fflags, intptr_t data, void *udata)
+int kevent_table_change(struct kevent_table *kt, uintptr_t ident,
+                        int16_t filter, uint16_t flags, uint32_t fflags,
+                        intptr_t data, void *udata)
 {
-    if (kq->changelist_cap == kq->nchanges) {
-        size_t cap = kq->changelist_cap < 2 ? 2 : kq->changelist_cap * 3 / 2;
-        void *mem = realloc(cap * sizeof(*kq->changelist));
+    if (kt->changelist_size == kt->nchanges) {
+        size_t size = kt->changelist_size < 2 ? 2 : kt->changelist_size * 3 / 2;
+        void *mem = realloc(kt->changelist, size * sizeof(*kt->changelist));
 
         if (!mem)
             return ENOMEM;
 
-        kq->changelist_cap = cap;
-        kq->changelist = mem;
+        kt->changelist = mem;
+        kt->changelist_size = size;
     }
 
-    kevent_set(kq->changelist[kq->nchanges++], ident, filter, flags, fflags,
+    kevent_set(kt->changelist[kt->nchanges++], ident, filter, flags, fflags,
                data, udata);
     return 0;
-}
-
-int kqueue_table_add(struct kqueue_table *kq, uintptr_t ident, int16_t filter,
-                     uint32_t fflags, intptr_t data, void *udata)
-{
-    return kqueue_table_push(kq, ident, filter, EV_ADD, fflags, data, udata);
-}
-
-int kqueue_table_delete(struct kqueue_table *kq, uintptr_t ident,
-                        int16_t filter)
-{
-    return kqueue_table_push(kq, ident, filter, EV_DELETE, 0, 0, NULL);
-}
-
-int kqueue_table_event_enable(struct kqueue_table *kq, uintptr_t ident,
-                              int16_t filter)
-{
-    return kqueue_table_push(kq, ident, filter, EV_ENABLE, 0, 0, NULL);
-}
-
-int kqueue_table_disable(struct kqueue_table *kq, uintptr_t ident,
-                         int16_t filter)
-{
-    return kqueue_table_push(kq, ident, filter, EV_DISABLE, 0, 0, NULL);
-}
-
-int kqueue_table_once(struct kqueue_table *kq, uintptr_t ident, int16_t filter,
-                      uint32_t fflags, intptr_t data, void *udata)
-{
-    return kqueue_table_push(kq, ident, filter, EV_ONESHOT, fflags, data,
-                             udata);
 }
 
 int main()
