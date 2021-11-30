@@ -2,6 +2,7 @@
  * NOT INTENDED TO CONTINUE WORK, INCOMPLETE
  */
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdnoreturn.h>
@@ -35,8 +36,10 @@
         sizeof(a) / sizeof((a)[0]);                                        \
     })
 
+/* Wrapped in fallacy too allow build to ignore without deleting. */
 int main()
 {
+#if false
     int kq;
     struct sockaddr_in addr;
     int fd_sock;
@@ -175,4 +178,5 @@ int main()
             }
         }
     }
+#endif
 }

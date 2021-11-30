@@ -61,8 +61,8 @@ struct kevent_table {
 
 int kevent_table(int kq, int nevents, struct kevent_table *kt)
 {
-    return kevent(kt->kq, kt->changelist, kt->nchanges, kt->eventlist,
-                  kt->nevents, kt->timeout);
+    return kevent(kq, kt->changelist, kt->nchanges, kt->eventlist, kt->nevents,
+                  &kt->timeout);
 }
 
 void kevent_set(struct kevent *event, uintptr_t ident, int16_t filter,
@@ -73,7 +73,7 @@ void kevent_set(struct kevent *event, uintptr_t ident, int16_t filter,
 
 int kevent_table_init(struct kevent_table *kt)
 {
-    memset(table, 0, sizeof(*table));
+    memset(kt, 0, sizeof(*kt));
     return 0;
 }
 
@@ -98,7 +98,7 @@ int kevent_table_change(struct kevent_table *kt, uintptr_t ident,
         kt->changelist_size = size;
     }
 
-    kevent_set(kt->changelist[kt->nchanges++], ident, filter, flags, fflags,
+    kevent_set(&kt->changelist[kt->nchanges++], ident, filter, flags, fflags,
                data, udata);
     return 0;
 }
