@@ -81,7 +81,10 @@ char *freadfile(FILE *stream)
 
 int fputd(long long d, FILE *stream)
 {
-    // 3 * n always larger than log_10(2 ^ 8 * sizeof(n)) for positive n.
+    /*
+     * Near optimal buffer size: `3 * n` always larger than `log_10(2 ^ 8 *
+     * sizeof(n))` for positive n.
+     */
     char str[3 * sizeof(d) + 1];
     sprintf(str, "%lld", d);
     return fputs(str, stream);
