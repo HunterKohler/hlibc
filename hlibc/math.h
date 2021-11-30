@@ -4,30 +4,25 @@
 #ifndef HLIBC_MATH_H_
 #define HLIBC_MATH_H_
 
-/*
- * Type generic non-recalculating minimum macro.
- */
-#define min(a, b)              \
-    ({                         \
-        __auto_type __a = (a); \
-        __auto_type __b = (b); \
-        __a < __b ? __a : __b; \
+#include <hlibc/def.h>
+
+#define max(a, b)                                                            \
+    ({                                                                       \
+        __typeof(a) __a = (a);                                               \
+        __typeof(b) __b = (b);                                               \
+        __static_assert(__types_compatible(a, b),                            \
+                        "max(" #a "," #b ") called on incompatible types."); \
+        __a > __b ? __a : __b;                                               \
     })
 
-/*
- * Type generic non-recalculating maximum macro.
- */
-#define max(a, b)              \
-    ({                         \
-        __auto_type __a = (a); \
-        __auto_type __b = (b); \
-        __a > __b ? __a : __b; \
+#define min(a, b)                                                            \
+    ({                                                                       \
+        __typeof(a) __a = (a);                                               \
+        __typeof(b) __b = (b);                                               \
+        __static_assert(__types_compatible(a, b),                            \
+                        "min(" #a "," #b ") called on incompatible types."); \
+        __a < __b ? __a : __b;                                               \
     })
-
-/*
- * Type generic non-recalculating clamp macro.
- */
-#define clamp(val, low, high) min((__typeof(val))max(val, low), high)
 
 /*
  * Upper bound for the Prime Counting Function.
