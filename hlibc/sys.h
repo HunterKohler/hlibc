@@ -8,8 +8,15 @@
 #include <stddef.h>
 
 /*
- * Get count of system cores.
+ * Get system core count. On error, a negative number is returned and errno is
+ * set to indicate the error.
  */
-size_t core_count();
+ssize_t core_count();
+
+/*
+ * Get system page size. On error, a negative number is returned and errno is
+ * set to indicate the error.
+ */
+ssize_t page_size()
 
 #endif
