@@ -20,8 +20,6 @@ SRC := $(shell find hlibc -name \*.c)
 TEST := $(shell find test -name \*.c)
 MISC := $(shell find misc -name \*.c)
 
-FILES := $(shell find . -regextype egrep -regex ".*\.[ch]([ch]|[xp+]{2})?$$")
-
 SRC_OBJ := $(patsubst %.c,build/%.o,$(SRC))
 MISC_OBJ := $(patsubst %.c,build/%.o,$(MISC))
 TEST_OBJ := $(patsubst %.c,build/%.o,$(TEST))
@@ -31,7 +29,7 @@ MISC_BIN := $(patsubst %.c,bin/%,$(MISC))
 TEST_BIN := $(patsubst %.c,bin/%,$(TEST))
 BIN := $(sort $(MISC_BIN) $(TEST_BIN))
 
-.PHONY: all clean misc test
+.PHONY: all clean misc test run_tests
 
 all: $(MISC_BIN) $(TEST_BIN)
 
@@ -39,8 +37,14 @@ clean:
 	@rm -rf bin build
 
 misc: $(MISC_BIN)
-
 test: $(TEST_BIN)
+
+run_tests: $(TEST_BIN)
+	@printf "Running all tests:\n"
+	@for i in $(TEST_BIN); do \
+		printf "%s:\n" "$$i"; \
+		$$i; \
+	done
 
 $(BIN): bin/% : build/%.o
 	@mkdir -p $(@D)
