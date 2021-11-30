@@ -27,28 +27,28 @@
 #define noreturn _Noreturn
 #endif
 
-#define SWAP(a, b)               \
-    do {                         \
-        __auto_type __tmp = (a); \
-        (a) = (b);               \
-        (b) = __tmp;             \
-    } while (0)
+#ifndef __static_assert
+#define __static_assert _Static_assert
+#endif
 
-#define IS_ARRAY(a) \
-    (!__builtin_types_compatible_p(__typeof__(a), __typeof__(&(a)[0])))
+#define __types_compatible(a, b) \
+    __builtin_types_compatible_p(__typeof(a), __typeof(b))
 
-#define ARRAY_SIZE(a)                                                \
-    ({                                                               \
-        static_assert(IS_ARRAY(a),                                   \
-                      "Cannot call ARRAY_SIZE on non static array"); \
-        sizeof(a) / sizeof((a)[0]);                                  \
+#define __is_array(a) (!__types_compatible((a), &(a)[0]))
+
+#define __static_assert_array(a) \
+    __static_assert(__is_array(a), "Non-array type: " #a)
+
+#define container_of(ptr, type, member)                     \
+    ({                                                      \
+        const __typeof(((type *)0)->member) *__ptr = (ptr); \
+        (type *)((char *)__ptr - offsetof(type, member));   \
     })
 
-#define NARGS(...) sizeof((int[])({ __VA_ARGS__ }))
-
-#define debug_printf(fmt, ...)                                           \
-    do {                                                                 \
-        fprintf(stderr, "%s:%d: " fmt, __FILE__, __LINE__, __VA_ARGS__); \
-    } while (0)
+#define ARRAY_SIZE(a)               \
+    ({                              \
+        __static_assert_array(a);   \
+        sizeof(a) / sizeof((a)[0]); \
+    })
 
 #endif
