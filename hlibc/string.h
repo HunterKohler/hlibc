@@ -11,13 +11,13 @@
 
 /*
  * Allocates `n + 1` bytes and null terminates buffer. Returns `NULL` and sets
- * `errno` on failure if not already set.
+ * `errno` on failure.
  */
 char *stralloc(size_t n);
 
 /*
  * Allocates enough memory to store concatenated strings. Returns `NULL` and
- * sets `errno` on failure if not already set.
+ * sets `errno` on failure.
  */
 char *astrcat(const char *src1, const char *src2);
 
@@ -267,6 +267,9 @@ static const char *const errno_name_table[] = {
 #endif
 };
 
+/*
+ * Retrieve the name of an 'errno-value'. On unknown, `NULL` is returned.
+ */
 static inline const char *error_name(int err)
 {
     return err < 0 || err >= ARRAY_SIZE(errno_name_table) ?
