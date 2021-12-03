@@ -21,6 +21,12 @@ char *stralloc(size_t n);
  */
 char *astrcat(const char *src1, const char *src2);
 
+/*
+ * Allocate and copy substring in `src` on `[begin, end)`, or an
+ * empty-null-terminated string when `end < begin`.
+ */
+char *substr(const char *src, size_t begin, size_t end);
+
 static const char *const errno_name_table[] = {
 #ifdef E2BIG
     [E2BIG] = "E2BIG",

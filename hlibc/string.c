@@ -21,7 +21,20 @@ char *astrcat(const char *src1, const char *src2)
 
     if (dest) {
         memcpy(dest, src1, len1);
-        memcpy(dest + len1, src2, len2);
+        memcpy(dest + len1, src2, len2 + 1);
+    }
+
+    return dest;
+}
+
+char *substr(const char *src, size_t begin, size_t end)
+{
+    size_t n = begin < end ? end - begin : 0;
+    char *dest = malloc(n + 1);
+
+    if (dest) {
+        memcpy(dest, src + begin, n);
+        dest[n] = 0;
     }
 
     return dest;
