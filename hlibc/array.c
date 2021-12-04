@@ -41,6 +41,8 @@ static inline int _hlib_array_insert(struct hlib_array *restrict arr,
     memmove(_hlib_array_at(arr, n + pos), _hlib_array_at(arr, pos),
             arr->elem_size * (arr->size - pos));
     memcpy(_hlib_array_at(arr, pos), vals, n * arr->elem_size);
+
+    return 0;
 }
 
 int hlib_array_init(struct hlib_array *arr, size_t elem_size)
@@ -49,6 +51,7 @@ int hlib_array_init(struct hlib_array *arr, size_t elem_size)
     arr->capacity = 0;
     arr->elem_size = elem_size;
     arr->data = NULL;
+    return 0;
 }
 
 void hlib_array_destroy(struct hlib_array *arr)
@@ -58,13 +61,8 @@ void hlib_array_destroy(struct hlib_array *arr)
 
 int hlib_array_reserve(struct hlib_array *arr, size_t size)
 {
-    if (size > arr->capacity) {
-        void *buf = realloc(arr->data, size * arr->elem_size);
-        if (!buf)
-            return ENOMEM;
-        arr->data = buf;
-        arr->capacity = size;
-    }
+    if (size > arr->capacity)
+        return _hlib_array_realloc(arr, size);
     return 0;
 }
 

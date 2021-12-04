@@ -37,6 +37,11 @@ void *memdup(const void *src, size_t n);
  */
 void *memrep(const void *src, size_t n, size_t m);
 
+/*
+ * Returns hex value of char, or -1 if invalid character.
+ */
+int hex_val(char c);
+
 static const char *const errno_name_table[] = {
 #ifdef E2BIG
     [E2BIG] = "E2BIG",

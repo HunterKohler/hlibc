@@ -1,3 +1,6 @@
+#include <stdlib.h>
+#include <unistd.h>
+#include <hlibc/math.h>
 #include <hlibc/kqueue.h>
 
 void kevent_set(struct kevent *event, uintptr_t ident, int16_t filter,
@@ -29,7 +32,7 @@ int kqueue_table_change(struct kqueue_table *kt, uintptr_t ident,
                         intptr_t data, void *udata)
 {
     if (kt->changelist_cap == kt->nchanges) {
-        kt->changelist_cap = max(kt->changelist_cap * 3 / 2, 2);
+        kt->changelist_cap = max(kt->changelist_cap * 3 / 2, (size_t)2);
         kt->changelist = realloc(kt->changelist,
                                  kt->changelist_cap * sizeof(*kt->changelist));
         if (!kt->changelist)

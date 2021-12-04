@@ -1,15 +1,19 @@
 SHELL = bash
 
+# -Wno-pointer-sign
+# -Wno-sign-compare
+
 CFLAGS := \
+	-O2 \
 	-std=c11 \
 	-fanalyzer \
 	-Wall \
 	-Wextra \
-	-Wno-unused-function \
-	-Wno-sign-compare \
-	-Wno-pointer-sign \
 	-Wshadow \
-	-Wdouble-promotion
+	-Wdouble-promotion \
+	-Wno-sign-compare \
+	-Wno-override-init \
+	-Wno-unused-function
 
 CPPFLAGS := -MD -MP -I./
 
