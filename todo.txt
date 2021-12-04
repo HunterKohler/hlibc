@@ -1,5 +1,0 @@
-- checkout these gcc flags:
-    -Wpedantic -Warray-bounds -Weffc++ -Wextra -Wwrite-strings -Wno-parentheses
-- get c linter
-- benchmark case-insensitive strcmp
-- write and test repeating mem cpy (n^2 vs nlog(n))
