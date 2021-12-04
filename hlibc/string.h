@@ -10,14 +10,13 @@
 #include <hlibc/def.h>
 
 /*
- * Allocates `n + 1` bytes and null terminates buffer. Returns `NULL` and sets
- * `errno` on failure.
+ * Allocates `n + 1` bytes and null terminates buffer. Returns `NULL` on error.
  */
 char *stralloc(size_t n);
 
 /*
- * Allocates enough memory to store concatenated strings. Returns `NULL` and
- * sets `errno` on failure.
+ * Allocates enough memory to store concatenated strings. Returns `NULL` on
+ * error.
  */
 char *astrcat(const char *src1, const char *src2);
 
@@ -26,6 +25,17 @@ char *astrcat(const char *src1, const char *src2);
  * empty-null-terminated string when `end < begin`.
  */
 char *substr(const char *src, size_t begin, size_t end);
+
+/*
+ * Copies `n` bytes to new buffer starting at `src`. Returns `NULL` on failure.
+ */
+void *memdup(const void *src, size_t n);
+
+/*
+ * Returns new buffer consisting of the first `n` bytes from `src` repeated
+ * `m` times. Returns `NULL` on failure.
+ */
+void *memrep(const void *src, size_t n, size_t m);
 
 static const char *const errno_name_table[] = {
 #ifdef E2BIG

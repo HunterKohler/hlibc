@@ -39,3 +39,22 @@ char *substr(const char *src, size_t begin, size_t end)
 
     return dest;
 }
+
+void *memdup(const void *src, size_t n)
+{
+    void *ret = malloc(n);
+    if (ret)
+        memcpy(ret, src, n);
+    return ret;
+}
+
+// TODO benchmark against method of doubling area copied and linear copy.
+void *memrep(const void *src, size_t n, size_t m)
+{
+    void *ret = malloc(n * m);
+    if (ret) {
+        for (int i = 0; i < m; i++)
+            memcpy(ret + i * n, src, n);
+    }
+    return ret;
+}
