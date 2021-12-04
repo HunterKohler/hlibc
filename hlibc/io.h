@@ -9,7 +9,6 @@
 #include <sys/stat.h>
 
 #include <hlibc/def.h>
-#include <hlibc/term.h>
 
 /*
  * Get optimal block size to read in file i/o.

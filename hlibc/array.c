@@ -6,15 +6,15 @@
 
 static inline int _hlib_array_realloc(struct hlib_array *arr, size_t capacity)
 {
-    void *buf = realloc(arr->buf, capacity * arr->elem_size);
+    void *buf = realloc(arr->data, capacity * arr->elem_size);
     if (!buf)
         return ENOMEM;
-    arr->buf = buf;
+    arr->data = buf;
     arr->capacity = capacity;
     return 0;
 }
 
-static inline int _hlib_array_grow_size(size_t size)
+static inline size_t _hlib_array_grow_size(size_t size)
 {
     return size < 2 ? 2 : size * 3 / 2;
 }
@@ -24,16 +24,16 @@ static inline int _hlib_array_grow(struct hlib_array *arr)
     return _hlib_array_realloc(arr, _hlib_array_grow_size(arr->capacity));
 }
 
-static inline void *_hlib_array_at(struct hlib_array *arr, size_t index)
+static inline void *_hlib_array_at(const struct hlib_array *arr, size_t index)
 {
-    return arr->buf + arr->elem_size * index;
+    return arr->data + arr->elem_size * index;
 }
 
 static inline int _hlib_array_insert(struct hlib_array *restrict arr,
                                      size_t pos, void *restrict vals, size_t n)
 {
     int err = _hlib_array_realloc(
-        max(_hlib_array_grow_size(arr->size + nvals), arr->capacity + vals));
+        arr, max(_hlib_array_grow_size(arr->size), arr->capacity + n));
 
     if (err)
         return err;
@@ -48,21 +48,21 @@ int hlib_array_init(struct hlib_array *arr, size_t elem_size)
     arr->size = 0;
     arr->capacity = 0;
     arr->elem_size = elem_size;
-    arr->buf = NULL;
+    arr->data = NULL;
 }
 
 void hlib_array_destroy(struct hlib_array *arr)
 {
-    free(arr->buf);
+    free(arr->data);
 }
 
 int hlib_array_reserve(struct hlib_array *arr, size_t size)
 {
     if (size > arr->capacity) {
-        void *buf = realloc(arr->buf, size * arr->elem_size);
+        void *buf = realloc(arr->data, size * arr->elem_size);
         if (!buf)
             return ENOMEM;
-        arr->buf = buf;
+        arr->data = buf;
         arr->capacity = size;
     }
     return 0;
@@ -122,11 +122,11 @@ int hlib_array_copy(const struct hlib_array *restrict src,
     if (!buf)
         return ENOMEM;
 
-    memcpy(buf, src->buf, buf_size);
+    memcpy(buf, src->data, buf_size);
     dest->capacity = src->size;
     dest->size = src->size;
     dest->elem_size = src->elem_size;
-    dest->buf = buf;
+    dest->data = buf;
     return 0;
 }
 

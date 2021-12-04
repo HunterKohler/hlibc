@@ -32,18 +32,18 @@ int spinlock_trylock(struct spinlock *lock)
 
 int spinlock_unlock(struct spinlock *lock)
 {
-    atomic_flag_clear(lock->flag);
+    atomic_flag_clear(&lock->flag);
     return 0;
 }
 
 int spinlock_init(struct spinlock *lock)
 {
-    atomic_flag_clear(lock->flag);
+    atomic_flag_clear(&lock->flag);
     return 0;
 }
 
 int spinlock_destroy(struct spinlock *lock)
 {
-    atomic_flag_clear(lock->flag);
+    atomic_flag_clear(&lock->flag);
     return 0;
 }

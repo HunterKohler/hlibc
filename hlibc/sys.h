@@ -17,6 +17,6 @@ ssize_t core_count();
  * Get system page size. On error, a negative number is returned and errno is
  * set to indicate the error.
  */
-ssize_t page_size()
+ssize_t page_size();
 
 #endif

@@ -7,6 +7,9 @@
 #ifndef HLIBC_KQUEUE_H_
 #define HLIBC_KQUEUE_H_
 
+#include <sys/event.h>
+#include <hlibc/def.h>
+
 /*
  * kqueue (2) documentation:
  *

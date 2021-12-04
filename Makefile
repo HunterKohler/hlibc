@@ -1,29 +1,31 @@
 SHELL = bash
 
-# -Wshadow
-# -Wdouble-promotion
-# -fanalyzer
-
 CFLAGS := \
 	-std=c11 \
+	-fanalyzer \
 	-Wall \
 	-Wextra \
 	-Wno-unused-function \
-	-Wno-sign-compare
+	-Wno-sign-compare \
+	-Wno-pointer-sign \
+	-Wshadow \
+	-Wdouble-promotion
 
 CPPFLAGS := -MD -MP -I./
 
 LDFLAGS :=
-LDLIBS :=
+LDLIBS := -pthread -lm
 
-SRC := $(shell find hlibc -name \*.c)
+LIB_ARCHIVE := build/hlibc.a
+
+LIB := $(shell find hlibc -name \*.c)
 TEST := $(shell find test -name \*.c)
 MISC := $(shell find misc -name \*.c)
 
-SRC_OBJ := $(patsubst %.c,build/%.o,$(SRC))
+LIB_OBJ := $(patsubst %.c,build/%.o,$(LIB))
 MISC_OBJ := $(patsubst %.c,build/%.o,$(MISC))
 TEST_OBJ := $(patsubst %.c,build/%.o,$(TEST))
-OBJ := $(sort $(SRC_OBJ) $(MISC_OBJ) $(TEST_OBJ))
+OBJ := $(sort $(LIB_OBJ) $(MISC_OBJ) $(TEST_OBJ))
 
 MISC_BIN := $(patsubst %.c,bin/%,$(MISC))
 TEST_BIN := $(patsubst %.c,bin/%,$(TEST))
@@ -31,7 +33,7 @@ BIN := $(sort $(MISC_BIN) $(TEST_BIN))
 
 .PHONY: all clean misc test run_tests
 
-all: $(MISC_BIN) $(TEST_BIN)
+all: $(MISC_BIN) $(TEST_BIN) $(LIB_ARCHIVE)
 
 clean:
 	@rm -rf bin build
@@ -50,10 +52,11 @@ $(BIN): bin/% : build/%.o
 	@mkdir -p $(@D)
 	$(CC) $(LDFLAGS) $(LDLIBS) $^ -o $@
 
-
 $(OBJ): build/%.o : %.c
 	@mkdir -p $(@D)
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
+$(LIB_ARCHIVE): $(LIB_OBJ)
+	ar -rcs $@ $^
 
 -include $(shell find build -name *.d 2>/dev/null)
