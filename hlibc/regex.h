@@ -19,23 +19,23 @@
  * instead of a static var, call to `pthread_once`, and entire other function
  * to run the compilation.
  */
-struct regcomp_once {
-    struct spinlock lock;
+typedef struct {
+    struct spinlock log;
     bool done;
-};
+} regcomp_once_t;
 
 /*
- * Static initializer for `struct regcomp_once`.
+ * Static initializer for `regcomp_once_t`.
  */
 #define REGCOMP_ONCE_INIT \
-    ((struct regcomp_once){ .lock = SPINLOCK_INIT, .done = false })
+    ((regcomp_once_t){ .lock = SPINLOCK_INIT, .done = false })
 
 /*
  * Initializes `re` associated with `once`, if this has not already been called
  * with the token `once`. Thread-safe, blocks if another thread is currently
  * initializing the regex.
  */
-int regcomp_once(struct regcomp_once *once, regex_t *re, const char *pattern,
+int regcomp_once(regcomp_once_t *once, regex_t *re, const char *pattern,
                  int cflags);
 
 #endif

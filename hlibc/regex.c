@@ -1,6 +1,6 @@
 #include <hlibc/regex.h>
 
-int regcomp_once(struct regcomp_once *once, regex_t *re, const char *pattern,
+int regcomp_once(regcomp_once_t *once, regex_t *re, const char *pattern,
                  int cflags)
 {
     int ret = 0;
