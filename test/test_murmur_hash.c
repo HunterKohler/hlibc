@@ -1,8 +1,6 @@
-#include "../hlibc/murmur_hash.c"
-#include "../hlibc/bit.c"
-
 #include <stdio.h>
 #include <assert.h>
+#include <hlibc/murmur_hash.h>
 
 /*
  * Remark: Well constructed test

@@ -1,8 +1,7 @@
-#include "../hlibc/bit.c"
-
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
+#include <hlibc/bit.h>
 
 const char hello_world[] = "Hello world!";
 const char hello_world_bin[] =

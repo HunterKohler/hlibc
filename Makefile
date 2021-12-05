@@ -4,6 +4,7 @@ SHELL = bash
 # -Wno-sign-compare
 
 CFLAGS := \
+	-g \
 	-O2 \
 	-std=c11 \
 	-fanalyzer \
@@ -42,6 +43,7 @@ all: $(MISC_BIN) $(TEST_BIN) $(LIB_ARCHIVE)
 clean:
 	@rm -rf bin build
 
+lib: $(LIB_ARCHIVE)
 misc: $(MISC_BIN)
 test: $(TEST_BIN)
 
@@ -51,6 +53,8 @@ run_tests: $(TEST_BIN)
 		printf "%s:\n" "$$i"; \
 		$$i; \
 	done
+
+$(TEST_BIN): $(LIB_ARCHIVE)
 
 $(BIN): bin/% : build/%.o
 	@mkdir -p $(@D)
