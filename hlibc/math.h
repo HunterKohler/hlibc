@@ -6,22 +6,22 @@
 
 #include <hlibc/def.h>
 
-#define max(a, b)                                                            \
-    ({                                                                       \
-        __typeof(a) __a = (a);                                               \
-        __typeof(b) __b = (b);                                               \
-        __static_assert(__types_compatible(a, b),                            \
-                        "max(" #a "," #b ") called on incompatible types."); \
-        __a > __b ? __a : __b;                                               \
+#define max(a, b)                                                          \
+    ({                                                                     \
+        typeof(a) __a = (a);                                               \
+        typeof(b) __b = (b);                                               \
+        static_assert(types_compatible(a, b),                              \
+                      "max(" #a "," #b ") called on incompatible types."); \
+        __a > __b ? __a : __b;                                             \
     })
 
-#define min(a, b)                                                            \
-    ({                                                                       \
-        __typeof(a) __a = (a);                                               \
-        __typeof(b) __b = (b);                                               \
-        __static_assert(__types_compatible(a, b),                            \
-                        "min(" #a "," #b ") called on incompatible types."); \
-        __a < __b ? __a : __b;                                               \
+#define min(a, b)                                                          \
+    ({                                                                     \
+        typeof(a) __a = (a);                                               \
+        typeof(b) __b = (b);                                               \
+        static_assert(types_compatible(a, b),                              \
+                      "min(" #a "," #b ") called on incompatible types."); \
+        __a < __b ? __a : __b;                                             \
     })
 
 /*

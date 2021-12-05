@@ -31,6 +31,10 @@
 #define static_assert _Static_assert
 #endif
 
+#ifndef typeof
+#define typeof __typeof
+#endif
+
 #define types_compatible(a, b) \
     __builtin_types_compatible_p(typeof(a), typeof(b))
 
