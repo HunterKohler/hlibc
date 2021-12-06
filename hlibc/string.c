@@ -71,3 +71,45 @@ int hex_val(char c)
 {
     return hex_val_table[(unsigned char)c];
 }
+
+bool strequal(const char *a, const char *b)
+{
+    return (a == b) || (a && b && !strcmp(a, b));
+}
+
+bool strcaseequal(const char *a, const char *b)
+{
+    return (a == b) || (a && b && !strcasecmp(a, b));
+}
+
+char *strcat_n(const char **src, size_t n)
+{
+    size_t *lens = malloc(n * sizeof(*lens));
+    size_t len = 0;
+
+    if (!lens)
+        return NULL;
+
+    for (int i = 0; i < n; i++) {
+        if (src[i]) {
+            lens[i] = strlen(src[i]);
+            len += lens[i];
+        }
+    }
+
+    char *buf = stralloc(len);
+    if (!buf) {
+        free(lens);
+        return NULL;
+    }
+
+    for (int i = 0; i < n; i++) {
+        if (src[i]) {
+            memcpy(buf, src[i], lens[i]);
+            buf += lens[i];
+        }
+    }
+
+    free(lens);
+    return buf - len;
+}

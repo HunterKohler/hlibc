@@ -10,7 +10,6 @@ CFLAGS := \
 	-fanalyzer \
 	-Wall \
 	-Wextra \
-	-Wshadow \
 	-Wdouble-promotion \
 	-Wno-sign-compare \
 	-Wno-override-init \

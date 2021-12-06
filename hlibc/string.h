@@ -21,10 +21,28 @@ char *stralloc(size_t n);
 char *astrcat(const char *src1, const char *src2);
 
 /*
+ * Allocates and returns memory for the concat of `n` strings in an array
+ * pointed to by `src`. Will ignore null strings.
+ */
+char *strcat_n(const char **src, size_t n);
+
+/*
  * Allocate and copy substring in `src` on `[begin, end)`, or an
  * empty-null-terminated string when `end < begin`.
  */
 char *substr(const char *src, size_t begin, size_t end);
+
+/*
+ * Compares strings for equality including `NULL` checks. `strcmp()` may cause
+ * a segmentation fault if passed `NULL`.
+ */
+bool strequal(const char *a, const char *b);
+
+/*
+ * Compares strings for case-insensitive equality including `NULL` checks.
+ * `strcmp()` may cause a segmentation fault if passed `NULL`.
+ */
+bool strcaseequal(const char *a, const char *b);
 
 /*
  * Copies `n` bytes to new buffer starting at `src`. Returns `NULL` on failure.
