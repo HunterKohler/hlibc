@@ -258,7 +258,7 @@ error:
     return err ? err : -1;
 }
 
-static char *remove_dot_segments(const char *input)
+char *remove_dot_segments(const char *input)
 {
     size_t len = strlen(input);
     char *in = memdup(input, len + 1);
