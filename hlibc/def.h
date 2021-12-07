@@ -12,8 +12,9 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdnoreturn.h>
-#include <limits.h>
+#include <complex.h>
 #include <errno.h>
+#include <limits.h>
 
 #ifndef thread_local
 #define thread_local _Thread_local
@@ -27,33 +28,82 @@
 #define noreturn _Noreturn
 #endif
 
-#ifndef static_assert
-#define static_assert _Static_assert
-#endif
-
 #ifndef typeof
 #define typeof __typeof
 #endif
 
+#ifndef complex
+#define complex _Complex
+#endif
+
+#ifndef alignas
+#define alignas _Alignas
+#endif
+
+#ifndef alignof
+#define alignof _Alignof
+#endif
+
+#ifndef bool
+#define bool _Bool
+#endif
+
+#ifndef true
+#define true (_Bool(+1u))
+#endif
+
+#ifndef false
+#define false (_Bool(+0u))
+#endif
+
 #define types_compatible(a, b) \
-    __builtin_types_compatible_p(typeof(a), typeof(b))
+    (__builtin_types_compatible_p(typeof(a), typeof(b)))
 
-/*
- * Compile time type checking macro for array types.
- */
+// clang-format off
+#define is_char(a) \
+    (types_compatible((a), char) || \
+     types_compatible((a), signed char) || \
+     types_compatible((a), unsigned char))
+
+#define is_signed(a)                       \
+    (types_compatible((a), signed char) || \
+     types_compatible((a), short) ||       \
+     types_compatible((a), int) ||         \
+     types_compatible((a), long) ||        \
+     types_compatible((a), long long) ||   \
+     types_compatible((a), int128_t))
+
+#define is_unsigned(a)                            \
+    (types_compatible((a), unsigned char) ||      \
+     types_compatible((a), unsigned short) ||     \
+     types_compatible((a), unsigned int) ||       \
+     types_compatible((a), unsigned long) ||      \
+     types_compatible((a), unsigned long long) || \
+     types_compatible((a), bool) ||               \
+     types_compatible((a), uint128_t))
+
+#define is_integral(a)                            \
+    (is_char(a) || is_signed(a) || is_unsigned(a))
+
+#define is_complex(a)                            \
+    (types_compatible((a), complex float) ||     \
+     types_compatible((a), complex double) ||    \
+     types_compatible((a), complex long double))
+
+#define is_floating_point(a)               \
+    (types_compatible((a), float) ||       \
+     types_compatible((a), double) ||      \
+     types_compatible((a), long double) || \
+     is_complex(a))
+
+#define is_void_ptr(a) types_compatible((a), void *)
 #define is_array(a) (!types_compatible((a), &(a)[0]))
+// clang-format on
 
-/*
- * TODO: Reasearch practical usage of `likely`, `unlikely`, and `barrier`
- */
-// #define likely(x) __builtin_expect(!!(x), 1)
-// #define unlikely(x) __builtin_expect(!!(x), 0)
-// #define barrier() __asm__ __volatile__("": : :"memory")
-
-#define container_of(ptr, type, member)                     \
-    ({                                                      \
-        const __typeof(((type *)0)->member) *__ptr = (ptr); \
-        (type *)((char *)__ptr - offsetof(type, member));   \
+#define container_of(ptr, type, member)                   \
+    ({                                                    \
+        const typeof(((type *)0)->member) *__ptr = (ptr); \
+        (type *)((char *)__ptr - offsetof(type, member)); \
     })
 
 #define ARRAY_SIZE(a)               \
@@ -67,5 +117,8 @@
 #else
 #define DEBUG_NULL NULL
 #endif
+
+typedef __int128_t int128_t;
+typedef __uint128_t uint128_t;
 
 #endif
