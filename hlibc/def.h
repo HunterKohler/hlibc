@@ -44,11 +44,6 @@
 #define is_array(a) (!types_compatible((a), &(a)[0]))
 
 /*
- * Asserts the argument in an array type.
- */
-#define static_assert_array(a) static_assert(is_array(a), "Non-array type: " #a)
-
-/*
  * TODO: Reasearch practical usage of `likely`, `unlikely`, and `barrier`
  */
 // #define likely(x) __builtin_expect(!!(x), 1)
@@ -63,8 +58,14 @@
 
 #define ARRAY_SIZE(a)               \
     ({                              \
-        static_assert_array(a);     \
+        static_assert(is_array(a)); \
         sizeof(a) / sizeof((a)[0]); \
     })
+
+#ifdef DEBUG
+#define DEBUG_NULL 0xDEADBEEF00000000
+#else
+#define DEBUG_NULL NULL
+#endif
 
 #endif
