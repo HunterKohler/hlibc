@@ -68,6 +68,40 @@ char *uri_repr(const struct URI *uri)
     return ret;
 }
 
+// if defined(R.scheme) then
+//     T.scheme    = R.scheme;
+//     T.authority = R.authority;
+//     T.path      = remove_dot_segments(R.path);
+//     T.query     = R.query;
+// else
+//     if defined(R.authority) then
+//     T.authority = R.authority;
+//     T.path      = remove_dot_segments(R.path);
+//     T.query     = R.query;
+//     else
+//     if (R.path == "") then
+//         T.path = Base.path;
+//         if defined(R.query) then
+//             T.query = R.query;
+//         else
+//             T.query = Base.query;
+//         endif;
+//     else
+//         if (R.path starts-with "/") then
+//             T.path = remove_dot_segments(R.path);
+//         else
+//             T.path = merge(Base.path, R.path);
+//             T.path = remove_dot_segments(T.path);
+//         endif;
+//         T.query = R.query;
+//     endif;
+//     T.authority = Base.authority;
+//     endif;
+//     T.scheme = Base.scheme;
+// endif;
+
+// T.fragment = R.fragment;
+
 void destroy_uri(struct URI *uri)
 {
     free(uri->scheme);
@@ -82,20 +116,47 @@ void destroy_uri(struct URI *uri)
 int parse_uri(struct URI *restrict uri, const char *str,
               const struct URI *restrict base)
 {
+    return 1;
+    /*
     http_module_init();
 
-    int err;
     regmatch_t matches[10];
-    regmatch_t *match_scheme = &matches[2];
-    regmatch_t *match_authority = &matches[4];
-    regmatch_t *match_path = &matches[5];
-    regmatch_t *match_query = &matches[7];
-    regmatch_t *match_fragment = &matches[9];
+    char *scheme = NULL;
+    char *authority = NULL;
+    char *path = NULL;
+    char *query = NULL;
+    char *fragment = NULL;
+
+    if ((err = regexec(&re_uri, str, ARRAY_SIZE(matches), matches, 0)) ||
+        (err = regmatch_text(str, &matches[2], &scheme)) ||
+        (err = regmatch_text(str, &matches[4], &authority)) ||
+        (err = regmatch_text(str, &matches[5], &path)) ||
+        (err = regmatch_text(str, &matches[7], &query)) ||
+        (err = regmatch_text(str, &matches[9], &fragment))) {
+        goto error;
+    }
+
+    if (scheme) {
+        if (path) {
+            char *tmp = remove_dot_segments(path);
+            if (!tmp)
+                goto error;
+
+            free(path);
+            path = tmp;
+        }
+    } else {
+        if (authority) {
+            char *tmp = remove_dot_segments(path);
+            if (!tmp)
+                goto error;
+
+            free(path);
+            path = tmp;
+        }
+    }
 
     memset(uri, 0, sizeof(*uri));
-
-    if ((err = regexec(&re_uri, str, ARRAY_SIZE(matches), matches, 0)))
-        goto error;
 
     if (regmatch_len(match_scheme)) {
         size_t start = match_scheme->rm_so;
@@ -156,7 +217,6 @@ int parse_uri(struct URI *restrict uri, const char *str,
             start += len;
             len = 0;
         } else {
-            /* Max hostname length */
             if ((len = strcspn(str + start, ":/?#")) > 253)
                 goto error_invalid;
 
@@ -256,52 +316,61 @@ error_memory:
 error:
     destroy_uri(uri);
     return err ? err : -1;
+    */
 }
 
-char *remove_dot_segments(const char *input)
+size_t remove_dot_segments(char *path)
 {
-    size_t len = strlen(input);
-    char *in = memdup(input, len + 1);
-    if (!in)
-        return NULL;
+    char *in = path;
+    char *out = path;
+    while (*in) {
+        if (!memcmp(in, "../", 3)) {
+            memset(in, 0, 3);
+            in += 3;
+        } else if (!memcmp(in, "./", 2)) {
+            memset(in, 0, 2);
+            in += 2;
+        } else if (!memcmp(in, "/./", 3)) {
+            memset(in, 0, 2);
+            in += 2;
+        } else if (!memcmp(in, "/.", 3)) {
+            memset(in, 0, 1);
+            in += 1;
+            *in = '/';
+        } else if (!memcmp(in, "/../", 4)) {
+            memset(in, 0, 3);
+            in += 3;
 
-    char *out = malloc(len + 1);
-    if (!out) {
-        free(in);
-        return NULL;
-    }
+            char *last = out;
+            while (out > path && *out != '/')
+                out--;
 
-    char *wpos = out;
-    char *rpos = in;
+            memset(out, 0, last - out);
+        } else if (!memcmp(in, "/..", 4)) {
+            memset(in, 0, 2);
+            in += 2;
+            *in = '/';
 
-    while (*rpos) {
-        if (!memcmp(rpos, "../", 3)) {
-            rpos += 3;
-        } else if (!memcmp(rpos, "./", 2) || !memcmp(rpos, "/./", 3)) {
-            rpos += 2;
-        } else if (!memcmp(rpos, "/.", 3)) {
-            *(++rpos) = '/';
-        } else if (!memcmp(rpos, "/../", 4)) {
-            rpos += 3;
-            wpos -= wpos > out;
-            while (wpos > out && *wpos != '/')
-                wpos--;
-        } else if (!memcmp(rpos, "/..", 4)) {
-            *(rpos += 2) = '/';
-            wpos -= wpos > out;
-            while (wpos > out && *wpos != '/')
-                wpos--;
-        } else if (!memcmp(rpos, ".", 2) || !memcmp(rpos, "..", 3)) {
+            char *last = out;
+            while (out > path && *out != '/')
+                out--;
+
+            memset(out, 0, last - out);
+        } else if (!memcmp(in, "..", 3)) {
+            memset(in, 0, 2);
+            break;
+        } else if (!memcmp(in, ".", 2)) {
+            memset(in, 0, 1);
             break;
         } else {
-            size_t seglen = strcspn(rpos + 1, "./") + 1;
-            memcpy(wpos, rpos, seglen);
-            rpos += seglen;
-            wpos += seglen;
+            size_t seglen = strcspn(in + 1, "./") + 1;
+            memmove(out, in, seglen);
+            memset(out + seglen, 0, in - out);
+            out += seglen;
+            in += seglen;
         }
     }
 
-    *wpos = 0;
-    free(in);
-    return out;
+    *out = 0;
+    return out - path;
 }

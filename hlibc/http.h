@@ -49,14 +49,13 @@ int parse_uri(struct URI *restrict uri, const char *input,
 int normalize_uri(struct URI *uri);
 
 /*
- * `remove_dot_segments` routine.
- *
- * This implementation is really shitty.
+ * `remove_dot_segments` routine. Changes `path` in place. The new size of
+ * the null-terminated-byte-string pointed to by `path` is returne.d
  *
  * Reference:
  * https://datatracker.ietf.org/doc/html/rfc3986#section-5.2.4
  */
-char *remove_dot_segments(const char *input);
+size_t remove_dot_segments(char *path);
 
 void destroy_uri(struct URI *uri);
 char *uri_repr(const struct URI *uri);

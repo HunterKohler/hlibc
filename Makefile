@@ -4,7 +4,7 @@ SHELL = bash
 # -Wno-sign-compare
 
 CFLAGS := \
-	-g \
+	-g3 \
 	-O2 \
 	-std=c11 \
 	-fanalyzer \

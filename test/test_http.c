@@ -184,18 +184,20 @@ void test_remove_dot_segments()
     for (int i = 0; i < ARRAY_SIZE(test_cases); i++) {
         const char *input = test_cases[i][0];
         const char *expected = test_cases[i][1];
-        char *ret = remove_dot_segments(input);
+        char *path = strdup(input);
+        size_t size = remove_dot_segments(path);
 
-        if (!ret || strcmp(ret, expected)) {
-            printf("Test 'test_remove_dot_segments()' failed:\n"
+        if (strcmp(path, expected) || size != strlen(expected)) {
+            printf("Test %d of 'test_remove_dot_segments()' failed:\n"
                    "    Input: %s\n"
                    "    Expected: %s\n"
-                   "    Recieved: %s\n",
-                   input, expected, ret);
+                   "    Recieved Path: %s\n"
+                   "    Recieved Size: %zu\n",
+                   i + 1, input, expected, path, size);
             abort();
         }
 
-        free(ret);
+        free(path);
     }
 }
 
