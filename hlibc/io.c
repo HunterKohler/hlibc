@@ -3,106 +3,44 @@
  */
 
 #include <stdlib.h>
-#include <sys/stat.h>
 #include <hlibc/def.h>
 #include <hlibc/io.h>
-#include <hlibc/string.h>
-#include <hlibc/math.h>
 
-blksize_t io_blksize(struct stat *st)
+off_t filesize(FILE *stream)
 {
-    return max(BUFSIZ, st->st_blksize);
-}
+    off_t pos;
+    off_t size;
 
-off_t fgetsize(FILE *stream)
-{
-    int fd;
-    struct stat st;
-    if ((fd = fileno(stream)) == -1 || fstat(fd, &st)) {
+    if ((pos = ftello(stream)) < 0 || fseek(stream, 0, SEEK_END) ||
+        (size = ftello(stream)) < 0 || fseek(stream, pos, SEEK_SET)) {
         return -1;
     }
-    return st.st_size;
+
+    return size;
 }
 
-int frewind(FILE *stream)
+off_t readfile(const char *path, void **dest)
 {
-    return fseek(stream, 0, SEEK_SET);
-}
+    FILE *stream = NULL;
+    off_t size = -1;
 
-char *readfile(const char *path)
-{
-    FILE *stream = fopen(path, "r");
-    if (!stream) {
-        return NULL;
+    if ((stream = fopen(path, "r"))) {
+        size = freadfile(stream, dest);
+        fclose(stream);
     }
 
-    char *buf = freadfile(stream);
-    if (fclose(stream)) {
-        free(buf);
-        return NULL;
-    }
-
-    return buf;
+    return size;
 }
 
-char *freadfile(FILE *stream)
+off_t freadfile(FILE *stream, void **dest)
 {
-    off_t pos_i;
-    struct stat st;
+    off_t size;
 
-    if ((pos_i = ftello(stream)) == -1 || fstat(fileno(stream), &st)) {
-        return NULL;
+    if ((size = filesize(stream)) < 0 || !(*dest = malloc(size)) ||
+        fread(*dest, 1, size, stream) != size) {
+        free(*dest);
+        return -1;
     }
 
-    size_t buf_size = st.st_size - pos_i;
-    char *buf = stralloc(buf_size);
-
-    if (!buf) {
-        return NULL;
-    }
-
-    blksize_t block_size = io_blksize(&st);
-    blksize_t read_size = block_size;
-
-    for (int i = 0; i < buf_size && read_size == block_size; i += block_size) {
-        read_size = fread(buf + i, sizeof *buf, block_size, stream);
-    }
-
-    if (feof(stream) && !fseeko(stream, pos_i, SEEK_SET)) {
-        return buf;
-    } else {
-        free(buf);
-        if (!errno) {
-            errno = EIO;
-        }
-        return NULL;
-    }
-}
-
-int fputd(long long d, FILE *stream)
-{
-    /*
-     * Near optimal buffer size: `3 * n` always larger than `log_10(2 ^ 8 *
-     * sizeof(n))` for positive n.
-     */
-    char str[3 * sizeof(d) + 1];
-    sprintf(str, "%lld", d);
-    return fputs(str, stream);
-}
-
-int fputf(long double f, FILE *stream)
-{
-    char str[24];
-    sprintf(str, "%Lf", f);
-    return fputs(str, stream);
-}
-
-int putd(long long d)
-{
-    return fputd(d, stdout);
-}
-
-int putf(long double f)
-{
-    return fputf(f, stdout);
+    return size;
 }
