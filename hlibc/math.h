@@ -10,7 +10,7 @@
     ({                                                                     \
         typeof(a) __a = (a);                                               \
         typeof(b) __b = (b);                                               \
-        static_assert(types_compatible(a, b),                              \
+        static_assert(types_compatible(__a, __b),                          \
                       "max(" #a "," #b ") called on incompatible types."); \
         __a > __b ? __a : __b;                                             \
     })
@@ -19,9 +19,22 @@
     ({                                                                     \
         typeof(a) __a = (a);                                               \
         typeof(b) __b = (b);                                               \
-        static_assert(types_compatible(a, b),                              \
+        static_assert(types_compatible(__a, __b),                          \
                       "min(" #a "," #b ") called on incompatible types."); \
         __a < __b ? __a : __b;                                             \
+    })
+
+#define clamp(x, a, b)                                                    \
+    ({                                                                    \
+        typeof(x) __x = (x);                                              \
+        typeof(a) __a = (a);                                              \
+        typeof(b) __b = (b);                                              \
+                                                                          \
+        static_assert(                                                    \
+            types_compatible(__a, __b) && types_compatible(__b, __c),     \
+            "clamp(" #x "," #a "," #b ") called on incompatible types."); \
+                                                                          \
+        __a > __x ? __a : __b < __x ? __b : __x;                          \
     })
 
 /*
