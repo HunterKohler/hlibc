@@ -48,7 +48,7 @@ static int module_init()
 {
     static pthread_once_t once = PTHREAD_ONCE_INIT;
     pthread_once(&once, module_init_routine);
-    return error;
+    return module_init_err;
 }
 
 /*
