@@ -36,10 +36,12 @@ int is_percent_encoded(const char *str)
 bool uri_equal(const struct URI *a, const struct URI *b)
 {
     return a == b ||
-           (!!a == !!b && strequal(a->scheme, b->scheme) &&
-            strequal(a->host, b->host) && strequal(a->userinfo, b->userinfo) &&
-            strequal(a->path, b->path) && strequal(a->query, b->query) &&
-            strequal(a->fragment, b->fragment) && a->port == b->port);
+           (!!a == !!b && !strcmp_safe(a->scheme, b->scheme) &&
+            !strcmp_safe(a->host, b->host) &&
+            !strcmp_safe(a->userinfo, b->userinfo) &&
+            !strcmp_safe(a->path, b->path) &&
+            !strcmp_safe(a->query, b->query) &&
+            !strcmp_safe(a->fragment, b->fragment) && a->port == b->port);
 }
 
 int normalize_uri(struct URI *uri)

@@ -33,16 +33,15 @@ char *strcat_n(const char **src, size_t n);
 char *substr(const char *src, size_t begin, size_t end);
 
 /*
- * Compares strings for equality including `NULL` checks. `strcmp()` may cause
- * a segmentation fault if passed `NULL`.
+ * Library `strcmp()` with null checking.
  */
-bool strequal(const char *a, const char *b);
+int strcmp_safe(const char *a, const char *b);
 
 /*
  * Compares strings for case-insensitive equality including `NULL` checks.
  * `strcmp()` may cause a segmentation fault if passed `NULL`.
  */
-bool strcaseequal(const char *a, const char *b);
+int strcasecmp_safe(const char *a, const char *b);
 
 /*
  * Copies `n` bytes to new buffer starting at `src`. Returns `NULL` on failure.

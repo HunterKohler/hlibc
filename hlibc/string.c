@@ -72,14 +72,14 @@ int hex_val(char c)
     return hex_val_table[(unsigned char)c];
 }
 
-bool strequal(const char *a, const char *b)
+int strcmp_safe(const char *a, const char *b)
 {
-    return (a == b) || (a && b && !strcmp(a, b));
+    return a == b ? 0 : a ? b ? strcmp(a, b) : -1 : 1;
 }
 
-bool strcaseequal(const char *a, const char *b)
+int strcasecmp_safe(const char *a, const char *b)
 {
-    return (a == b) || (a && b && !strcasecmp(a, b));
+    return (a == b) ? 0 : a ? b ? strcasecmp(a, b) : -1 : 1;
 }
 
 char *strcat_n(const char **src, size_t n)
