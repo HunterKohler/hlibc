@@ -3,6 +3,7 @@
  */
 
 #include <stdlib.h>
+#include <ctype.h>
 #include <hlibc/string.h>
 
 char *stralloc(size_t n)
@@ -45,17 +46,6 @@ void *memdup(const void *src, size_t n)
     void *ret = malloc(n);
     if (ret)
         memcpy(ret, src, n);
-    return ret;
-}
-
-// TODO benchmark against method of doubling area copied and linear copy.
-void *memrep(const void *src, size_t n, size_t m)
-{
-    void *ret = malloc(n * m);
-    if (ret) {
-        for (int i = 0; i < m; i++)
-            memcpy(ret + i * n, src, n);
-    }
     return ret;
 }
 
@@ -112,4 +102,16 @@ char *strcat_n(const char **src, size_t n)
 
     free(lens);
     return buf - len;
+}
+
+void strtrim(char *str)
+{
+    size_t begin = strspn(str, " \t\n\r\f\v");
+    size_t end = strlen(str);
+
+    while (end && isspace(str[end - 1]))
+        end--;
+
+    memmove(str, str + begin, end - begin);
+    str[end - begin] = 0;
 }

@@ -49,15 +49,14 @@ int strcasecmp_safe(const char *a, const char *b);
 void *memdup(const void *src, size_t n);
 
 /*
- * Returns new buffer consisting of the first `n` bytes from `src` repeated
- * `m` times. Returns `NULL` on failure.
- */
-void *memrep(const void *src, size_t n, size_t m);
-
-/*
  * Returns hex value of char, or -1 if invalid character.
  */
 int hex_val(char c);
+
+/*
+ * Removes leading and trailing whitespace from string in-place.
+ */
+void strtrim(char *c);
 
 static const char *const errno_name_table[] = {
 #ifdef E2BIG
@@ -308,7 +307,7 @@ static const char *const errno_name_table[] = {
 /*
  * Retrieve the name of an 'errno-value'. On unknown, `NULL` is returned.
  */
-static inline const char *error_name(int err)
+static inline const char *strerror_name(int err)
 {
     return err < 0 || err >= ARRAY_SIZE(errno_name_table) ?
                NULL :
