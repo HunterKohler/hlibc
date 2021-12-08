@@ -2,6 +2,7 @@
  * Copyright (C) 2021 Hunter Kohler <jhunterkohler@gmail.com>
  */
 #include <stdlib.h>
+#include <stdatomic.h>
 #include <errno.h>
 #include "threads.h"
 
@@ -13,11 +14,6 @@ union thrd_routine_info {
     };
 };
 
-/*
- * POSIX `errno` code if an error occured during module initialization.
- */
-int module_init_error;
-
 pthread_mutexattr_t mtx_attr_plain;
 pthread_mutexattr_t mtx_attr_timed;
 pthread_mutexattr_t mtx_attr_plain_recursive;
@@ -25,28 +21,36 @@ pthread_mutexattr_t mtx_attr_timed_recursive;
 
 thread_local union thrd_routine_info *routine_info;
 
-static void module_init_routine()
+static int module_init()
 {
-    int err;
-    if ((err = pthread_mutexattr_init(&mtx_attr_plain)) ||
-        (err = pthread_mutexattr_init(&mtx_attr_timed)) ||
-        (err = pthread_mutexattr_init(&mtx_attr_plain_recursive)) ||
-        (err = pthread_mutexattr_init(&mtx_attr_timed_recursive))) {
-        module_init_error = err;
-    }
-}
+    static atomic_flag init = ATOMIC_FLAG_INIT;
+    static int error;
 
-static inline int module_init()
-{
-    static pthread_once_t module_init_ctl = PTHREAD_ONCE_INIT;
-    int err = pthread_once(&module_init_ctl, module_init_routine);
-    return err ? err : module_init_error;
+    if (!atomic_flag_test_and_set(&init)) {
+        // clang-format off
+        if ((error = pthread_mutexattr_init(&mtx_attr_plain)) ||
+            (error = pthread_mutexattr_init(&mtx_attr_timed)) ||
+            (error = pthread_mutexattr_init(&mtx_attr_plain_recursive)) ||
+            (error = pthread_mutexattr_init(&mtx_attr_timed_recursive)) ||
+            (error = pthread_mutexattr_settype(&mtx_attr_plain, PTHREAD_MUTEX_NORMAL)) ||
+            (error = pthread_mutexattr_settype(&mtx_attr_timed, PTHREAD_MUTEX_NORMAL)) ||
+            (error = pthread_mutexattr_settype(&mtx_attr_plain_recursive, PTHREAD_MUTEX_RECURSIVE)) ||
+            (error = pthread_mutexattr_settype(&mtx_attr_timed_recursive, PTHREAD_MUTEX_RECURSIVE))) {
+            pthread_mutexattr_destroy(&mtx_attr_plain);
+            pthread_mutexattr_destroy(&mtx_attr_timed);
+            pthread_mutexattr_destroy(&mtx_attr_plain_recursive);
+            pthread_mutexattr_destroy(&mtx_attr_timed_recursive);
+        }
+        // clang-format on
+    }
+
+    return error;
 }
 
 /*
  * Get ISO thread error (or success) value from POSIX `errno` codes.
  */
-static inline int thrd_return_code(int n)
+static int thrd_return_code(int n)
 {
     switch (n) {
     case 0:
