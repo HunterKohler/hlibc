@@ -165,176 +165,47 @@ int parse_uri(struct URI *restrict uri, const char *str,
         goto error;
     }
 
-    if (scheme) {
-        if (path) {
-            char *tmp = remove_dot_segments(path);
-            if (!tmp)
-                goto error;
+    // if (scheme) {
+    //     if (!valid_scheme(scheme))
+    //         goto error_invalid;
+    // } else {
+    //     if (!base) {
+    //         goto error_invalid;
+    //     } else if (!(scheme = strdup(base->scheme))) {
+    //         goto error_memory;
+    //     } else if (!authority) {
+    //         if (!(authority = strdup(base->authority)))
+    //             goto error_memory;
 
-            free(path);
-            path = tmp;
-        }
-    } else {
-        if (authority) {
-            char *tmp = remove_dot_segments(path);
-            if (!tmp)
-                goto error;
+    //         if (!path[0]) {
+    //             free(path);
+    //             if (!(path = strdup(base->path)) ||
+    //                 (!query && !(query = strdup(base->query)))) {
+    //                 goto error_memory;
+    //             }
+    //         } else if (path[0] != '/') {
+    //             size_t base_len = strlen(base->path);
+    //             size_t path_len = strlen(path);
 
-            free(path);
-            path = tmp;
-        }
-    }
+    //             if (base_len) {
+    //                 while (base_len && base->path[base_len - 1] != '/')
+    //                     base_len--;
 
-    memset(uri, 0, sizeof(*uri));
-
-    if (regmatch_len(match_scheme)) {
-        size_t start = match_scheme->rm_so;
-        size_t len = match_scheme->rm_eo - start;
-        char *scheme = stralloc(len);
-        uri->scheme = scheme;
-
-        if (!scheme)
-            goto error_memory;
-
-        if (!isalpha(str[start]))
-            goto error_invalid;
-
-        for (int i = 0; i < len; i++) {
-            char c = str[start + i];
-            if (isalnum(c) || strchr("+-.", c))
-                scheme[i] = tolower(c);
-            else
-                goto error_invalid;
-        }
-    }
-
-    if (regmatch_len(match_authority)) {
-        size_t start = match_authority->rm_so;
-        size_t len = 0;
-
-        while (isalnum(str[start + len]) ||
-               strchr("-._~:!$&'()*+,;=", str[start + len]) ||
-               is_percent_encoded(str + start + len))
-            len++;
-
-        if (str[start + len] == '@') {
-            if (len > 0) {
-                if (!(uri->userinfo = memdup(str + start, len + 1)))
-                    goto error_memory;
-
-                uri->userinfo[len] = 0;
-            }
-
-            start += len + 1;
-        }
-
-        len = 0;
-        if (str[start] == '[') {
-            while (isxdigit(str[start + len]) ||
-                   strchr(":.]", str[start + len]))
-                len++;
-
-            if (str[start + len - 1] != ']')
-                goto error_invalid;
-
-            uri->host = memdup(str + start, len + 1);
-            if (!uri->host)
-                goto error_memory;
-
-            uri->host[len] = 0;
-            uri->host_type = URI_HOST_IP6;
-            start += len;
-            len = 0;
-        } else {
-            if ((len = strcspn(str + start, ":/?#")) > 253)
-                goto error_invalid;
-
-            char *host = memdup(str + start, len + 1);
-            if (!host)
-                goto error_memory;
-
-            host[len] = 0;
-            uri->host = host;
-
-            if (!regexec(&re_ip4, host, 0, NULL, 0)) {
-                uri->host_type = URI_HOST_IP4;
-            } else {
-                uri->host_type = URI_HOST_NAMED;
-
-                if (!isalnum(host[0]))
-                    goto error_invalid;
-
-                for (int i = 0; i < len; i++) {
-                    if (host[i] == '.' ?
-                            !isalnum(host[i - 1]) || !isalnum(host[i + 1]) :
-                            !isalnum(host[i]) && host[i] != '-')
-                        goto error_invalid;
-
-                    host[i] = tolower(host[i]);
-                }
-            }
-
-            start += len;
-            len = 0;
-        }
-
-        if (str[start] == ':') {
-            start++;
-
-            int n = 0;
-            int max_len = len + 5;
-
-            while (len < max_len && isdigit(str[start + len]))
-                n = 10 * n + str[start + len++] - '0';
-
-            if (n >= 1 << 16)
-                goto error_invalid;
-
-            uri->port = n;
-            start += len;
-        }
-
-        if (start != match_authority->rm_eo)
-            goto error_invalid;
-    }
-
-    if (regmatch_len(match_path)) {
-        size_t start = match_path->rm_so;
-        size_t len = match_path->rm_eo - start;
-        char *path = memdup(str + start, len + 1);
-        uri->path = path;
-
-        if (!path)
-            goto error_memory;
-
-        path[len] = 0;
-    }
-
-    if (regmatch_len(match_query)) {
-        size_t start = match_query->rm_so;
-        size_t len = match_query->rm_eo - start;
-        char *query = memdup(str + start, len + 1);
-        uri->query = query;
-
-        if (!query)
-            goto error_memory;
-
-        query[len] = 0;
-    }
-
-    if (regmatch_len(match_fragment)) {
-        size_t start = match_fragment->rm_so;
-        size_t len = match_fragment->rm_eo - start;
-        char *fragment = memdup(str + start, len + 1);
-        uri->fragment = fragment;
-
-        if (!fragment)
-            goto error_memory;
-
-        fragment[len] = 0;
-    }
-
-    return 0;
+    //                 char *mem = malloc(base_len + path_len + 1);
+    //                 memcpy(mem, base->path, base_len);
+    //                 memcpy(mem + base_len, path_len);
+    //                 mem[base_len + path_len] = 0;
+    //             } else {
+    //                 char *mem = malloc(path_len + 2);
+    //                 if (!mem)
+    //                     goto error_memory;
+    //                 mem[0] = '/';
+    //                 memcpy(mem + 1, path, path_len + 1);
+    //                 free(path);
+    //             }
+    //         }
+    //     }
+    // }
 
 error_invalid:
     err = EINVAL;
@@ -345,61 +216,306 @@ error_memory:
 error:
     destroy_uri(uri);
     return err ? err : -1;
-    */
 }
 
-size_t remove_dot_segments(char *path)
+// memset(uri, 0, sizeof(*uri));
+
+// if (regmatch_len(match_scheme)) {
+//     size_t start = match_scheme->rm_so;
+//     size_t len = match_scheme->rm_eo - start;
+//     char *scheme = stralloc(len);
+//     uri->scheme = scheme;
+
+//     if (!scheme)
+//         goto error_memory;
+
+//     if (!isalpha(str[start]))
+//         goto error_invalid;
+
+//     for (int i = 0; i < len; i++) {
+//         char c = str[start + i];
+//         if (isalnum(c) || strchr("+-.", c))
+//             scheme[i] = tolower(c);
+//         else
+//             goto error_invalid;
+//     }
+// }
+
+// if (regmatch_len(match_authority)) {
+//     size_t start = match_authority->rm_so;
+//     size_t len = 0;
+
+//     while (isalnum(str[start + len]) ||
+//            strchr("-._~:!$&'()*+,;=", str[start + len]) ||
+//            is_percent_encoded(str + start + len))
+//         len++;
+
+//     if (str[start + len] == '@') {
+//         if (len > 0) {
+//             if (!(uri->userinfo = memdup(str + start, len + 1)))
+//                 goto error_memory;
+
+//             uri->userinfo[len] = 0;
+//         }
+
+//         start += len + 1;
+//     }
+
+//     len = 0;
+//     if (str[start] == '[') {
+//         while (isxdigit(str[start + len]) || strchr(":.]", str[start + len]))
+//             len++;
+
+//         if (str[start + len - 1] != ']')
+//             goto error_invalid;
+
+//         uri->host = memdup(str + start, len + 1);
+//         if (!uri->host)
+//             goto error_memory;
+
+//         uri->host[len] = 0;
+//         uri->host_type = URI_HOST_IP6;
+//         start += len;
+//         len = 0;
+//     } else {
+//         if ((len = strcspn(str + start, ":/?#")) > 253)
+//             goto error_invalid;
+
+//         char *host = memdup(str + start, len + 1);
+//         if (!host)
+//             goto error_memory;
+
+//         host[len] = 0;
+//         uri->host = host;
+
+//         if (!regexec(&re_ip4, host, 0, NULL, 0)) {
+//             uri->host_type = URI_HOST_IP4;
+//         } else {
+//             uri->host_type = URI_HOST_NAMED;
+
+//             if (!isalnum(host[0]))
+//                 goto error_invalid;
+
+//             for (int i = 0; i < len; i++) {
+//                 if (host[i] == '.' ?
+//                         !isalnum(host[i - 1]) || !isalnum(host[i + 1]) :
+//                         !isalnum(host[i]) && host[i] != '-')
+//                     goto error_invalid;
+
+//                 host[i] = tolower(host[i]);
+//             }
+//         }
+
+//         start += len;
+//         len = 0;
+//     }
+
+//     if (str[start] == ':') {
+//         start++;
+
+//         int n = 0;
+//         int max_len = len + 5;
+
+//         while (len < max_len && isdigit(str[start + len]))
+//             n = 10 * n + str[start + len++] - '0';
+
+//         if (n >= 1 << 16)
+//             goto error_invalid;
+
+//         uri->port = n;
+//         start += len;
+//     }
+
+//     if (start != match_authority->rm_eo)
+//         goto error_invalid;
+// }
+
+// if (regmatch_len(match_path)) {
+//     size_t start = match_path->rm_so;
+//     size_t len = match_path->rm_eo - start;
+//     char *path = memdup(str + start, len + 1);
+//     uri->path = path;
+
+//     if (!path)
+//         goto error_memory;
+
+//     path[len] = 0;
+// }
+
+// if (regmatch_len(match_query)) {
+//     size_t start = match_query->rm_so;
+//     size_t len = match_query->rm_eo - start;
+//     char *query = memdup(str + start, len + 1);
+//     uri->query = query;
+
+//     if (!query)
+//         goto error_memory;
+
+//     query[len] = 0;
+// }
+
+// if (regmatch_len(match_fragment)) {
+//     size_t start = match_fragment->rm_so;
+//     size_t len = match_fragment->rm_eo - start;
+//     char *fragment = memdup(str + start, len + 1);
+//     uri->fragment = fragment;
+
+//     if (!fragment)
+//         goto error_memory;
+
+//     fragment[len] = 0;
+// }
+
+// return 0;
+
+// }
+
+char *normalize_path(const char *path)
 {
-    char *in = path;
-    char *out = path;
+    if (!path)
+        return NULL;
+
+    /* Temporary copy, and over-allocated buf for ease of implementation. */
+    size_t buf_len = 3 * strlen(path);
+    char *input = NULL;
+    char *buf = NULL;
+
+    if (!(input = strdup(path)) || !(buf = malloc(buf_len)))
+        goto error;
+
+    char *in = input;
+    char *out = buf;
+
     while (*in) {
-        if (!memcmp(in, "../", 3)) {
-            memset(in, 0, 3);
+        if (!memcmp(in, "//", 2)) {
+            in++;
+        } else if (!memcmp(in, "../", 3)) {
             in += 3;
         } else if (!memcmp(in, "./", 2)) {
-            memset(in, 0, 2);
             in += 2;
         } else if (!memcmp(in, "/./", 3)) {
-            memset(in, 0, 2);
             in += 2;
         } else if (!memcmp(in, "/.", 3)) {
-            memset(in, 0, 1);
-            in += 1;
-            *in = '/';
+            *(++in) = '/';
         } else if (!memcmp(in, "/../", 4)) {
-            memset(in, 0, 3);
             in += 3;
-
-            char *last = out;
-            while (out > path && *out != '/')
+            while (out > buf && *out != '/')
                 out--;
-
-            memset(out, 0, last - out);
         } else if (!memcmp(in, "/..", 4)) {
-            memset(in, 0, 2);
-            in += 2;
-            *in = '/';
-
-            char *last = out;
-            while (out > path && *out != '/')
+            *(in += 2) = '/';
+            while (out > buf && *out != '/')
                 out--;
+        } else if (!memcmp(in, "..", 3) || !memcmp(in, ".", 2)) {
+            break;
+        } else if (is_percent_encoded(in)) {
+            char c = hex_val(in[1]) * 16 + hex_val(in[2]);
 
-            memset(out, 0, last - out);
-        } else if (!memcmp(in, "..", 3)) {
-            memset(in, 0, 2);
-            break;
-        } else if (!memcmp(in, ".", 2)) {
-            memset(in, 0, 1);
-            break;
+            if (is_unreserved(c)) {
+                *out++ = c;
+            } else {
+                *out++ = '%';
+                *out++ = toupper(in[1]);
+                *out++ = toupper(in[2]);
+            }
+
+            in += 3;
+        } else if (is_unreserved(*in) || *in == '/' || *in == '.') {
+            *out++ = *in++;
         } else {
-            size_t seglen = strcspn(in + 1, "./") + 1;
-            memmove(out, in, seglen);
-            memset(out + seglen, 0, in - out);
-            out += seglen;
-            in += seglen;
+            unsigned char c = *in++;
+            *out++ = '%';
+            *out++ = "0123456789ABCDEF"[c >> 4];
+            *out++ = "0123456789ABCDEF"[c & 0b1111];
         }
     }
 
-    *out = 0;
-    return out - path;
+    size_t ret_len = out - buf;
+    char *ret = realloc(buf, ret_len + 1);
+    if (!ret)
+        goto error;
+
+    ret[ret_len] = 0;
+    free(input);
+    return ret;
+
+error:
+    free(buf);
+    free(input);
+    return NULL;
+}
+
+bool http_status_informational(int code)
+{
+    return code >= 100 && code < 200;
+}
+
+bool http_status_successful(int code)
+{
+    return code >= 200 && code < 300;
+}
+
+bool http_status_redirect(int code)
+{
+    return code >= 300 && code < 400;
+}
+
+bool http_status_client_error(int code)
+{
+    return code >= 400 && code < 500;
+}
+
+bool http_status_server_error(int code)
+{
+    return code >= 500 && code < 600;
+}
+
+const char *http_status_reason(int code)
+{
+    /* clang-format off */
+    switch (code) {
+    case 100: return "Continue";
+    case 101: return "Switching Protocols";
+    case 200: return "OK";
+    case 201: return "Created";
+    case 202: return "Accepted";
+    case 203: return "Non-Authoritative Information";
+    case 204: return "No Content";
+    case 205: return "Reset Content";
+    case 206: return "Partial Content";
+    case 300: return "Multiple Choices";
+    case 301: return "Moved Permanently";
+    case 302: return "Found";
+    case 303: return "See Other";
+    case 304: return "Not Modified";
+    case 305: return "Use Proxy";
+    case 307: return "Temporary Redirect";
+    case 400: return "Bad Request";
+    case 401: return "Unauthorized";
+    case 402: return "Payment Required";
+    case 403: return "Forbidden";
+    case 404: return "Not Found";
+    case 405: return "Method Not Allowed";
+    case 406: return "Not Acceptable";
+    case 407: return "Proxy Authentication Required";
+    case 408: return "Request Timeout";
+    case 409: return "Conflict";
+    case 410: return "Gone";
+    case 411: return "Length Required";
+    case 412: return "Precondition Failed";
+    case 413: return "Payload Too Large";
+    case 414: return "URI Too Long";
+    case 415: return "Unsupported Media Type";
+    case 416: return "Range Not Satisfiable";
+    case 417: return "Expectation Failed";
+    case 418: return "I'm a teapot";
+    case 426: return "Upgrade Required";
+    case 500: return "Internal Server Error";
+    case 501: return "Not Implemented";
+    case 502: return "Bad Gateway";
+    case 503: return "Service Unavailable";
+    case 504: return "Gateway Timeout";
+    case 505: return "HTTP Version Not Supported";
+    default: return NULL;
+    }
+    /* clang-format on */
 }

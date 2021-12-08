@@ -63,4 +63,16 @@ void destroy_uri(struct URI *uri);
 char *uri_repr(const struct URI *uri);
 bool uri_equal(const struct URI *a, const struct URI *b);
 
+/*
+ * Returns the (technically 'a') reason message for some known HTTP status
+ * `code`. If not known, returns NULL.
+ */
+const char *http_status_reason(int code);
+
+bool http_status_informational(int code);
+bool http_status_successful(int code);
+bool http_status_redirect(int code);
+bool http_status_client_error(int code);
+bool http_status_server_error(int code);
+
 #endif
