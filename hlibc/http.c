@@ -28,7 +28,12 @@ static void http_module_init()
     pthread_once(&once, http_module_init_routine);
 }
 
-int is_percent_encoded(const char *str)
+static bool is_unreserved(char c)
+{
+    return isalnum(c) || c == '-' || c == '.' || c == '_' || c == '~';
+}
+
+static int is_percent_encoded(const char *str)
 {
     return str[0] == '%' && isxdigit(str[1]) && isxdigit(str[2]);
 }
@@ -36,17 +41,12 @@ int is_percent_encoded(const char *str)
 bool uri_equal(const struct URI *a, const struct URI *b)
 {
     return a == b ||
-           (!!a == !!b && !strcmp_safe(a->scheme, b->scheme) &&
+           (a && b && !strcmp_safe(a->scheme, b->scheme) &&
             !strcmp_safe(a->host, b->host) &&
             !strcmp_safe(a->userinfo, b->userinfo) &&
             !strcmp_safe(a->path, b->path) &&
             !strcmp_safe(a->query, b->query) &&
             !strcmp_safe(a->fragment, b->fragment) && a->port == b->port);
-}
-
-int normalize_uri(struct URI *uri)
-{
-    return 0;
 }
 
 char *uri_repr(const struct URI *uri)
@@ -69,40 +69,6 @@ char *uri_repr(const struct URI *uri)
              uri->query, uri->fragment);
     return ret;
 }
-
-// if defined(R.scheme) then
-//     T.scheme    = R.scheme;
-//     T.authority = R.authority;
-//     T.path      = remove_dot_segments(R.path);
-//     T.query     = R.query;
-// else
-//     if defined(R.authority) then
-//     T.authority = R.authority;
-//     T.path      = remove_dot_segments(R.path);
-//     T.query     = R.query;
-//     else
-//     if (R.path == "") then
-//         T.path = Base.path;
-//         if defined(R.query) then
-//             T.query = R.query;
-//         else
-//             T.query = Base.query;
-//         endif;
-//     else
-//         if (R.path starts-with "/") then
-//             T.path = remove_dot_segments(R.path);
-//         else
-//             T.path = merge(Base.path, R.path);
-//             T.path = remove_dot_segments(T.path);
-//         endif;
-//         T.query = R.query;
-//     endif;
-//     T.authority = Base.authority;
-//     endif;
-//     T.scheme = Base.scheme;
-// endif;
-
-// T.fragment = R.fragment;
 
 void destroy_uri(struct URI *uri)
 {

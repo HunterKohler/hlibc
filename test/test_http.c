@@ -171,29 +171,45 @@ void test_parse_uri()
     }
 }
 
-void test_remove_dot_segments()
+void test_normalize_path()
 {
     const char *test_cases[][2] = {
-        { "../a", "a" },      { "./a", "a" },      { ".././a", "a" },
-        { "/a/./b", "/a/b" }, { "/a/./", "/a/" },  { "/.", "/" },
-        { "/a/.", "/a/" },    { "/a/../b", "/b" }, { "/a/../", "/" },
-        { "/..", "/" },       { "/a/..", "/" },    { "/a/b/..", "/a/" },
-        { ".", "" },          { "..", "" },
+        { "../a", "a" },
+        { "./a", "a" },
+        { ".././a", "a" },
+        { "/a/./b", "/a/b" },
+        { "/a/./", "/a/" },
+        { "/.", "/" },
+        { "/a/.", "/a/" },
+        { "/a/../b", "/b" },
+        { "/a/../", "/" },
+        { "/..", "/" },
+        { "/a/..", "/" },
+        { "/a/b/..", "/a/" },
+        { ".", "" },
+        { "..", "" },
+        { "//a//////", "/a/" },
+        { "/a/./b/.././a//a", "/a/a/a" },
+        { "/%Fa//./%1e", "/%FA/%1E" },
+        { "/ab"
+          "\x63"
+          "de/xx"
+          "\xA5"
+          "xx",
+          "/abcde/xx%A5xx" },
     };
 
     for (int i = 0; i < ARRAY_SIZE(test_cases); i++) {
         const char *input = test_cases[i][0];
         const char *expected = test_cases[i][1];
-        char *path = strdup(input);
-        size_t size = remove_dot_segments(path);
+        char *path = normalize_path(input);
 
-        if (strcmp(path, expected) || size != strlen(expected)) {
-            printf("Test %d of 'test_remove_dot_segments()' failed:\n"
+        if (strcmp(path, expected)) {
+            printf("Test %d of 'test_normalize_path()' failed:\n"
                    "    Input: %s\n"
                    "    Expected: %s\n"
-                   "    Recieved Path: %s\n"
-                   "    Recieved Size: %zu\n",
-                   i + 1, input, expected, path, size);
+                   "    Recieved Path: %s\n",
+                   i + 1, input, expected, path);
             abort();
         }
 
@@ -203,7 +219,7 @@ void test_remove_dot_segments()
 
 int main()
 {
-    test_remove_dot_segments();
+    test_normalize_path();
     // test_parse_uri();
     printf("Success\n");
 }
