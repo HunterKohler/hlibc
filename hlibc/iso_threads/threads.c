@@ -14,6 +14,8 @@ union thrd_routine_info {
     };
 };
 
+int module_init_err;
+
 pthread_mutexattr_t mtx_attr_plain;
 pthread_mutexattr_t mtx_attr_timed;
 pthread_mutexattr_t mtx_attr_plain_recursive;
@@ -21,29 +23,31 @@ pthread_mutexattr_t mtx_attr_timed_recursive;
 
 thread_local union thrd_routine_info *routine_info;
 
+static void module_init_routine()
+{
+    if ((module_init_err = pthread_mutexattr_init(&mtx_attr_plain)) ||
+        (module_init_err = pthread_mutexattr_init(&mtx_attr_timed)) ||
+        (module_init_err = pthread_mutexattr_init(&mtx_attr_plain_recursive)) ||
+        (module_init_err = pthread_mutexattr_init(&mtx_attr_timed_recursive)) ||
+        (module_init_err = pthread_mutexattr_settype(&mtx_attr_plain,
+                                                     PTHREAD_MUTEX_NORMAL)) ||
+        (module_init_err = pthread_mutexattr_settype(&mtx_attr_timed,
+                                                     PTHREAD_MUTEX_NORMAL)) ||
+        (module_init_err = pthread_mutexattr_settype(
+             &mtx_attr_plain_recursive, PTHREAD_MUTEX_RECURSIVE)) ||
+        (module_init_err = pthread_mutexattr_settype(
+             &mtx_attr_timed_recursive, PTHREAD_MUTEX_RECURSIVE))) {
+        pthread_mutexattr_destroy(&mtx_attr_plain);
+        pthread_mutexattr_destroy(&mtx_attr_timed);
+        pthread_mutexattr_destroy(&mtx_attr_plain_recursive);
+        pthread_mutexattr_destroy(&mtx_attr_timed_recursive);
+    }
+}
+
 static int module_init()
 {
-    static atomic_flag init = ATOMIC_FLAG_INIT;
-    static int error;
-
-    if (!atomic_flag_test_and_set(&init)) {
-        // clang-format off
-        if ((error = pthread_mutexattr_init(&mtx_attr_plain)) ||
-            (error = pthread_mutexattr_init(&mtx_attr_timed)) ||
-            (error = pthread_mutexattr_init(&mtx_attr_plain_recursive)) ||
-            (error = pthread_mutexattr_init(&mtx_attr_timed_recursive)) ||
-            (error = pthread_mutexattr_settype(&mtx_attr_plain, PTHREAD_MUTEX_NORMAL)) ||
-            (error = pthread_mutexattr_settype(&mtx_attr_timed, PTHREAD_MUTEX_NORMAL)) ||
-            (error = pthread_mutexattr_settype(&mtx_attr_plain_recursive, PTHREAD_MUTEX_RECURSIVE)) ||
-            (error = pthread_mutexattr_settype(&mtx_attr_timed_recursive, PTHREAD_MUTEX_RECURSIVE))) {
-            pthread_mutexattr_destroy(&mtx_attr_plain);
-            pthread_mutexattr_destroy(&mtx_attr_timed);
-            pthread_mutexattr_destroy(&mtx_attr_plain_recursive);
-            pthread_mutexattr_destroy(&mtx_attr_timed_recursive);
-        }
-        // clang-format on
-    }
-
+    static pthread_once_t once = PTHREAD_ONCE_INIT;
+    pthread_once(&once, module_init_routine);
     return error;
 }
 
