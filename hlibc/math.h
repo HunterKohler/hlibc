@@ -5,6 +5,7 @@
 #define HLIBC_MATH_H_
 
 #include <hlibc/def.h>
+#include <math.h>
 
 #define max(a, b)              \
     ({                         \
@@ -33,5 +34,11 @@ size_t prime_count_upper(size_t n);
  * https://mathworld.wolfram.com/PrimeCountingFunction.html
  */
 size_t prime_count_lower(size_t n);
+
+/*
+ * Sigmoid Function
+ * https://mathworld.wolfram.com/SigmoidFunction.html
+ */
+double sigmoid(double x);
 
 #endif

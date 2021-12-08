@@ -15,3 +15,8 @@ size_t prime_count_lower(size_t n)
 {
     return (size_t)(n / log(n));
 }
+
+double sigmoid(double x)
+{
+    return 1 / (1 + exp(-x));
+}
