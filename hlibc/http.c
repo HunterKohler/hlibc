@@ -81,11 +81,70 @@ void destroy_uri(struct URI *uri)
     memset(uri, 0, sizeof(*uri));
 }
 
+int normalize_uri(struct URI *uri)
+{
+    return 0;
+}
+
+int normalize_scheme(char *scheme)
+{
+    if (!isalpha(*scheme))
+        return EINVAL;
+
+    for (char *it = scheme; *it; it++) {
+        if (!isalnum(*it) && !strchr("+-.", *it))
+            return EINVAL;
+        *it = tolower(*it);
+    }
+
+    return 0;
+}
+
+int normalize_hostname(char *hostname)
+{
+    if (!isalnum(*hostname))
+        return EINVAL;
+
+    char *it = hostname + 1;
+    size_t len = 1;
+    size_t seglen = 1;
+
+    while (*it) {
+        *it = tolower(*it);
+        if (++seglen > 63 || ++len > 253 ||
+            (!isalnum(*it) &&
+             !(it[0] == '-' && isalnum(it[-1]) && isalnum(it[1]))))
+            return EINVAL;
+    }
+
+    return 0;
+}
+
+int parse_port(const char *str, uint16_t *dest, size_t *len)
+{
+    if (!str || !isdigit(str[0]))
+        return EINVAL;
+
+    uint32_t val = 0;
+    size_t pos = 0;
+
+    while (isdigit(str[pos]) && pos < 5)
+        val += str[pos++] - '0';
+
+    if (isdigit(str[pos]) || val >= 1 << 16)
+        return EOVERFLOW;
+
+    if (dest)
+        *dest = val;
+    if (len)
+        *len = pos;
+
+    return 0;
+}
+
 int parse_uri(struct URI *restrict uri, const char *str,
               const struct URI *restrict base)
 {
-    return 1;
-    /*
     http_module_init();
 
     regmatch_t matches[10];
@@ -94,6 +153,8 @@ int parse_uri(struct URI *restrict uri, const char *str,
     char *path = NULL;
     char *query = NULL;
     char *fragment = NULL;
+
+    int err;
 
     if ((err = regexec(&re_uri, str, ARRAY_SIZE(matches), matches, 0)) ||
         (err = regmatch_text(str, &matches[2], &scheme)) ||
