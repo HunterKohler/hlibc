@@ -62,11 +62,6 @@ static inline void list_add_tail(struct list_handle *item,
 static inline void list_del(struct list_handle *handle)
 {
     __list_del(handle->prev, handle->next);
-
-    if (DEBUG) {
-        handle->next = DEBUG_NULL;
-        handle->prev = DEBUG_NULL;
-    }
 }
 
 static inline void list_move(struct list_handle *item,
@@ -90,11 +85,6 @@ static inline void list_replace(struct list_handle *old,
     item->prev = old->prev;
     item->prev->next = item;
     item->next->prev = item;
-
-    if (DEBUG) {
-        old->next = DEBUG_NULL;
-        old->prev = DEBUG_NULL;
-    }
 }
 
 static inline void list_swap(struct list_handle *a, struct list_handle *b)

@@ -112,12 +112,6 @@
         sizeof(a) / sizeof((a)[0]); \
     })
 
-#ifdef DEBUG
-#define DEBUG_NULL 0xDEADBEEF00000000
-#else
-#define DEBUG_NULL NULL
-#endif
-
 typedef __int128_t int128_t;
 typedef __uint128_t uint128_t;
 
