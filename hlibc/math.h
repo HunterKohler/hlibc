@@ -6,7 +6,6 @@
 #define HLIBC_MATH_H_
 
 #include <hlibc/def.h>
-#include <math.h>
 
 #define max(a, b)              \
     ({                         \
@@ -28,18 +27,28 @@
  * Upper bound for the Prime Counting Function.
  * https://mathworld.wolfram.com/PrimeCountingFunction.html
  */
-size_t prime_count_upper(size_t n);
+unsigned int prime_count_upper(unsigned int n);
 
 /*
  * Lower bound for the Prime Counting Function.
  * https://mathworld.wolfram.com/PrimeCountingFunction.html
  */
-size_t prime_count_lower(size_t n);
+unsigned int prime_count_lower(unsigned int n);
 
 /*
  * Sigmoid Function
  * https://mathworld.wolfram.com/SigmoidFunction.html
  */
 double sigmoid(double x);
+
+/*
+ * Fast floor log base 2.
+ */
+unsigned int floor_log2(unsigned int x);
+
+/*
+ * Fast floor log base 10.
+ */
+unsigned int floor_log10(unsigned int x);
 
 #endif
