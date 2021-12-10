@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2021 Hunter Kohler <jhunterkohler@gmail.com>
+ */
+
 #ifndef HLIBC_HTTP_H_
 #define HLIBC_HTTP_H_
 

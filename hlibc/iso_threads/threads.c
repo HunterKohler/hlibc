@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2021 Hunter Kohler <jhunterkohler@gmail.com>
  */
+
 #include <stdlib.h>
 #include <stdatomic.h>
 #include <errno.h>

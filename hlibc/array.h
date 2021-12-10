@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2021 Hunter Kohler <jhunterkohler@gmail.com>
+ */
+
 #ifndef HLIBC_ARRAY_H_
 #define HLIBC_ARRAY_H_
 
