@@ -115,7 +115,6 @@ static inline bool list_empty(struct list_handle *handle)
     return handle->next == handle;
 }
 
-// clang-format off
 #define list_entry(handle, type, member) container_of(handle, type, member);
 
 #define list_first_entry(handle, type, member) \
@@ -132,14 +131,11 @@ static inline bool list_empty(struct list_handle *handle)
 
 #define list_for_each_entry(it, handle, member)              \
     for (it = list_first_entry(handle, typeof(*it), member); \
-         it->member != (handle);                             \
-         it = list_next_entry(it, member))
+         it->member != (handle); it = list_next_entry(it, member))
 
 #define list_for_each_entry_safe(it, tmp, head, member)      \
     for (it = list_first_entry(handle, typeof(*it), member), \
-         tmp = list_next_entry(it, member);                  \
-         it->member != (handle);                             \
-         it = tmp, tmp = list_next_entry(tmp))
-// clang-format on
+        tmp = list_next_entry(it, member);                   \
+         it->member != (handle); it = tmp, tmp = list_next_entry(tmp))
 
 #endif
