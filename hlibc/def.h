@@ -112,6 +112,14 @@
         sizeof(a) / sizeof((a)[0]); \
     })
 
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#define LITTLE_ENDIAN
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#define BIG_ENDIAN
+#else
+#error There may be a byte order issue. Try fixing macros.
+#endif
+
 typedef __int128_t int128_t;
 typedef __uint128_t uint128_t;
 
