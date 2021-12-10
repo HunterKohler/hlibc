@@ -1,10 +1,10 @@
 /*
  * Copyright (C) 2021 John Hunter Kohler <jhunterkohler@gmail.com>
  *
- * Stores shared headers and static helpers between some misc/ files.
+ * Stores shared headers and static helpers between some misc/networking/ files.
  */
-#ifndef MISC_COMMON_H_
-#define MISC_COMMON_H_
+#ifndef MISC_NETWORKING_COMMON_H_
+#define MISC_NETWORKING_COMMON_H_
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
