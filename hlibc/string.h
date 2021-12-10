@@ -5,6 +5,7 @@
 #ifndef HLIBC_STRING_H_
 #define HLIBC_STRING_H_
 
+#include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 #include <hlibc/def.h>
@@ -54,9 +55,74 @@ void *memdup(const void *src, size_t n);
 int hex_val(char c);
 
 /*
- * Removes leading and trailing whitespace from string in-place.
+ * Removes leading and trailing whitespace from string in-place. Returns
+ * new length.
  */
-void strtrim(char *c);
+size_t strtrim(char *c);
+
+/*
+ * Hex-encoded size of `n` bytes of memory.
+ */
+size_t hex_encode_size(size_t n);
+
+/*
+ * Decoded size of `n` byte hex-encoded string.
+ */
+size_t hex_decode_size(size_t n);
+
+/*
+ * Writes hex representation as a null terminated string  of `n` bytes of
+ * memory from `ptr` into `dest`. `dest` should point to a buffer of at least
+ * `2 * n + 1` bytes.
+ */
+void hex_encode(const void *restrict src, size_t n, char *restrict dest);
+
+/*
+ * Writes the values of a hex encoded string `str` to memory at `dest`. `dest`
+ * should point to a buffer at least `ceil(strlen(str) / 2.0) + 1` bytes long.
+ */
+int hex_decode(const char *restrict src, void *restrict dest);
+
+int b64_val(char c);
+size_t b64_encode_size(size_t n);
+size_t b64_decode_size(const char *src, size_t n);
+void b64_encode(const void *restrict src, size_t n, char *restrict dest);
+int b64_decode(const char *restrict src, size_t n, void *restrict dest);
+
+char *__to_string_ll(long long src, char *dest, unsigned int base);
+char *__to_string_ull(unsigned long long src, char *dest, unsigned int base);
+char *__to_string_c(char src, char *dest);
+char *__to_string_b(bool src, char *dest);
+char *__to_string_ld(long double src, char *dest);
+char *__to_string_cld(complex long double src, char *dest);
+
+/*
+ * Generic stringification for primitives. 128-bit-wide integer types not
+ * supported.
+ */
+// clang-format off
+#define to_string(src, dest, ...)             \
+    _Generic((src),                           \
+        signed char: __to_string_ll,          \
+        short: __to_string_ll,                \
+        int: __to_string_ll,                  \
+        long: __to_string_ll,                 \
+        long long: __to_string_ll,            \
+        unsigned char: __to_string_ull,       \
+        unsigned short: __to_string_ull,      \
+        unsigned int: __to_string_ull,        \
+        unsigned long: __to_string_ull,       \
+        unsigned long long: __to_string_ull,  \
+        float: __to_string_ld,                \
+        double: __to_string_ld,               \
+        long double: __to_string_ld,          \
+        complex float: __to_string_cld,       \
+        complex double: __to_string_cld,      \
+        complex long double: __to_string_cld, \
+        char: __to_string_c,                  \
+        bool: __to_string_b,                  \
+    )(src, dest, ## __VA_ARGS__)
+// clang-format on
 
 static const char *const errno_name_table[] = {
 #ifdef E2BIG
