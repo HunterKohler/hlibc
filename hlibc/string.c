@@ -319,18 +319,22 @@ int b64_val(char c)
     return b64_table[(unsigned char)c];
 }
 
-int b64_decode(const char *restrict src, size_t n, void *restrict dest)
+int b64_decode(const char *restrict src, void *restrict dest)
 {
-    int i = 0;
-    int end = n - 4 * (src[n - 1] == '=');
-
     uint8_t *out = dest;
+    size_t len = strlen(src);
 
-    while (i < end) {
+    if (len % 4)
+        return -1;
+
+    size_t pad = len > 0 ? (src[len - 1] == '=') + (src[len - 2] == '=') : 0;
+    const char *end = src + len - 3 - pad;
+
+    while (src < end) {
         uint8_t a, b, c, d;
 
-        if ((a = b64_val(src[i++])) > 63 || (b = b64_val(src[i++])) > 63 ||
-            (c = b64_val(src[i++])) > 63 || (d = b64_val(src[i++])) > 63)
+        if ((a = b64_val(*src++)) > 63 || (b = b64_val(*src++)) > 63 ||
+            (c = b64_val(*src++)) > 63 || (d = b64_val(*src++)) > 63)
             return -1;
 
         *out++ = a << 2 | b >> 4;
@@ -338,18 +342,18 @@ int b64_decode(const char *restrict src, size_t n, void *restrict dest)
         *out++ = c << 6 | d;
     }
 
-    if (src[n - 2] == '=') {
+    if (pad == 2) {
         uint8_t a, b;
 
-        if ((a = b64_val(src[i++])) > 63 || (b = b64_val(src[i++])) > 63)
+        if ((a = b64_val(*src++)) > 63 || (b = b64_val(*src++)) > 63)
             return -1;
 
         *out++ = a << 2 | b >> 4;
-    } else if (src[n - 1] == '=') {
+    } else if (pad == 1) {
         uint8_t a, b, c;
 
-        if ((a = b64_val(src[i++])) > 63 || (b = b64_val(src[i++])) > 63 ||
-            (c = b64_val(src[i++])) > 63)
+        if ((a = b64_val(*src++)) > 63 || (b = b64_val(*src++)) > 63 ||
+            (c = b64_val(*src++)) > 63)
             return -1;
 
         *out++ = a << 2 | b >> 4;

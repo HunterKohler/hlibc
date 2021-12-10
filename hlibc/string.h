@@ -87,7 +87,7 @@ int b64_val(char c);
 size_t b64_encode_size(size_t n);
 size_t b64_decode_size(const char *src, size_t n);
 void b64_encode(const void *restrict src, size_t n, char *restrict dest);
-int b64_decode(const char *restrict src, size_t n, void *restrict dest);
+int b64_decode(const char *restrict src, void *restrict dest);
 
 char *__to_string_ll(long long src, char *dest, unsigned int base);
 char *__to_string_ull(unsigned long long src, char *dest, unsigned int base);

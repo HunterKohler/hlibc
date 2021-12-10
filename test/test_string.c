@@ -2,6 +2,7 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <unistd.h>
 
 struct test_case_encoding {
     size_t plain_size;
@@ -36,7 +37,7 @@ void test_b64_decode(struct test_case_encoding *tc)
 {
     char buf[1024] = { 0 };
 
-    assert(!b64_decode(tc->b64, tc->b64_size, buf));
+    assert(!b64_decode(tc->b64, buf));
     assert(!memcmp(buf, tc->plain, tc->plain_size));
 }
 
