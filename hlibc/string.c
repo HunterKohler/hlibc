@@ -73,6 +73,11 @@ int strcasecmp_safe(const char *a, const char *b)
     return (a == b) ? 0 : a ? b ? strcasecmp(a, b) : -1 : 1;
 }
 
+int memcmp_safe(const void *a, const void *b, size_t n)
+{
+    return (a == b) ? 0 : a ? b ? memcmp(a, b, n) : -1 : 1;
+}
+
 char *strcat_n(const char **src, size_t n)
 {
     size_t *lens = malloc(n * sizeof(*lens));
@@ -184,13 +189,14 @@ char *__to_string_ll(long long n, char *dest, unsigned int base)
 
     size_t size = ARRAY_SIZE(tmp) - start;
     if (dest || (dest = malloc(size)))
-        memcpy(dest, tmp + start + 1, size);
+        memcpy(dest, tmp + start, size);
 
     return dest;
 }
 
 char *__to_string_ull(unsigned long long n, char *dest, unsigned int base)
 {
+    printf("%llu\n", n);
     if (!base || base > 36)
         return NULL;
 
@@ -198,7 +204,7 @@ char *__to_string_ull(unsigned long long n, char *dest, unsigned int base)
     size_t start = ARRAY_SIZE(tmp) - 1;
 
     tmp[start--] = 0;
-    for (long long i = n; i; i /= base)
+    for (unsigned long long i = n; i; i /= base)
         tmp[start--] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"[i % base];
 
     if (n == 0)
@@ -208,7 +214,7 @@ char *__to_string_ull(unsigned long long n, char *dest, unsigned int base)
 
     size_t size = ARRAY_SIZE(tmp) - start;
     if (dest || (dest = malloc(size)))
-        memcpy(dest, tmp + start + 1, size);
+        memcpy(dest, tmp + start, size);
 
     return dest;
 }

@@ -45,6 +45,11 @@ int strcmp_safe(const char *a, const char *b);
 int strcasecmp_safe(const char *a, const char *b);
 
 /*
+ * Library `memcmp()` with null checking.
+ */
+int memcmp_safe(const void *a, const void *b, size_t n);
+
+/*
  * Copies `n` bytes to new buffer starting at `src`. Returns `NULL` on failure.
  */
 void *memdup(const void *src, size_t n);
@@ -120,7 +125,7 @@ char *__to_string_cld(complex long double src, char *dest);
         complex double: __to_string_cld,      \
         complex long double: __to_string_cld, \
         char: __to_string_c,                  \
-        bool: __to_string_b,                  \
+        bool: __to_string_b                   \
     )(src, dest, ## __VA_ARGS__)
 // clang-format on
 
