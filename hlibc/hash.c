@@ -2,7 +2,7 @@
  * Copyright (C) 2021 Hunter Kohler <jhunterkohler@gmail.com>
  */
 
-#include <hlibc/murmur_hash.h>
+#include <hlibc/hash.h>
 #include <hlibc/bit.h>
 
 #define MURMUR_C1 0xcc9e2d51
