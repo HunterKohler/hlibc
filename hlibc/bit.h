@@ -7,6 +7,7 @@
 #ifndef HLIBC_BIT_H_
 #define HLIBC_BIT_H_
 
+#include <string.h>
 #include <hlibc/def.h>
 
 /*
@@ -73,13 +74,135 @@
 int bit_at(const void *target, long long i);
 
 /*
- * Rotate the 32 bit integer `x` by `n` bits.
- */
-uint32_t rotl_32(uint32_t x, size_t n);
-
-/*
  * Take hamming distance on arbitrary `n` bytes.
  */
 size_t hamming_distance(const void *a, const void *b, size_t n);
+
+uint8_t rotl8(uint8_t x, size_t n);
+uint8_t rotr8(uint8_t x, size_t n);
+uint16_t rotl16(uint16_t x, size_t n);
+uint16_t rotr16(uint16_t x, size_t n);
+uint32_t rotl32(uint32_t x, size_t n);
+uint32_t rotr32(uint32_t x, size_t n);
+uint64_t rotl64(uint64_t x, size_t n);
+uint64_t rotr64(uint64_t x, size_t n);
+uint128_t rotl128(uint128_t x, size_t n);
+uint128_t rotr128(uint128_t x, size_t n);
+
+#define DEFINE_BITSET(name, size) unsigned long name[BITS_TO_LONGS(size)]
+
+unsigned long *bitmap_alloc(unsigned int bits)
+{
+    return malloc(BITS_TO_LONGS(bits));
+}
+
+unsigned long *bitmap_zalloc(unsigned int bits)
+{
+    return calloc(1, BITS_TO_LONGS(bits) * sizeof(unsigned long));
+}
+
+unsigned long *bitmap_realloc(unsigned long *bitmap, unsigned int bits)
+{
+    return realloc(bitmap, BITS_TO_LONGS(bits));
+}
+
+void bitmap_free(unsigned long *bitmap)
+{
+    free(bitmap);
+}
+
+void bitmap_and(unsigned long *dest, unsigned long *a, unsigned long *b,
+                unsigned int nbits)
+{
+    unsigned int n = BITS_TO_LONGS(nbits);
+
+    for (unsigned int i = 0; i < n; i++)
+        dest[i] = a[i] & b[i];
+}
+
+void bitmap_xor(unsigned long *dest, unsigned long *a, unsigned long *b,
+                unsigned int nbits)
+{
+    unsigned int n = BITS_TO_LONGS(nbits);
+
+    for (unsigned int i = 0; i < n; i++)
+        dest[i] = a[i] ^ b[i];
+}
+
+void bitmap_or(unsigned long *dest, unsigned long *a, unsigned long *b,
+               unsigned int nbits)
+{
+    unsigned int n = BITS_TO_LONGS(nbits);
+
+    for (unsigned int i = 0; i < n; i++)
+        dest[i] = a[i] | b[i];
+}
+
+void bitmap_not(unsigned long *dest, unsigned long *src, unsigned int nbits)
+{
+    unsigned int n = BITS_TO_LONGS(nbits);
+
+    for (unsigned int i = 0; i < n; i++)
+        dest[i] = ~src[i];
+}
+
+void bitmap_set(unsigned long *bitmap, unsigned int pos, unsigned int nbits)
+{
+    unsigned int first = pos % LONG_BIT;
+    unsigned int last = (pos + nbits) % LONG_BIT;
+    unsigned int n = (nbits - first - last) / LONG_BIT;
+
+    if (first)
+        bitmap[pos / LONG_BIT] |= (~0UL >> (LONG_BIT - first));
+    if (last)
+        bitmap[(pos + nbits) / LONG_BIT] |= (~0UL << (LONG_BIT - last));
+    if (n)
+        memset(bitmap + BITS_TO_LONGS(pos), ~0, n / sizeof(long));
+}
+
+void bitmap_unset(unsigned long *bitmap, int pos, unsigned int nbits)
+{
+    unsigned int first = pos % LONG_BIT;
+    unsigned int last = (pos + nbits) % LONG_BIT;
+    unsigned int n = (nbits - first - last) / LONG_BIT;
+
+    if (first)
+        bitmap[pos / LONG_BIT] &= (~0UL << first);
+    if (last)
+        bitmap[(pos + nbits) / LONG_BIT] &= (~0UL >> last);
+
+    if (n)
+        memset(bitmap + BITS_TO_LONGS(pos), 0, n / sizeof(long));
+}
+
+int bitmap_equal(unsigned long *a, unsigned long *b, unsigned int nbits)
+{
+    unsigned int n = nbits / LONG_BIT;
+    unsigned int mask = (~0UL << (LONG_BIT - (nbits % LONG_BIT)));
+
+    return !memcmp(a, b, n / sizeof(long)) &&
+           !((nbits % LONG_BIT) && ((a[n + 1] ^ b[n + 1]) & mask));
+}
+
+unsigned int bitmap_popcount(unsigned long *bitmap, unsigned int nbits)
+{
+    unsigned int n = nbits / LONG_BIT;
+    unsigned int last = nbits % LONG_BIT;
+    unsigned int count = 0;
+
+    for (int i = 0; i < n; i++)
+        count += popcountl(bitmap[i]);
+
+    if (last)
+        count += popcountl(bitmap[n + 1] & (~0UL << (LONG_BIT - last)));
+
+    return count;
+}
+
+void bitmap_shift_right(unsigned long *dest, unsigned long *src,
+                        unsigned int shift, unsigned int nbits);
+
+void bitmap_shift_left(unsigned long *dest, unsigned long *src,
+                       unsigned int shift, unsigned int nbits);
 
 #endif

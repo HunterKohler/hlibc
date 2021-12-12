@@ -9,14 +9,54 @@ int bit_at(const void *target, long long i)
     return (((const char *)target)[i >> 3] >> (7 - (i & 7))) & 1;
 }
 
-uint32_t rotl_32(uint32_t x, size_t n)
+uint8_t rotl8(uint8_t x, size_t n)
+{
+    return (x << n) | (x >> (8 - n));
+}
+
+uint8_t rotr8(uint8_t x, size_t n)
+{
+    return (x >> n) | (x << (8 - n));
+}
+
+uint16_t rotl16(uint16_t x, size_t n)
+{
+    return (x << n) | (x >> (16 - n));
+}
+
+uint16_t rotr16(uint16_t x, size_t n)
+{
+    return (x >> n) | (x << (16 - n));
+}
+
+uint32_t rotl32(uint32_t x, size_t n)
 {
     return (x << n) | (x >> (32 - n));
 }
 
-uint32_t rotr_32(uint32_t x, size_t n)
+uint32_t rotr32(uint32_t x, size_t n)
 {
     return (x >> n) | (x << (32 - n));
+}
+
+uint64_t rotl64(uint64_t x, size_t n)
+{
+    return (x << n) | (x >> (64 - n));
+}
+
+uint64_t rotr64(uint64_t x, size_t n)
+{
+    return (x >> n) | (x << (64 - n));
+}
+
+uint128_t rotl128(uint128_t x, size_t n)
+{
+    return (x << n) | (x >> (128 - n));
+}
+
+uint128_t rotr128(uint128_t x, size_t n)
+{
+    return (x >> n) | (x << (128 - n));
 }
 
 size_t hamming_distance(const void *a, const void *b, size_t n)
