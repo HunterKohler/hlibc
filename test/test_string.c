@@ -57,14 +57,6 @@ void test_hex_decode(struct test_case_encoding *tc)
     assert(!memcmp(out, tc->plain, tc->plain_size));
 }
 
-// void test_hex_decode_error()
-// {
-// }
-
-// void test_b64_decode_error()
-// {
-// }
-
 int main()
 {
     for (int i = 0; i < ARRAY_SIZE(test_vector); i++) {
@@ -73,9 +65,6 @@ int main()
         test_b64_encode(test_vector + i);
         test_b64_decode(test_vector + i);
     }
-
-    // test_hex_decode_error();
-    // test_b64_decode_error();
 
     printf("Success\n");
 }
