@@ -1,16 +1,12 @@
 SHELL = bash
 
-# -Wno-pointer-sign
-# -Wno-sign-compare
-
 CFLAGS := \
-	-g3 \
-	-O2 \
+	-g \
+	-O0 \
 	-std=c11 \
 	-fanalyzer \
 	-Wall \
 	-Wextra \
-	-Wdouble-promotion \
 	-Wno-sign-compare \
 	-Wno-override-init \
 	-Wno-unused-function
@@ -53,9 +49,7 @@ run_tests: $(TEST_BIN)
 		$$i; \
 	done
 
-$(TEST_BIN): $(LIB_ARCHIVE)
-
-$(BIN): bin/% : build/%.o
+$(BIN): bin/% : build/%.o $(LIB_ARCHIVE)
 	@mkdir -p $(@D)
 	$(CC) $(LDFLAGS) $(LDLIBS) $^ -o $@
 
