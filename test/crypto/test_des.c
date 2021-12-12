@@ -1,145 +1,359 @@
 /*
  * Copyright (C) 2021 Hunter Kohler <jhunterkohler@gmail.com>
+ *
+ * Begins with individual by hand cases, then uses larger testing vector
+ * for integration testing.
  */
 
+#include <hlibc/string.h>
 #include <hlibc/crypto/des.h>
 
 #include <stdio.h>
 #include <assert.h>
 
-static uint64_t schedule_test_key = 0x93C0EEB98CEF5C;
-static uint64_t schedule_test_expected[] = {
-    0x2781DD7319DEB9, 0x4F03BAE633BD72, 0x3C0EEB98CEF5C9, 0xF03BAE433BD726,
-    0xC0EEB93CEF5C98, 0x03BAE4F3BD7263, 0x0EEB93CEF5C98C, 0x3BAE4F0BD72633,
-    0x775C9E07AE4C67, 0xDD72781EB9319D, 0x75C9E07AE4C677, 0xD72781DB9319DE,
-    0x5C9E077E4C677A, 0x72781DD9319DEB, 0xC9E07754C677AE, 0x93C0EEB98CEF5C,
-};
-
-void test_des_schedule()
-{
-    uint64_t schedule[16];
-    des_schedule(schedule_test_key, schedule);
-
-    for (int i = 0; i < 16; i++) {
-        assert(schedule[i] == schedule_test_expected[i]);
-    }
-}
-
 void test_des_left_shift()
 {
-    uint64_t k = schedule_test_key;
+    static uint64_t key = 0xBD87A20E3BDAA0;
+    static uint64_t expected[] = {
+        0x7B0F441C77B541, 0xF61E8828EF6A83, 0xD87A20B3BDAA0E, 0x61E882FEF6A838,
+        0x87A20BDBDAA0E3, 0x1E882F6F6A838E, 0x7A20BD8DAA0E3B, 0xE882F616A838EF,
+        0xD105EC3D5071DE, 0x4417B0F541C77B, 0x105EC3D5071DED, 0x417B0F441C77B5,
+        0x05EC3D1071DED5, 0x17B0F441C77B54, 0x5EC3D1071DED50, 0xBD87A20E3BDAA0,
+    };
+
+    uint64_t k = key;
 
     for (int i = 0; i < 16; i++) {
         k = des_left_shift(k, i);
-        assert(k == schedule_test_expected[i]);
+        assert(k == expected[i]);
     }
 }
 
 void test_des_PC_1()
 {
-    uint64_t k = 0xE7A1926FFE75BCA3;
-    uint64_t expected = 0x00D739FB79D79584;
+    uint64_t input = 0xBD87A20E3BDAA065;
+    uint64_t expected = 0x67A0D533E8B391;
+    uint64_t res = des_PC_1(input);
 
-    k = des_PC_1(k);
-
-    assert(k == expected);
+    assert(res == expected);
 }
 
 void test_des_PC_2()
 {
-    uint64_t k = 0xD4A5D5F058FFD2;
-    uint64_t expected = 0x00F941ADDC5CBC;
+    uint64_t input = 0xBD87A20E3BDAA0;
+    uint64_t expected = 0xCECD60BBCE16;
+    uint64_t res = des_PC_2(input);
 
-    k = des_PC_2(k);
-
-    assert(k == expected);
+    assert(res == expected);
 }
 
 void test_des_P()
 {
-    uint64_t x = 0x71BEBA57;
-    uint64_t expected = 0x3772DBE6;
+    uint64_t input = 0xBD87A20E;
+    uint64_t expected = 0x89EA53B2;
+    uint64_t res = des_P(input);
 
-    x = des_P(x);
-
-    assert(x == expected);
+    assert(res == expected);
 }
 
 void test_des_E()
 {
-    uint64_t x = 0x0001AC31B3E;
-    uint64_t expected = 0xF56068F69FC;
+    uint64_t input = 0xBD87A20E;
+    uint64_t expected = 0x5FBC0FD0405D;
+    uint64_t res = des_E(input);
 
-    x = des_E(x);
-
-    assert(x == expected);
+    assert(res == expected);
 }
 
 void test_des_IP()
 {
-    uint64_t x = 0x5E9D0E69E9093B5D;
-    uint64_t expected = 0x99C387FA1258FF45;
+    uint64_t input = 0xBD87A20E3BDAA065;
+    uint64_t expected = 0xA0318B9367D5393E;
+    uint64_t res = des_IP(input);
 
-    x = des_IP(x);
-
-    assert(x == expected);
+    assert(res == expected);
 }
 
 void test_des_IP_inv()
 {
-    uint64_t x = 0x5E9D0E69E9093B5D;
-    uint64_t expected = 0xBB4C56FF5A89C390;
+    uint64_t input = 0xBD87A20E3BDAA065;
+    uint64_t expected = 0xD2B553E1E0CE227C;
+    uint64_t res = des_IP_inv(input);
 
-    x = des_IP_inv(x);
-
-    assert(x == expected);
-}
-
-void test_des_single()
-{
+    assert(res == expected);
 }
 
 void test_des_S()
 {
+    uint64_t input = 0xEE4B7E1DD004;
+    uint32_t expected = 0x784C348;
+    uint32_t res = des_S(input);
+
+    assert(res == expected);
 }
 
-void test_des_f()
-{
-}
+struct des_test_case {
+    uint64_t key;
+    uint64_t plaintext;
+    uint64_t ciphertext;
+};
 
-void test_des()
+struct des_test_set {
+    char *title;
+    struct des_test_case *cases;
+};
+
+extern struct des_test_set des_test_vector[];
+
+void main_test_vector()
 {
+    struct des_test_set *ts;
+    struct des_test_case *tc;
+    for (ts = des_test_vector; ts->title; ts++) {
+        for (tc = ts->cases; tc->key || tc->plaintext || tc->ciphertext; tc++) {
+            uint64_t cipher = des(tc->plaintext, tc->key, DES_ENCRYPT);
+            uint64_t plain = des(tc->ciphertext, tc->key, DES_DECRYPT);
+
+            if (cipher != tc->ciphertext || plain != tc->plaintext) {
+                printf("Test: %s\n"
+                       "Case: %ld\n"
+                       "Plain: %llX\n"
+                       "Cipher: %llX\n"
+                       "Key: %llX\n"
+                       "Recieved Plain: %llX\n"
+                       "Recieved Cipher: %llX\n",
+                       ts->title, tc - ts->cases, tc->plaintext, tc->ciphertext,
+                       tc->key, plain, cipher);
+            }
+
+            assert(cipher == tc->ciphertext);
+            assert(plain == tc->plaintext);
+        }
+    }
 }
 
 int main()
 {
-    // uint64_t input = 0x95F8A5E5DD31D900;
-    // uint64_t expected = 0x8000000000000000;
+    test_des_IP();
+    test_des_IP_inv();
+    test_des_E();
+    test_des_P();
+    test_des_S();
+    test_des_left_shift();
+    test_des_PC_1();
+    test_des_PC_2();
+    main_test_vector();
 
-    // printf("Block:    %.16llX\n"
-    //        "Key:      %.16X\n"
-    //        "Expected: %.16llX\n"
-    //        "Recieved: %.16llX\n",
-    //        input, 0, expected, des_single(input, 0));
-
-    uint64_t input = 0x12C4FACC29FF33B9;
-    uint64_t expect = 0xAA6C31A76EAE3537;
-
-    printf("Block:   %llX\n"
-           "Expect:  %llX\n"
-           "Recieve: %llX\n",
-           input, expect, des_IP(input));
-
-    // test_des_IP();
-    // test_des_IP_inv();
-    // test_des_E();
-    // test_des_P();
-    // test_des_S();
-    // test_des_left_shift();
-    // test_des_PC_1();
-    // test_des_PC_2();
-    // test_des_f();
-    // test_des_single();
-    // test_des_schedule();
-    // test_des();
+    printf("Success\n");
 }
+
+/*
+ * Test vectors for DES Electronic Code Book (ECB) implementation, derived from:
+ * "Validating the Correctness of Hardware Implementations of the NBS Data
+ * Encryption Standard" NBS Special Publication 500-20, 1980.
+ *
+ * Reference: https://archive.org/details/validatingcorrec00gait/
+ *
+ * Arrays are terminated with empty test cases.
+ * Because the testing function above runs encryption and decryption on all
+ * cases, no need to follow direct guidance in paper for the IP inverse and
+ * 'right-shift' tests, as they are equivalent.
+ */
+struct des_test_set des_test_vector[] = {
+    {
+        .title = "IP, IP_inv, E Test",
+        .cases = ((struct des_test_case[]){
+            { 0x0101010101010101, 0x95F8A5E5DD31D900, 0x8000000000000000 },
+            { 0x0101010101010101, 0xDD7F121CA5015619, 0x4000000000000000 },
+            { 0x0101010101010101, 0x2E8653104F3834EA, 0x2000000000000000 },
+            { 0x0101010101010101, 0x4BD388FF6CD81D4F, 0x1000000000000000 },
+            { 0x0101010101010101, 0x20B9E767B2FB1456, 0x0800000000000000 },
+            { 0x0101010101010101, 0x55579380D77138EF, 0x0400000000000000 },
+            { 0x0101010101010101, 0x6CC5DEFAAF04512F, 0x0200000000000000 },
+            { 0x0101010101010101, 0x0D9F279BA5D87260, 0x0100000000000000 },
+            { 0x0101010101010101, 0xD9031B0271BD5A0A, 0x0080000000000000 },
+            { 0x0101010101010101, 0x424250B37C3DD951, 0x0040000000000000 },
+            { 0x0101010101010101, 0xB8061B7ECD9A21E5, 0x0020000000000000 },
+            { 0x0101010101010101, 0xF15D0F286B65BD28, 0x0010000000000000 },
+            { 0x0101010101010101, 0xADD0CC8D6E5DEBA1, 0x0008000000000000 },
+            { 0x0101010101010101, 0xE6D5F82752AD63D1, 0x0004000000000000 },
+            { 0x0101010101010101, 0xECBFE3BD3F591A5E, 0x0002000000000000 },
+            { 0x0101010101010101, 0xF356834379D165CD, 0x0001000000000000 },
+            { 0x0101010101010101, 0x2B9F982F20037FA9, 0x0000800000000000 },
+            { 0x0101010101010101, 0x889DE068A16F0BE6, 0x0000400000000000 },
+            { 0x0101010101010101, 0xE19E275D846A1298, 0x0000200000000000 },
+            { 0x0101010101010101, 0x329A8ED523D71AEC, 0x0000100000000000 },
+            { 0x0101010101010101, 0xE7FCE22557D23C97, 0x0000080000000000 },
+            { 0x0101010101010101, 0x12A9F5817FF2D65D, 0x0000040000000000 },
+            { 0x0101010101010101, 0xA484C3AD38DC9C19, 0x0000020000000000 },
+            { 0x0101010101010101, 0xFBE00A8A1EF8AD72, 0x0000010000000000 },
+            { 0x0101010101010101, 0x750D079407521363, 0x0000008000000000 },
+            { 0x0101010101010101, 0x64FEED9C724C2FAF, 0x0000004000000000 },
+            { 0x0101010101010101, 0xF02B263B328E2B60, 0x0000002000000000 },
+            { 0x0101010101010101, 0x9D64555A9A10B852, 0x0000001000000000 },
+            { 0x0101010101010101, 0xD106FF0BED5255D7, 0x0000000800000000 },
+            { 0x0101010101010101, 0xE1652C6B138C64A5, 0x0000000400000000 },
+            { 0x0101010101010101, 0xE428581186EC8F46, 0x0000000200000000 },
+            { 0x0101010101010101, 0xAEB5F5EDE22D1A36, 0x0000000100000000 },
+            { 0x0101010101010101, 0xE943D7568AEC0C5C, 0x0000000080000000 },
+            { 0x0101010101010101, 0xDF98C8276F54B04B, 0x0000000040000000 },
+            { 0x0101010101010101, 0xB160E4680F6C696F, 0x0000000020000000 },
+            { 0x0101010101010101, 0xFA0752B07D9C4AB8, 0x0000000010000000 },
+            { 0x0101010101010101, 0xCA3A2B036DBC8502, 0x0000000008000000 },
+            { 0x0101010101010101, 0x5E0905517BB59BCF, 0x0000000004000000 },
+            { 0x0101010101010101, 0x814EEB3B91D90726, 0x0000000002000000 },
+            { 0x0101010101010101, 0x4D49DB1532919C9F, 0x0000000001000000 },
+            { 0x0101010101010101, 0x25EB5FC3F8CF0621, 0x0000000000800000 },
+            { 0x0101010101010101, 0xAB6A20C0620D1C6F, 0x0000000000400000 },
+            { 0x0101010101010101, 0x79E90DBC98F92CCA, 0x0000000000200000 },
+            { 0x0101010101010101, 0x866ECEDD8072BB0E, 0x0000000000100000 },
+            { 0x0101010101010101, 0x8B54536F2F3E64A8, 0x0000000000080000 },
+            { 0x0101010101010101, 0xEA51D3975595B86B, 0x0000000000040000 },
+            { 0x0101010101010101, 0xCAFFC6AC4542DE31, 0x0000000000020000 },
+            { 0x0101010101010101, 0x8DD45A2DDF90796C, 0x0000000000010000 },
+            { 0x0101010101010101, 0x1029D55E880EC2D0, 0x0000000000008000 },
+            { 0x0101010101010101, 0x5D86CB23639DBEA9, 0x0000000000004000 },
+            { 0x0101010101010101, 0x1D1CA853AE7C0C5F, 0x0000000000002000 },
+            { 0x0101010101010101, 0xCE332329248F3228, 0x0000000000001000 },
+            { 0x0101010101010101, 0x8405D1ABE24FB942, 0x0000000000000800 },
+            { 0x0101010101010101, 0xE643D78090CA4207, 0x0000000000000400 },
+            { 0x0101010101010101, 0x48221B9937748A23, 0x0000000000000200 },
+            { 0x0101010101010101, 0xDD7C0BBD61FAFD54, 0x0000000000000100 },
+            { 0x0101010101010101, 0x2FBC291A570DB5C4, 0x0000000000000080 },
+            { 0x0101010101010101, 0xE07C30D7E4E26E12, 0x0000000000000040 },
+            { 0x0101010101010101, 0x0953E2258E8E90A1, 0x0000000000000020 },
+            { 0x0101010101010101, 0x5B711BC4CEEBF2EE, 0x0000000000000010 },
+            { 0x0101010101010101, 0xCC083F1E6D9E85F6, 0x0000000000000008 },
+            { 0x0101010101010101, 0xD2FD8867D50D2DFE, 0x0000000000000004 },
+            { 0x0101010101010101, 0x06E7EA22CE92708F, 0x0000000000000002 },
+            { 0x0101010101010101, 0x166B40B44ABA4BD6, 0x0000000000000001 },
+            { 0 },
+        }),
+    },
+    {
+        .title = "PC1 and PC2 Test",
+        .cases = ((struct des_test_case[]){
+            { 0x8001010101010101, 0x0000000000000000, 0x95A8D72813DAA94D },
+            { 0x4001010101010101, 0x0000000000000000, 0x0EEC1487DD8C26D5 },
+            { 0x2001010101010101, 0x0000000000000000, 0x7AD16FFB79C45926 },
+            { 0x1001010101010101, 0x0000000000000000, 0xD3746294CA6A6CF3 },
+            { 0x0801010101010101, 0x0000000000000000, 0x809F5F873C1FD761 },
+            { 0x0401010101010101, 0x0000000000000000, 0xC02FAFFEC989D1FC },
+            { 0x0201010101010101, 0x0000000000000000, 0x4615AA1D33E72F10 },
+            { 0x0180010101010101, 0x0000000000000000, 0x2055123350C00858 },
+            { 0x0140010101010101, 0x0000000000000000, 0xDF3B99D6577397C8 },
+            { 0x0120010101010101, 0x0000000000000000, 0x31FE17369B5288C9 },
+            { 0x0110010101010101, 0x0000000000000000, 0xDFDD3CC64DAE1642 },
+            { 0x0108010101010101, 0x0000000000000000, 0x178C83CE2B399D94 },
+            { 0x0104010101010101, 0x0000000000000000, 0x50F636324A9B7F80 },
+            { 0x0102010101010101, 0x0000000000000000, 0xA8468EE3BC18F06D },
+            { 0x0101800101010101, 0x0000000000000000, 0xA2DC9E92FD3CDE92 },
+            { 0x0101400101010101, 0x0000000000000000, 0xCAC09F797D031287 },
+            { 0x0101200101010101, 0x0000000000000000, 0x90BA680B22AEB525 },
+            { 0x0101100101010101, 0x0000000000000000, 0xCE7A24F350E280B6 },
+            { 0x0101080101010101, 0x0000000000000000, 0x882BFF0AA01A0B87 },
+            { 0x0101040101010101, 0x0000000000000000, 0x25610288924511C2 },
+            { 0x0101020101010101, 0x0000000000000000, 0xC71516C29C75D170 },
+            { 0x0101018001010101, 0x0000000000000000, 0x5199C29A52C9F059 },
+            { 0x0101014001010101, 0x0000000000000000, 0xC22F0A294A71F29F },
+            { 0x0101012001010101, 0x0000000000000000, 0xEE371483714C02EA },
+            { 0x0101011001010101, 0x0000000000000000, 0xA81FBD448F9E522F },
+            { 0x0101010801010101, 0x0000000000000000, 0x4F644C92E192DFED },
+            { 0x0101010401010101, 0x0000000000000000, 0x1AFA9A66A6DF92AE },
+            { 0x0101010201010101, 0x0000000000000000, 0xB3C1CC715CB879D8 },
+            { 0x0101010180010101, 0x0000000000000000, 0x19D032E64AB0BD8B },
+            { 0x0101010140010101, 0x0000000000000000, 0x3CFAA7A7DC8720DC },
+            { 0x0101010120010101, 0x0000000000000000, 0xB7265F7F447AC6F3 },
+            { 0x0101010110010101, 0x0000000000000000, 0x9DB73B3C0D163F54 },
+            { 0x0101010108010101, 0x0000000000000000, 0x8181B65BABF4A975 },
+            { 0x0101010104010101, 0x0000000000000000, 0x93C9B64042EAA240 },
+            { 0x0101010102010101, 0x0000000000000000, 0x5570530829705592 },
+            { 0x0101010101800101, 0x0000000000000000, 0x8638809E878787A0 },
+            { 0x0101010101400101, 0x0000000000000000, 0x41B9A79AF79AC208 },
+            { 0x0101010101200101, 0x0000000000000000, 0x7A9BE42F2009A892 },
+            { 0x0101010101100101, 0x0000000000000000, 0x29038D56BA6D2745 },
+            { 0x0101010101080101, 0x0000000000000000, 0x5495C6ABF1E5DF51 },
+            { 0x0101010101040101, 0x0000000000000000, 0xAE13DBD561488933 },
+            { 0x0101010101020101, 0x0000000000000000, 0x024D1FFA8904E389 },
+            { 0x0101010101018001, 0x0000000000000000, 0xD1399712F99BF02E },
+            { 0x0101010101014001, 0x0000000000000000, 0x14C1D7C1CFFEC79E },
+            { 0x0101010101012001, 0x0000000000000000, 0x1DE5279DAE3BED6F },
+            { 0x0101010101011001, 0x0000000000000000, 0xE941A33F85501303 },
+            { 0x0101010101010801, 0x0000000000000000, 0xDA99DBBC9A03F379 },
+            { 0x0101010101010401, 0x0000000000000000, 0xB7FC92F91D8E92E9 },
+            { 0x0101010101010201, 0x0000000000000000, 0xAE8E5CAA3CA04E85 },
+            { 0x0101010101010180, 0x0000000000000000, 0x9CC62DF43B6EED74 },
+            { 0x0101010101010140, 0x0000000000000000, 0xD863DBB5C59A91A0 },
+            { 0x0101010101010120, 0x0000000000000000, 0xA1AB2190545B91D7 },
+            { 0x0101010101010110, 0x0000000000000000, 0x0875041E64C570F7 },
+            { 0x0101010101010108, 0x0000000000000000, 0x5A594528BEBEF1CC },
+            { 0x0101010101010104, 0x0000000000000000, 0xFCDB3291DE21F0C0 },
+            { 0x0101010101010102, 0x0000000000000000, 0x869EFD7F9F265A09 },
+            { 0 },
+        }),
+    },
+    {
+        .title = "P Test",
+        .cases = ((struct des_test_case[]){
+            { 0x1046913489980131, 0x0000000000000000, 0x88D55E54F54C97B4 },
+            { 0x1007103489988020, 0x0000000000000000, 0x0C0CC00C83EA48FD },
+            { 0x10071034C8980120, 0x0000000000000000, 0x83BC8EF3A6570183 },
+            { 0x1046103489988020, 0x0000000000000000, 0xDF725DCAD94EA2E9 },
+            { 0x1086911519190101, 0x0000000000000000, 0xE652B53B550BE8B0 },
+            { 0x1086911519580101, 0x0000000000000000, 0xAF527120C485CBB0 },
+            { 0x5107B01519580101, 0x0000000000000000, 0x0F04CE393DB926D5 },
+            { 0x1007B01519190101, 0x0000000000000000, 0xC9F00FFC74079067 },
+            { 0x3107915498080101, 0x0000000000000000, 0x7CFD82A593252B4E },
+            { 0x3107919498080101, 0x0000000000000000, 0xCB49A2F9E91363E3 },
+            { 0x10079115B9080140, 0x0000000000000000, 0x00B588BE70D23F56 },
+            { 0x3107911598080140, 0x0000000000000000, 0x406A9A6AB43399AE },
+            { 0x1007D01589980101, 0x0000000000000000, 0x6CB773611DCA9ADA },
+            { 0x9107911589980101, 0x0000000000000000, 0x67FD21C17DBB5D70 },
+            { 0x9107D01589190101, 0x0000000000000000, 0x9592CB4110430787 },
+            { 0x1007D01598980120, 0x0000000000000000, 0xA6B7FF68A318DDD3 },
+            { 0x1007940498190101, 0x0000000000000000, 0x4D102196C914CA16 },
+            { 0x0107910491190401, 0x0000000000000000, 0x2DFA9F4573594965 },
+            { 0x0107910491190101, 0x0000000000000000, 0xB46604816C0E0774 },
+            { 0x0107940491190401, 0x0000000000000000, 0x6E7E6221A4F34E87 },
+            { 0x19079210981A0101, 0x0000000000000000, 0xAA85E74643233199 },
+            { 0x1007911998190801, 0x0000000000000000, 0x2E5A19DB4D1962D6 },
+            { 0x10079119981A0801, 0x0000000000000000, 0x23A866A809D30894 },
+            { 0x1007921098190101, 0x0000000000000000, 0xD812D961F017D320 },
+            { 0x100791159819010B, 0x0000000000000000, 0x055605816E58608F },
+            { 0x1004801598190101, 0x0000000000000000, 0xABD88E8B1B7716F1 },
+            { 0x1004801598190102, 0x0000000000000000, 0x537AC95BE69DA1E1 },
+            { 0x1004801598190108, 0x0000000000000000, 0xAED0F6AE3C25CDD8 },
+            { 0x1002911498100104, 0x0000000000000000, 0xB3E35A5EE53E7B8D },
+            { 0x1002911598190104, 0x0000000000000000, 0x61C79C71921A2EF8 },
+            { 0x1002911598100201, 0x0000000000000000, 0xE2F5728F0995013C },
+            { 0x1002911698100101, 0x0000000000000000, 0x1AEAC39A61F0A464 },
+            { 0 },
+        }),
+    },
+    {
+        .title = "S-Box Test",
+        .cases = ((struct des_test_case[]){
+            { 0x7CA110454A1A6E57, 0x01A1D6D039776742, 0x690F5B0D9A26939B },
+            { 0x0131D9619DC1376E, 0x5CD54CA83DEF57DA, 0x7A389D10354BD271 },
+            { 0x07A1133E4A0B2686, 0x0248D43806F67172, 0x868EBB51CAB4599A },
+            { 0x3849674C2602319E, 0x51454B582DDF440A, 0x7178876E01F19B2A },
+            { 0x04B915BA43FEB5B6, 0x42FD443059577FA2, 0xAF37FB421F8C4095 },
+            { 0x0113B970FD34F2CE, 0x059B5E0851CF143A, 0x86A560F10EC6D85B },
+            { 0x0170F175468FB5E6, 0x0756D8E0774761D2, 0x0CD3DA020021DC09 },
+            { 0x43297FAD38E373FE, 0x762514B829BF486A, 0xEA676B2CB7DB2B7A },
+            { 0x07A7137045DA2A16, 0x3BDD119049372802, 0xDFD64A815CAF1A0F },
+            { 0x04689104C2FD3B2F, 0x26955F6835AF609A, 0x5C513C9C4886C088 },
+            { 0x37D06BB516CB7546, 0x164D5E404F275232, 0x0A2AEEAE3FF4AB77 },
+            { 0x1F08260D1AC2465E, 0x6B056E18759F5CCA, 0xEF1BF03E5DFA575A },
+            { 0x584023641ABA6176, 0x004BD6EF09176062, 0x88BF0DB6D70DEE56 },
+            { 0x025816164629B007, 0x480D39006EE762F2, 0xA1F9915541020B56 },
+            { 0x49793EBC79B3258F, 0x437540C8698F3CFA, 0x6FBF1CAFCFFD0556 },
+            { 0x4FB05E1515AB73A7, 0x072D43A077075292, 0x2F22E49BAB7CA1AC },
+            { 0x49E95D6D4CA229BF, 0x02FE55778117F12A, 0x5A6B612CC26CCE4A },
+            { 0x018310DC409B26D6, 0x1D9D5C5018F728C2, 0x5F4C038ED12B2E41 },
+            { 0x1C587F1C13924FEF, 0x305532286D6F295A, 0x63FAC0D034D9F793 },
+            { 0 },
+        }),
+    },
+    { 0 }
+};
