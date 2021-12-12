@@ -120,37 +120,4 @@
         void *: "%p")
 // clang-format on
 
-#define _assert_eq(x, y) (assert((x) == (y)))
-#define _assert_str_eq(x, y)                                              \
-    ({                                                                    \
-        const char *__x = (x);                                            \
-        const char *__y = (y);                                            \
-        if (!!__x != !!__y || !strcmp(__x, __y)) {                        \
-            printf("%s%s:%d:%s %sAssertion failed%s\n"                    \
-                   "    Expected: \n"                                     \
-                   "        %s == %s\n"                                   \
-                   "    Values:\n"                                        \
-                   "        %-15s :=  %s\n"                               \
-                   "        %-15s :=  %s\n",                              \
-                   BOLD, __FILE__, __LINE__, RESET_WEIGHT, FG_BRIGHT_RED, \
-                   FG_DEFAULT, #x, #y, #x, __x ? __x : "NULL", #y,        \
-                   __y ? __y : "NULL");                                   \
-            abort();                                                      \
-        }                                                                 \
-    })
-
-/* clang-format off */
-#define assert_eq(x, y)                           \
-    ({                                            \
-        typeof(x) __x = (x);                      \
-        typeof(y) __y = (y);                      \
-        _Generic(__x,                             \
-            char *: _Generic(__y,                 \
-                char *: _assert_str_eq((x), (y)), \
-                default: _assert_eq((x), (y))),   \
-            default:(_assert_eq((x), (y)))        \
-        );                                        \
-    })
-/* clang-format on */
-
 #endif
