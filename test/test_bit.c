@@ -17,7 +17,7 @@ void test_bit_at()
     }
 }
 
-void test_rotl_32()
+void test_rotl32()
 {
     // Generated rotations
     uint32_t inputs[] = {
@@ -30,13 +30,13 @@ void test_rotl_32()
     };
 
     for (int i = 0; i < 32; i++) {
-        assert(rotl_32(inputs[0], i) == inputs[i]);
+        assert(rotl32(inputs[0], i) == inputs[i]);
     }
 }
 
 int main()
 {
     test_bit_at();
-    test_rotl_32();
+    test_rotl32();
     printf("Success\n");
 }
