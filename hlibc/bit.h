@@ -78,15 +78,15 @@ int bit_at(const void *target, long long i);
  */
 size_t hamming_distance(const void *a, const void *b, size_t n);
 
-uint8_t rotl8(uint8_t x, size_t n);
+uint8_t rotl_8(uint8_t x, size_t n);
 uint8_t rotr8(uint8_t x, size_t n);
-uint16_t rotl16(uint16_t x, size_t n);
+uint16_t rotl_16(uint16_t x, size_t n);
 uint16_t rotr16(uint16_t x, size_t n);
-uint32_t rotl32(uint32_t x, size_t n);
+uint32_t rotl_32(uint32_t x, size_t n);
 uint32_t rotr32(uint32_t x, size_t n);
-uint64_t rotl64(uint64_t x, size_t n);
+uint64_t rotl_64(uint64_t x, size_t n);
 uint64_t rotr64(uint64_t x, size_t n);
-uint128_t rotl128(uint128_t x, size_t n);
+uint128_t rotl_128(uint128_t x, size_t n);
 uint128_t rotr128(uint128_t x, size_t n);
 
 #endif
