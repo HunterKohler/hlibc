@@ -302,6 +302,8 @@ void b64_encode(const void *restrict src, size_t n, char *restrict dest)
         *dest++ = '=';
         break;
     }
+
+    *dest = 0;
 }
 
 int b64_val(char c)

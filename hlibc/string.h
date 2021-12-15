@@ -88,10 +88,32 @@ void hex_encode(const void *restrict src, size_t n, char *restrict dest);
  */
 int hex_decode(const char *restrict src, void *restrict dest);
 
+/*
+ * Returns Base 64 value of `c`.
+ */
 int b64_val(char c);
+
+/*
+ * Returns the size of a length `n` buffer when encoded to Base 64.
+ */
 size_t b64_encode_size(size_t n);
+
+/*
+ * Returns the size of the decoded buffer that `n` bytes of the Base 64 encoded
+ * string `src` represents.
+ */
 size_t b64_decode_size(const char *src, size_t n);
+
+/*
+ * Writes a the Base 64 representation of the first `n` bytes from `src`
+ * to `dest`. The buffers may not overlap. `dest` will be null terminated.
+ */
 void b64_encode(const void *restrict src, size_t n, char *restrict dest);
+
+/*
+ * Writes the binary buffer represented by the Base 64 encoded string `src`
+ * to `dest`. `src` must be null terminated. `src` and `dest` may not overlap.
+ */
 int b64_decode(const char *restrict src, void *restrict dest);
 
 char *__to_string_ll(long long src, char *dest, unsigned int base);
@@ -129,260 +151,266 @@ char *__to_string_cld(complex long double src, char *dest);
     )(src, dest, ## __VA_ARGS__)
 // clang-format on
 
-static const char *const errno_name_table[] = {
+/*
+ * Retrieve the name of an `errno` value specified by `code`. If the name is
+ * not known, this function returns `NULL`. Attempts to conform to POSIX
+ * specification.
+ *
+ * Reference:
+ * https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/errno.h.html
+ */
+static inline const char *strerror_name(int code)
+{
+    static const char *const names[] = {
 #ifdef E2BIG
-    [E2BIG] = "E2BIG",
+        [E2BIG] = "E2BIG",
 #endif
 #ifdef EACCES
-    [EACCES] = "EACCES",
+        [EACCES] = "EACCES",
 #endif
 #ifdef EADDRINUSE
-    [EADDRINUSE] = "EADDRINUSE",
+        [EADDRINUSE] = "EADDRINUSE",
 #endif
 #ifdef EADDRNOTAVAIL
-    [EADDRNOTAVAIL] = "EADDRNOTAVAIL",
+        [EADDRNOTAVAIL] = "EADDRNOTAVAIL",
 #endif
 #ifdef EAFNOSUPPORT
-    [EAFNOSUPPORT] = "EAFNOSUPPORT",
+        [EAFNOSUPPORT] = "EAFNOSUPPORT",
 #endif
 #ifdef EAGAIN
-    [EAGAIN] = "EAGAIN",
+        [EAGAIN] = "EAGAIN",
 #endif
 #ifdef EALREADY
-    [EALREADY] = "EALREADY",
+        [EALREADY] = "EALREADY",
 #endif
 #ifdef EBADF
-    [EBADF] = "EBADF",
+        [EBADF] = "EBADF",
 #endif
 #ifdef EBADMSG
-    [EBADMSG] = "EBADMSG",
+        [EBADMSG] = "EBADMSG",
 #endif
 #ifdef EBUSY
-    [EBUSY] = "EBUSY",
+        [EBUSY] = "EBUSY",
 #endif
 #ifdef ECANCELED
-    [ECANCELED] = "ECANCELED",
+        [ECANCELED] = "ECANCELED",
 #endif
 #ifdef ECHILD
-    [ECHILD] = "ECHILD",
+        [ECHILD] = "ECHILD",
 #endif
 #ifdef ECONNABORTED
-    [ECONNABORTED] = "ECONNABORTED",
+        [ECONNABORTED] = "ECONNABORTED",
 #endif
 #ifdef ECONNREFUSED
-    [ECONNREFUSED] = "ECONNREFUSED",
+        [ECONNREFUSED] = "ECONNREFUSED",
 #endif
 #ifdef ECONNRESET
-    [ECONNRESET] = "ECONNRESET",
+        [ECONNRESET] = "ECONNRESET",
 #endif
 #ifdef EDEADLK
-    [EDEADLK] = "EDEADLK",
+        [EDEADLK] = "EDEADLK",
 #endif
 #ifdef EDESTADDRREQ
-    [EDESTADDRREQ] = "EDESTADDRREQ",
+        [EDESTADDRREQ] = "EDESTADDRREQ",
 #endif
 #ifdef EDOM
-    [EDOM] = "EDOM",
+        [EDOM] = "EDOM",
 #endif
 #ifdef EDQUOT
-    [EDQUOT] = "EDQUOT",
+        [EDQUOT] = "EDQUOT",
 #endif
 #ifdef EEXIST
-    [EEXIST] = "EEXIST",
+        [EEXIST] = "EEXIST",
 #endif
 #ifdef EFAULT
-    [EFAULT] = "EFAULT",
+        [EFAULT] = "EFAULT",
 #endif
 #ifdef EFBIG
-    [EFBIG] = "EFBIG",
+        [EFBIG] = "EFBIG",
 #endif
 #ifdef EHOSTUNREACH
-    [EHOSTUNREACH] = "EHOSTUNREACH",
+        [EHOSTUNREACH] = "EHOSTUNREACH",
 #endif
 #ifdef EIDRM
-    [EIDRM] = "EIDRM",
+        [EIDRM] = "EIDRM",
 #endif
 #ifdef EILSEQ
-    [EILSEQ] = "EILSEQ",
+        [EILSEQ] = "EILSEQ",
 #endif
 #ifdef EINPROGRESS
-    [EINPROGRESS] = "EINPROGRESS",
+        [EINPROGRESS] = "EINPROGRESS",
 #endif
 #ifdef EINTR
-    [EINTR] = "EINTR",
+        [EINTR] = "EINTR",
 #endif
 #ifdef EINVAL
-    [EINVAL] = "EINVAL",
+        [EINVAL] = "EINVAL",
 #endif
 #ifdef EIO
-    [EIO] = "EIO",
+        [EIO] = "EIO",
 #endif
 #ifdef EISCONN
-    [EISCONN] = "EISCONN",
+        [EISCONN] = "EISCONN",
 #endif
 #ifdef EISDIR
-    [EISDIR] = "EISDIR",
+        [EISDIR] = "EISDIR",
 #endif
 #ifdef ELOOP
-    [ELOOP] = "ELOOP",
+        [ELOOP] = "ELOOP",
 #endif
 #ifdef EMFILE
-    [EMFILE] = "EMFILE",
+        [EMFILE] = "EMFILE",
 #endif
 #ifdef EMLINK
-    [EMLINK] = "EMLINK",
+        [EMLINK] = "EMLINK",
 #endif
 #ifdef EMSGSIZE
-    [EMSGSIZE] = "EMSGSIZE",
+        [EMSGSIZE] = "EMSGSIZE",
 #endif
 #ifdef EMULTIHOP
-    [EMULTIHOP] = "EMULTIHOP",
+        [EMULTIHOP] = "EMULTIHOP",
 #endif
 #ifdef ENAMETOOLONG
-    [ENAMETOOLONG] = "ENAMETOOLONG",
+        [ENAMETOOLONG] = "ENAMETOOLONG",
 #endif
 #ifdef ENETDOWN
-    [ENETDOWN] = "ENETDOWN",
+        [ENETDOWN] = "ENETDOWN",
 #endif
 #ifdef ENETRESET
-    [ENETRESET] = "ENETRESET",
+        [ENETRESET] = "ENETRESET",
 #endif
 #ifdef ENETUNREACH
-    [ENETUNREACH] = "ENETUNREACH",
+        [ENETUNREACH] = "ENETUNREACH",
 #endif
 #ifdef ENFILE
-    [ENFILE] = "ENFILE",
+        [ENFILE] = "ENFILE",
 #endif
 #ifdef ENOBUFS
-    [ENOBUFS] = "ENOBUFS",
+        [ENOBUFS] = "ENOBUFS",
 #endif
 #ifdef ENODATA
-    [ENODATA] = "ENODATA",
+        [ENODATA] = "ENODATA",
 #endif
 #ifdef ENODEV
-    [ENODEV] = "ENODEV",
+        [ENODEV] = "ENODEV",
 #endif
 #ifdef ENOENT
-    [ENOENT] = "ENOENT",
+        [ENOENT] = "ENOENT",
 #endif
 #ifdef ENOEXEC
-    [ENOEXEC] = "ENOEXEC",
+        [ENOEXEC] = "ENOEXEC",
 #endif
 #ifdef ENOLCK
-    [ENOLCK] = "ENOLCK",
+        [ENOLCK] = "ENOLCK",
 #endif
 #ifdef ENOLINK
-    [ENOLINK] = "ENOLINK",
+        [ENOLINK] = "ENOLINK",
 #endif
 #ifdef ENOMEM
-    [ENOMEM] = "ENOMEM",
+        [ENOMEM] = "ENOMEM",
 #endif
 #ifdef ENOMSG
-    [ENOMSG] = "ENOMSG",
+        [ENOMSG] = "ENOMSG",
 #endif
 #ifdef ENOPROTOOPT
-    [ENOPROTOOPT] = "ENOPROTOOPT",
+        [ENOPROTOOPT] = "ENOPROTOOPT",
 #endif
 #ifdef ENOSPC
-    [ENOSPC] = "ENOSPC",
+        [ENOSPC] = "ENOSPC",
 #endif
 #ifdef ENOSR
-    [ENOSR] = "ENOSR",
+        [ENOSR] = "ENOSR",
 #endif
 #ifdef ENOSTR
-    [ENOSTR] = "ENOSTR",
+        [ENOSTR] = "ENOSTR",
 #endif
 #ifdef ENOSYS
-    [ENOSYS] = "ENOSYS",
+        [ENOSYS] = "ENOSYS",
 #endif
 #ifdef ENOTCONN
-    [ENOTCONN] = "ENOTCONN",
+        [ENOTCONN] = "ENOTCONN",
 #endif
 #ifdef ENOTDIR
-    [ENOTDIR] = "ENOTDIR",
+        [ENOTDIR] = "ENOTDIR",
 #endif
 #ifdef ENOTEMPTY
-    [ENOTEMPTY] = "ENOTEMPTY",
+        [ENOTEMPTY] = "ENOTEMPTY",
 #endif
 #ifdef ENOTRECOVERABLE
-    [ENOTRECOVERABLE] = "ENOTRECOVERABLE",
+        [ENOTRECOVERABLE] = "ENOTRECOVERABLE",
 #endif
 #ifdef ENOTSOCK
-    [ENOTSOCK] = "ENOTSOCK",
+        [ENOTSOCK] = "ENOTSOCK",
 #endif
 #ifdef ENOTSUP
-    [ENOTSUP] = "ENOTSUP",
+        [ENOTSUP] = "ENOTSUP",
 #endif
 #ifdef ENOTTY
-    [ENOTTY] = "ENOTTY",
+        [ENOTTY] = "ENOTTY",
 #endif
 #ifdef ENXIO
-    [ENXIO] = "ENXIO",
+        [ENXIO] = "ENXIO",
 #endif
 #ifdef EOPNOTSUPP
-    [EOPNOTSUPP] = "EOPNOTSUPP",
+        [EOPNOTSUPP] = "EOPNOTSUPP",
 #endif
 #ifdef EOVERFLOW
-    [EOVERFLOW] = "EOVERFLOW",
+        [EOVERFLOW] = "EOVERFLOW",
 #endif
 #ifdef EOWNERDEAD
-    [EOWNERDEAD] = "EOWNERDEAD",
+        [EOWNERDEAD] = "EOWNERDEAD",
 #endif
 #ifdef EPERM
-    [EPERM] = "EPERM",
+        [EPERM] = "EPERM",
 #endif
 #ifdef EPIPE
-    [EPIPE] = "EPIPE",
+        [EPIPE] = "EPIPE",
 #endif
 #ifdef EPROTO
-    [EPROTO] = "EPROTO",
+        [EPROTO] = "EPROTO",
 #endif
 #ifdef EPROTONOSUPPORT
-    [EPROTONOSUPPORT] = "EPROTONOSUPPORT",
+        [EPROTONOSUPPORT] = "EPROTONOSUPPORT",
 #endif
 #ifdef EPROTOTYPE
-    [EPROTOTYPE] = "EPROTOTYPE",
+        [EPROTOTYPE] = "EPROTOTYPE",
 #endif
 #ifdef ERANGE
-    [ERANGE] = "ERANGE",
+        [ERANGE] = "ERANGE",
 #endif
 #ifdef EROFS
-    [EROFS] = "EROFS",
+        [EROFS] = "EROFS",
 #endif
 #ifdef ESPIPE
-    [ESPIPE] = "ESPIPE",
+        [ESPIPE] = "ESPIPE",
 #endif
 #ifdef ESRCH
-    [ESRCH] = "ESRCH",
+        [ESRCH] = "ESRCH",
 #endif
 #ifdef ESTALE
-    [ESTALE] = "ESTALE",
+        [ESTALE] = "ESTALE",
 #endif
 #ifdef ETIME
-    [ETIME] = "ETIME",
+        [ETIME] = "ETIME",
 #endif
 #ifdef ETIMEDOUT
-    [ETIMEDOUT] = "ETIMEDOUT",
+        [ETIMEDOUT] = "ETIMEDOUT",
 #endif
 #ifdef ETXTBSY
-    [ETXTBSY] = "ETXTBSY",
+        [ETXTBSY] = "ETXTBSY",
 #endif
 #ifdef EWOULDBLOCK
-    [EWOULDBLOCK] = "EWOULDBLOCK",
+        [EWOULDBLOCK] = "EWOULDBLOCK",
 #endif
 #ifdef EXDEV
-    [EXDEV] = "EXDEV",
+        [EXDEV] = "EXDEV",
 #endif
-};
+    };
 
-/*
- * Retrieve the name of an 'errno-value'. On unknown, `NULL` is returned.
- */
-static inline const char *strerror_name(int err)
-{
-    return err < 0 || err >= ARRAY_SIZE(errno_name_table) ?
-               NULL :
-               errno_name_table[err];
+    if (code < 0 || code >= ARRAY_SIZE(names))
+        return NULL;
+
+    return names[code];
 }
 
 #endif
