@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2021 Hunter Kohler <jhunterkohler@gmail.com>
- * 
+ *
  * Embedded Red-Black Tree (working)
  */
 
@@ -27,11 +27,11 @@ struct rb_node {
 
 #define RBTREE_INIT ((struct rbtree){ .root = NULL })
 
-struct rb_node *rb_first(const struct rb_tree *tree);
-struct rb_node *rb_last(const struct rb_tree *tree);
-struct rb_node *rb_next(const struct rb_node *node);
-struct rb_node *rb_prev(const struct rb_node *node);
-struct rb_node *rb_sibling(const struct rb_node *node);
+struct rb_node *rb_first(struct rb_tree *tree);
+struct rb_node *rb_last(struct rb_tree *tree);
+struct rb_node *rb_next(struct rb_node *node);
+struct rb_node *rb_prev(struct rb_node *node);
+struct rb_node *rb_sibling(struct rb_node *node);
 void rb_rotate(struct rb_node *root, struct rb_node *pivot);
 void rb_insert(struct rb_tree *tree, struct rb_node *node,
                bool (*less)(struct rb_node *, struct rb_node *));

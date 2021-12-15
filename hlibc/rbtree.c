@@ -1,6 +1,6 @@
 #include <hlibc/rbtree.h>
 
-struct rb_node *rb_first(const struct rb_tree *tree)
+struct rb_node *rb_first(struct rb_tree *tree)
 {
     struct rb_node *node = tree->root;
 
@@ -13,7 +13,7 @@ struct rb_node *rb_first(const struct rb_tree *tree)
     return node;
 }
 
-struct rb_node *rb_last(const struct rb_tree *tree)
+struct rb_node *rb_last(struct rb_tree *tree)
 {
     struct rb_node *node = tree->root;
 
@@ -26,7 +26,7 @@ struct rb_node *rb_last(const struct rb_tree *tree)
     return node;
 }
 
-struct rb_node *rb_next(const struct rb_node *node)
+struct rb_node *rb_next(struct rb_node *node)
 {
     if (!node) {
         return NULL;
@@ -42,7 +42,7 @@ struct rb_node *rb_next(const struct rb_node *node)
     }
 }
 
-struct rb_node *rb_prev(const struct rb_node *node)
+struct rb_node *rb_prev(struct rb_node *node)
 {
     if (!node) {
         return NULL;
@@ -58,7 +58,7 @@ struct rb_node *rb_prev(const struct rb_node *node)
     }
 }
 
-struct rb_node *rb_sibling(const struct rb_node *node)
+struct rb_node *rb_sibling(struct rb_node *node)
 {
     return node->parent->left == node ? node->parent->left :
                                         node->parent->right;
@@ -111,18 +111,18 @@ void rb_insert(struct rb_tree *tree, struct rb_node *node,
         } else if ((uncle = rb_sibling(parent))->color == RB_RED) {
             uncle->color = RB_BLACK;
             parent->color = RB_BLACK;
-            grandparent->color == RB_RED;
+            grandparent->color = RB_RED;
             node = grandparent;
         } else {
             if (grandparent->left == parent ? parent->right == node :
                                               parent->left == node) {
                 rb_rotate(parent, node);
                 node = parent;
-                parent = node->parent
+                parent = node->parent;
             }
 
             rb_rotate(grandparent, parent);
-            grandparent->color == RB_RED;
+            grandparent->color = RB_RED;
             parent->color = RB_BLACK;
             return;
         }
@@ -130,41 +130,41 @@ void rb_insert(struct rb_tree *tree, struct rb_node *node,
 }
 
 /* TODO */
-void rb_remove(struct rb_tree *tree, struct rb_node *node)
-{
-    struct rb_node *parent = node->parent;
+// void rb_remove(struct rb_tree *tree, struct rb_node *node)
+// {
+//     struct rb_node *parent = node->parent;
 
-    if (tree->root == node && !node->left && !node->right) {
-        tree->root = NULL;
-        return;
-    }
+//     if (tree->root == node && !node->left && !node->right) {
+//         tree->root = NULL;
+//         return;
+//     }
 
-    if (node->left && node->right) {
-        struct rb_node *next = rb_next(node);
+//     if (node->left && node->right) {
+//         struct rb_node *next = rb_next(node);
 
-        if (node->parent) {
-            if (node->parent->left == node)
-                node->parent->left = next;
-            else
-                node->parent->right = next;
-        }
+//         if (node->parent) {
+//             if (node->parent->left == node)
+//                 node->parent->left = next;
+//             else
+//                 node->parent->right = next;
+//         }
 
-        node->left->parent = next;
-        swap(&node->left, &next->left);
+//         node->left->parent = next;
+//         swap(&node->left, &next->left);
 
-        if (next->right)
-            next->right->parent = node;
+//         if (next->right)
+//             next->right->parent = node;
 
-        if (node->right == next) {
-            next->parent = node->parent;
-            node->parent = next;
-            node->right = next->right;
-            next->right = node;
-        } else {
-            next->parent->left = node;
-            node->right->parent = next;
-            swap(&node->right, &next->right);
-            swap(&node->parent, &next->parent);
-        }
-    }
-}
+//         if (node->right == next) {
+//             next->parent = node->parent;
+//             node->parent = next;
+//             node->right = next->right;
+//             next->right = node;
+//         } else {
+//             next->parent->left = node;
+//             node->right->parent = next;
+//             swap(&node->right, &next->right);
+//             swap(&node->parent, &next->parent);
+//         }
+//     }
+// }
