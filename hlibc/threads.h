@@ -18,7 +18,15 @@
 int nanosleep_full(long nsec, time_t sec);
 
 /*
- * Standard spinlock. Requires c11 atomics.
+ * Requires C11 atomics.
+ *
+ * "I repeat: do not use spinlocks in user space, unless you actually know what
+ * you're doing. And be aware that the likelihood that you know what you are
+ * doing is basically nil."
+ *     - Linus Torvalds
+ *
+ * Anti-Reference:
+ * https://www.realworldtech.com/forum/?threadid=189711&curpostid=189723
  */
 struct spinlock {
     atomic_flag flag;
