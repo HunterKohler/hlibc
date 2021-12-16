@@ -123,7 +123,7 @@ void test_parse_uri()
     };
 
     /* Valid cases */
-    for (int i = 0; i < ARRAY_SIZE(test_cases); i++) {
+    for (int i = 0; i < array_size(test_cases); i++) {
         struct URI uri;
 
         int err = parse_uri(&uri, test_cases[i].str, NULL);
@@ -152,7 +152,7 @@ void test_parse_uri()
     }
 
     /* Invalid cases */
-    for (int i = 0; i < ARRAY_SIZE(invalid); i++) {
+    for (int i = 0; i < array_size(invalid); i++) {
         struct URI uri;
 
         int err = parse_uri(&uri, invalid[i], NULL);
@@ -199,7 +199,7 @@ void test_normalize_path()
           "/abcde/xx%A5xx" },
     };
 
-    for (int i = 0; i < ARRAY_SIZE(test_cases); i++) {
+    for (int i = 0; i < array_size(test_cases); i++) {
         const char *input = test_cases[i][0];
         const char *expected = test_cases[i][1];
         char *path = normalize_path(input);

@@ -174,7 +174,7 @@ char *__to_string_ll(long long n, char *dest, unsigned int base)
         return NULL;
 
     char tmp[CHAR_BIT * sizeof(n) + 2];
-    size_t start = ARRAY_SIZE(tmp) - 1;
+    size_t start = array_size(tmp) - 1;
 
     tmp[start--] = 0;
     for (long long i = n; i; i /= base)
@@ -187,7 +187,7 @@ char *__to_string_ll(long long n, char *dest, unsigned int base)
 
     start += 1;
 
-    size_t size = ARRAY_SIZE(tmp) - start;
+    size_t size = array_size(tmp) - start;
     if (dest || (dest = malloc(size)))
         memcpy(dest, tmp + start, size);
 
@@ -201,7 +201,7 @@ char *__to_string_ull(unsigned long long n, char *dest, unsigned int base)
         return NULL;
 
     char tmp[CHAR_BIT * sizeof(n) + 2];
-    size_t start = ARRAY_SIZE(tmp) - 1;
+    size_t start = array_size(tmp) - 1;
 
     tmp[start--] = 0;
     for (unsigned long long i = n; i; i /= base)
@@ -212,7 +212,7 @@ char *__to_string_ull(unsigned long long n, char *dest, unsigned int base)
 
     start += 1;
 
-    size_t size = ARRAY_SIZE(tmp) - start;
+    size_t size = array_size(tmp) - start;
     if (dest || (dest = malloc(size)))
         memcpy(dest, tmp + start, size);
 

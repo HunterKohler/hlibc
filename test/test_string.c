@@ -59,7 +59,7 @@ void test_hex_decode(struct test_case_encoding *tc)
 
 int main()
 {
-    for (int i = 0; i < ARRAY_SIZE(test_vector); i++) {
+    for (int i = 0; i < array_size(test_vector); i++) {
         test_hex_encode(test_vector + i);
         test_hex_decode(test_vector + i);
         test_b64_encode(test_vector + i);

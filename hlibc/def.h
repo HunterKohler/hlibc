@@ -131,7 +131,7 @@
         (type *)((char *)__ptr - offsetof(type, member)); \
     })
 
-#define ARRAY_SIZE(a)               \
+#define array_size(a)               \
     ({                              \
         static_assert(is_array(a)); \
         sizeof(a) / sizeof((a)[0]); \

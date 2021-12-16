@@ -28,11 +28,11 @@
         exit(1);                                                    \
     } while (0)
 
-#define ARRAY_SIZE(a)                                                      \
+#define array_size(a)                                                      \
     ({                                                                     \
         static_assert(                                                     \
             !__builtin_types_compatable_p(__typeof(a), __typeof(&(a)[0])), \
-            "non-array passed to ARRAY_SIZE()");                           \
+            "non-array passed to array_size()");                           \
         sizeof(a) / sizeof((a)[0]);                                        \
     })
 
@@ -73,7 +73,7 @@ int main()
         fatal("EV_ERROR");
 
     while (true) {
-        int ready = kevent(kq, NULL, 0, eventlist, ARRAY_SIZE(eventlist));
+        int ready = kevent(kq, NULL, 0, eventlist, array_size(eventlist));
         int changes = 0;
 
         if (ready < 1)
@@ -147,7 +147,7 @@ int main()
                                 "Content-Type: text/plain; charset=utf-8\r\n"
                                 "\r\n"
                                 "%s",
-                                ARRAY_SIZE(content), content);
+                                array_size(content), content);
 
                     if (send_length < 0) {
                         fatal("sprintf");

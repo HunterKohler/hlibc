@@ -407,7 +407,7 @@ static inline const char *strerror_name(int code)
 #endif
     };
 
-    if (code < 0 || code >= ARRAY_SIZE(names))
+    if (code < 0 || code >= array_size(names))
         return NULL;
 
     return names[code];
