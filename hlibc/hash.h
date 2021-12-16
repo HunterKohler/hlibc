@@ -9,8 +9,8 @@
 #include <stdint.h>
 #include <hlibc/def.h>
 
-static_assert(__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__);
-static_assert(__CHAR_BIT__ == 8);
+static_assert(LITTLE_ENDIAN);
+static_assert(CHAR_BIT == 8);
 
 /*
  * Small implementation of the x86, 32-bit version of MurmurHash3. Current

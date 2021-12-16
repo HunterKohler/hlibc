@@ -31,10 +31,10 @@ uint32_t murmur_hash_x86_32(const void *key, size_t len, uint32_t seed)
     switch (len & 3) {
     case 3:
         tail_block ^= tail[2] << 16;
-        [[fallthrough]];
+        __fallthrough;
     case 2:
         tail_block ^= tail[1] << 8;
-        [[fallthrough]];
+        __fallthrough;
     case 1:
         tail_block ^= tail[0];
         tail_block = rotl_32(tail_block * MURMUR_C1, 15) * MURMUR_C2;
