@@ -165,10 +165,4 @@ typedef __uint128_t uint128_t;
         *__b = __tmp;                               \
     } while (0)
 
-/*
- * Reference:
- * https://gcc.gnu.org/onlinedocs/gcc/Statement-Attributes.html#Statement-Attributes
- */
-#define __fallthrough __attribute__((fallthrough))
-
 #endif
