@@ -17,17 +17,6 @@ struct array {
 };
 
 /*
- * Static array initializer for elements of `type`. `type` is not evaluated.
- */
-#define ARRAY_INIT_TYPE(type)      \
-    ((struct array){               \
-        .size = 0,                 \
-        .capacity = 0,             \
-        .elem_size = sizeof(type), \
-        .data = NULL,              \
-    })
-
-/*
  * Static initializer for elements of size `elem_size`.
  */
 #define ARRAY_INIT(elem_size)   \
