@@ -370,3 +370,8 @@ int b64_decode(const char *restrict src, void *restrict dest)
 
     return 0;
 }
+
+size_t strlen_safe(const char *str)
+{
+    return !str ? 0 : strlen(str);
+}

@@ -50,6 +50,11 @@ int strcasecmp_safe(const char *a, const char *b);
 int memcmp_safe(const void *a, const void *b, size_t n);
 
 /*
+ * Library `strlen()` with null checking.
+ */
+size_t strlen_safe(const char *str);
+
+/*
  * Copies `n` bytes to new buffer starting at `src`. Returns `NULL` on failure.
  */
 void *memdup(const void *src, size_t n);
