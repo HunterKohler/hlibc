@@ -13,10 +13,8 @@
 size_t regmatch_len(const regmatch_t *match);
 
 /*
- * Allocated a new buffer at `dest`, and copies the regex match `match` from
- * string. `dest` is set to `NULL` for non-matches.
+ * Checks if a regex match, is actually a match.
  */
-int regmatch_text(const char *restrict str, const regmatch_t *match,
-                  char *restrict *dest);
+bool regmatch_valid(const regmatch_t *match);
 
 #endif
