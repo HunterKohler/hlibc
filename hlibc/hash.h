@@ -9,8 +9,9 @@
 #include <stdint.h>
 #include <hlibc/def.h>
 
-static_assert(LITTLE_ENDIAN);
-static_assert(CHAR_BIT == 8);
+#ifndef LITTLE_ENDIAN
+#error "MurmurHash3 has only been implemented for little-endian machines"
+#endif
 
 /*
  * Small implementation of the x86, 32-bit version of MurmurHash3. Current
@@ -20,5 +21,13 @@ static_assert(CHAR_BIT == 8);
  * https://github.com/aappleby/smhasher
  */
 uint32_t murmur_hash_x86_32(const void *key, size_t len, uint32_t seed);
+
+/*
+ * Siphash 2-4
+ *
+ * Reference:
+ * https://www.aumasson.jp/siphash/siphash.pdf
+ */
+uint64_t siphash(const void *input, size_t len, const void *k);
 
 #endif
