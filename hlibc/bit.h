@@ -78,15 +78,100 @@ int bit_at(const void *target, long long i);
  */
 size_t hamming_distance(const void *a, const void *b, size_t n);
 
-uint8_t rotl_8(uint8_t x, size_t n);
-uint8_t rotr_8(uint8_t x, size_t n);
-uint16_t rotl_16(uint16_t x, size_t n);
-uint16_t rotr_16(uint16_t x, size_t n);
-uint32_t rotl_32(uint32_t x, size_t n);
-uint32_t rotr_32(uint32_t x, size_t n);
-uint64_t rotl_64(uint64_t x, size_t n);
-uint64_t rotr_64(uint64_t x, size_t n);
-uint128_t rotl_128(uint128_t x, size_t n);
-uint128_t rotr_128(uint128_t x, size_t n);
+static inline uint8_t rotl8(uint8_t x, size_t n)
+{
+    return (x << n) | (x >> (8 - n));
+}
+
+static inline uint16_t rotl16(uint16_t x, size_t n)
+{
+    return  (x << n) | (x >> (16 - n));
+}
+
+static inline uint32_t rotl32(uint32_t x, size_t n)
+{
+    return (x << n) | (x >> (32 - n));
+}
+
+static inline uint64_t rotl64(uint64_t x, size_t n)
+{
+    return (x << n) | (x >> (64 - n));
+}
+
+static inline uint128_t rotl128(uint128_t x, size_t n)
+{
+    return (x << n) | (x >> (128 - n));
+}
+
+static inline uint8_t rotr8(uint8_t x, size_t n)
+{
+    return (x >> n) | (x << (8 - n));
+}
+
+static inline uint16_t rotr16(uint16_t x, size_t n)
+{
+    return (x >> n) | (x << (16 - n));
+}
+
+static inline uint32_t rotr32(uint32_t x, size_t n)
+{
+    return (x >> n) | (x << (32 - n));
+}
+
+static inline uint64_t rotr64(uint64_t x, size_t n)
+{
+    return (x >> n) | (x << (64 - n));
+}
+
+static inline uint128_t rotr128(uint128_t x, size_t n)
+{
+    return (x >> n) | (x << (128 - n));
+}
+
+#ifdef LITTLE_ENDIAN
+
+#define cpu_to_le128(x) ((uint128_t)(x))
+#define cpu_to_le64(x) ((uint64_t)(x))
+#define cpu_to_le32(x) ((uint32_t)(x))
+#define cpu_to_le16(x) ((uint16_t)(x))
+
+#define cpu_to_be128(x) (bswap128((x)))
+#define cpu_to_be64(x) (bswap64((x)))
+#define cpu_to_be32(x) (bswap32((x)))
+#define cpu_to_be16(x) (bswap16((x)))
+
+#define le128_to_cpu(x) ((uint128_t)(x))
+#define le64_to_cpu(x) ((uint64_t)(x))
+#define le32_to_cpu(x) ((uint32_t)(x))
+#define le16_to_cpu(x) ((uint16_t)(x))
+
+#define be128_to_cpu(x) (bswap128((x)))
+#define be64_to_cpu(x) (bswap64((x)))
+#define be32_to_cpu(x) (bswap32((x)))
+#define be16_to_cpu(x) (bswap16((x)))
+
+#elif BIG_ENDIAN
+
+#define cpu_to_le128(x) (bswap128((x)))
+#define cpu_to_le64(x) (bswap64((x)))
+#define cpu_to_le32(x) (bswap32((x)))
+#define cpu_to_le16(x) (bswap16((x)))
+
+#define cpu_to_be128(x) ((uint128_t)(x))
+#define cpu_to_be64(x) ((uint64_t)(x))
+#define cpu_to_be32(x) ((uint32_t)(x))
+#define cpu_to_be16(x) ((uint16_t)(x))
+
+#define le128_to_cpu(x) (bswap128((x)))
+#define le64_to_cpu(x) (bswap64((x)))
+#define le32_to_cpu(x) (bswap32((x)))
+#define le16_to_cpu(x) (bswap16((x)))
+
+#define be128_to_cpu(x) ((uint128_t)(x))
+#define be64_to_cpu(x) ((uint64_t)(x))
+#define be32_to_cpu(x) ((uint32_t)(x))
+#define be16_to_cpu(x) ((uint16_t)(x))
+
+#endif
 
 #endif
