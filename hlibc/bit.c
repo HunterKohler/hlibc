@@ -4,10 +4,6 @@
 
 #include <hlibc/bit.h>
 
-int bit_at(const void *target, long long i)
-{
-    return (((const char *)target)[i >> 3] >> (7 - (i & 7))) & 1;
-}
 
 size_t hamming_distance(const void *a, const void *b, size_t n)
 {

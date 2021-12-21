@@ -10,6 +10,9 @@
 #include <string.h>
 #include <hlibc/def.h>
 
+#define BITS_PER(type) (CHAR_BIT * sizeof(type))
+#define BITS_TO(bits, type) (((bits) + BITS_PER(type) - 1) / BITS_PER(type))
+
 /*
  * Macros for GCC's builtin ffs (find first signifigant) functions.
  * Reference: https://gcc.gnu.org/onlinedocs/gcc/Other-Builtins.html
@@ -69,9 +72,48 @@
 #define bswap128(x) __builtin_bswap128(x)
 
 /*
- * Get the value of the bit at an offset `i` from `target`.
+ * TODO test for negative indices.
  */
-int bit_at(const void *target, long long i);
+static inline bool bit_test(const void *base, int i)
+{
+    return ((uint8_t *)base)[i >> 3] & (1 << (i % 8));
+}
+
+static inline void bit_set(void *base, int i)
+{
+    ((uint8_t *)base)[i >> 3] |= (1 << (i % 8));
+}
+
+static inline void bit_clear(void *base, int i)
+{
+    ((uint8_t *)base)[i >> 3] &= ~(1 << (i % 8));
+}
+
+static inline void bit_flip(void *base, int i)
+{
+    ((uint8_t *)base)[i >> 3] ^= (1 << (i % 8));
+}
+
+static inline bool bit_test_and_set(void *base, int i)
+{
+    bool old = bit_test(base, i);
+    bit_set(base, i);
+    return old;
+}
+
+static inline bool bit_test_and_clear(void *base, int i)
+{
+    bool old = bit_test(base, i);
+    bit_clear(base, i);
+    return old;
+}
+
+static inline bool bit_test_and_flip(void *base, int i)
+{
+    bool old = bit_test(base, i);
+    bit_clear(base, i);
+    return old;
+}
 
 /*
  * Take hamming distance on arbitrary `n` bytes.
@@ -85,7 +127,7 @@ static inline uint8_t rotl8(uint8_t x, size_t n)
 
 static inline uint16_t rotl16(uint16_t x, size_t n)
 {
-    return  (x << n) | (x >> (16 - n));
+    return (x << n) | (x >> (16 - n));
 }
 
 static inline uint32_t rotl32(uint32_t x, size_t n)
