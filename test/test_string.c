@@ -65,6 +65,4 @@ int main()
         test_b64_encode(test_vector + i);
         test_b64_decode(test_vector + i);
     }
-
-    printf("Success\n");
 }

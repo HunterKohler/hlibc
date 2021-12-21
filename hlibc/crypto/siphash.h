@@ -6,8 +6,11 @@
 #ifndef HLIBC_CRYPTO_SIPHASH_H_
 #define HLIBC_CRYPTO_SIPHASH_H_
 
+#include <hlibc/def.h>
+
 #define SIPHASH_BLOCK_SIZE 8
 #define SIPHASH_KEY_SIZE 16
+
 
 /*
  * SipHash 2-4

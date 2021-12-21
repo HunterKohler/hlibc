@@ -6,8 +6,6 @@
 #ifndef HLIBC_CRYPTO_MURMUR_H_
 #define HLIBC_CRYPTO_MURMUR_H_
 
-#include <stddef.h>
-#include <stdint.h>
 #include <hlibc/def.h>
 
 /*

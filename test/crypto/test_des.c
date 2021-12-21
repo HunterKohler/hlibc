@@ -143,8 +143,6 @@ int main()
     test_des_PC_1();
     test_des_PC_2();
     main_test_vector();
-
-    printf("Success\n");
 }
 
 /*
