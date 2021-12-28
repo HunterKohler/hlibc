@@ -10,6 +10,7 @@
 #include <string.h>
 #include <hlibc/def.h>
 
+#define BIT(pos) (1UL << (pos))
 #define BITS_PER(type) (CHAR_BIT * sizeof(type))
 #define BITS_TO(bits, type) (((bits) + BITS_PER(type) - 1) / BITS_PER(type))
 
