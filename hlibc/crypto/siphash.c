@@ -36,22 +36,16 @@ void siphash(const void *input, size_t len, const void *k, void *out)
     switch (len % 8) {
     case 7:
         last |= (uint64_t)tail[6] << 48;
-        [[fallthrough]];
     case 6:
         last |= (uint64_t)tail[5] << 40;
-        [[fallthrough]];
     case 5:
         last |= (uint64_t)tail[4] << 32;
-        [[fallthrough]];
     case 4:
         last |= (uint64_t)tail[3] << 24;
-        [[fallthrough]];
     case 3:
         last |= (uint64_t)tail[2] << 16;
-        [[fallthrough]];
     case 2:
         last |= (uint64_t)tail[1] << 8;
-        [[fallthrough]];
     case 1:
         last |= (uint64_t)tail[0];
         break;

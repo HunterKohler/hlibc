@@ -9,6 +9,7 @@ CFLAGS := \
 	-Wextra \
 	-Wno-sign-compare \
 	-Wno-override-init \
+	-Wno-fallthrough \
 	-Wno-unused-function
 
 CPPFLAGS := -MD -MP -I./

@@ -130,5 +130,4 @@ static inline bool list_empty(struct list_node *node)
         tmp = list_next_entry(it, member);                 \
          it->member != (node); it = tmp, tmp = list_next_entry(tmp))
 
-
 #endif
