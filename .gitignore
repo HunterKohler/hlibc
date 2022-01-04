@@ -16,6 +16,7 @@ out/
 # Temporary
 temp.*
 tmp.*
+tmp
 
 # Objects
 *.o
