@@ -55,7 +55,7 @@ static inline void *array_at(const struct array *arr, size_t index)
 static inline int array_insert(struct array *arr, size_t pos, const void *vals,
                                size_t n)
 {
-    int err = array_grow(arr, arr->size + n);
+    int err = __array_realloc(arr, arr->size + n);
     if (err)
         return err;
 
