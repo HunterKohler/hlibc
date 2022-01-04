@@ -46,11 +46,7 @@ misc: $(MISC_BIN)
 test: $(TEST_BIN)
 
 run_tests: $(TEST_BIN)
-	@printf "Running all tests:\n"
-	@for i in $(TEST_BIN); do \
-		printf "%s:\n" "$$i"; \
-		$$i; \
-	done
+	@./tools/run_tests $(TEST_BIN)
 
 $(BIN): bin/% : build/%.o $(LIB_ARCHIVE)
 	@mkdir -p $(@D)
