@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <tgmath.h>
+#include <hlibc/bit.h>
 #include <hlibc/string.h>
 
 char *stralloc(size_t n)
@@ -13,33 +14,6 @@ char *stralloc(size_t n)
     if (buf)
         buf[n] = '\0';
     return buf;
-}
-
-char *astrcat(const char *src1, const char *src2)
-{
-    size_t len1 = strlen(src1);
-    size_t len2 = strlen(src2);
-    char *dest = malloc(len1 + len2 + 1);
-
-    if (dest) {
-        memcpy(dest, src1, len1);
-        memcpy(dest + len1, src2, len2 + 1);
-    }
-
-    return dest;
-}
-
-char *substr(const char *src, size_t begin, size_t end)
-{
-    size_t n = begin < end ? end - begin : 0;
-    char *dest = malloc(n + 1);
-
-    if (dest) {
-        memcpy(dest, src + begin, n);
-        dest[n] = 0;
-    }
-
-    return dest;
 }
 
 void *memdup(const void *src, size_t n)
@@ -52,7 +26,7 @@ void *memdup(const void *src, size_t n)
 
 int hex_val(char c)
 {
-    static uint8_t hex_val_table[] = {
+    static char hex_val_table[] = {
         [0 ... 255] = -1, ['0'] = 0,  ['1'] = 1,  ['2'] = 2,  ['3'] = 3,
         ['4'] = 4,        ['5'] = 5,  ['6'] = 6,  ['7'] = 7,  ['8'] = 8,
         ['9'] = 9,        ['a'] = 10, ['b'] = 11, ['c'] = 12, ['d'] = 13,
@@ -61,172 +35,6 @@ int hex_val(char c)
     };
 
     return hex_val_table[(unsigned char)c];
-}
-
-int strcmp_safe(const char *a, const char *b)
-{
-    return a == b ? 0 : a ? b ? strcmp(a, b) : -1 : 1;
-}
-
-int strcasecmp_safe(const char *a, const char *b)
-{
-    return (a == b) ? 0 : a ? b ? strcasecmp(a, b) : -1 : 1;
-}
-
-int memcmp_safe(const void *a, const void *b, size_t n)
-{
-    return (a == b) ? 0 : a ? b ? memcmp(a, b, n) : -1 : 1;
-}
-
-char *strcat_n(const char **src, size_t n)
-{
-    size_t *lens = malloc(n * sizeof(*lens));
-    size_t len = 0;
-
-    if (!lens)
-        return NULL;
-
-    for (int i = 0; i < n; i++) {
-        if (src[i]) {
-            lens[i] = strlen(src[i]);
-            len += lens[i];
-        }
-    }
-
-    char *buf = stralloc(len);
-    if (!buf) {
-        free(lens);
-        return NULL;
-    }
-
-    for (int i = 0; i < n; i++) {
-        if (src[i]) {
-            memcpy(buf, src[i], lens[i]);
-            buf += lens[i];
-        }
-    }
-
-    free(lens);
-    return buf - len;
-}
-
-size_t strtrim(char *str)
-{
-    size_t begin = strspn(str, " \t\n\r\f\v");
-    size_t end = strlen(str);
-
-    while (end && isspace(str[end - 1]))
-        end--;
-
-    size_t size = end - begin;
-
-    memmove(str, str + begin, size);
-    str[size] = 0;
-
-    return size;
-}
-
-char *__to_string_c(char c, char *dest)
-{
-    if (dest || (dest = malloc(2))) {
-        dest[0] = c;
-        dest[1] = 0;
-    }
-
-    return dest;
-}
-
-char *__to_string_b(bool b, char *dest)
-{
-    int len = b ? 5 : 6;
-
-    if (dest || (dest = malloc(len)))
-        memcpy(dest, b ? "true" : "false", len);
-
-    return dest;
-}
-
-char *__to_string_ld(long double d, char *dest)
-{
-    char tmp[350];
-    size_t size = sprintf(tmp, "%Lf", d) + 1;
-
-    if (dest || (dest = malloc(size)))
-        memcpy(dest, tmp, size);
-
-    return dest;
-}
-
-char *__to_string_cld(complex long double d, char *dest)
-{
-    char tmp[700];
-    size_t size = sprintf(tmp, "%Lf + %Lfi", creal(d), cimag(d)) + 1;
-
-    if (dest || (dest = malloc(size)))
-        memcpy(dest, tmp, size);
-
-    return dest;
-}
-
-char *__to_string_ll(long long n, char *dest, unsigned int base)
-{
-    if (!base || base > 36)
-        return NULL;
-
-    char tmp[CHAR_BIT * sizeof(n) + 2];
-    size_t start = array_size(tmp) - 1;
-
-    tmp[start--] = 0;
-    for (long long i = n; i; i /= base)
-        tmp[start--] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"[i % base];
-
-    if (n < 0)
-        tmp[start--] = '-';
-    else if (n == 0)
-        tmp[start--] = '0';
-
-    start += 1;
-
-    size_t size = array_size(tmp) - start;
-    if (dest || (dest = malloc(size)))
-        memcpy(dest, tmp + start, size);
-
-    return dest;
-}
-
-char *__to_string_ull(unsigned long long n, char *dest, unsigned int base)
-{
-    printf("%llu\n", n);
-    if (!base || base > 36)
-        return NULL;
-
-    char tmp[CHAR_BIT * sizeof(n) + 2];
-    size_t start = array_size(tmp) - 1;
-
-    tmp[start--] = 0;
-    for (unsigned long long i = n; i; i /= base)
-        tmp[start--] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"[i % base];
-
-    if (n == 0)
-        tmp[start--] = '0';
-
-    start += 1;
-
-    size_t size = array_size(tmp) - start;
-    if (dest || (dest = malloc(size)))
-        memcpy(dest, tmp + start, size);
-
-    return dest;
-}
-
-size_t hex_encode_size(size_t n)
-{
-    return 2 * n;
-}
-
-size_t hex_decode_size(size_t n)
-{
-    return (n + 1) / 2;
 }
 
 void hex_encode(const void *restrict src, size_t n, char *restrict dest)
@@ -242,37 +50,23 @@ void hex_encode(const void *restrict src, size_t n, char *restrict dest)
     *dest = 0;
 }
 
-int hex_decode(const char *restrict src, void *restrict dest)
+int hex_decode(const char *restrict src, void *restrict dest, size_t size)
 {
-    char *out = dest;
-
-    size_t len = strlen(src);
-    if (len & 1) {
-        if ((*out++ = hex_val(*src++)) < 0)
-            return -1;
-    }
+    int i = 0;
+    int a;
+    int b;
 
     while (*src) {
-        char a = hex_val(*src++);
-        char b = hex_val(*src++);
+        if ((a = hex_val(*src++)) < 0 || (b = hex_val(*src++)) < 0)
+            return EINVAL;
 
-        if (a < 0 || b < 0)
-            return -1;
+        if (i == size)
+            return ENOMEM;
 
-        *out++ = 16 * a + b;
+        ((char *)dest)[i++] = (a << 4) + b;
     }
 
     return 0;
-}
-
-size_t b64_encode_size(size_t n)
-{
-    return ((n + 2) / 3) << 2;
-}
-
-size_t b64_decode_size(const char *src, size_t n)
-{
-    return (n >> 2) * 3 - (src ? (src[n - 1] == '=') + (src[n - 2] == '=') : 0);
 }
 
 void b64_encode(const void *restrict src, size_t n, char *restrict dest)
@@ -281,35 +75,39 @@ void b64_encode(const void *restrict src, size_t n, char *restrict dest)
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
     const uint8_t *in = src;
-    for (const uint8_t *end = in + n - 3; in <= end; in += 3) {
+    const uint8_t *in_last = src + n - 3;
+
+    while(in <= in_last) {
         *dest++ = b64_charset[in[0] >> 2];
-        *dest++ = b64_charset[(in[0] & 0x03) << 4 | in[1] >> 4];
-        *dest++ = b64_charset[(in[1] & 0x0F) << 2 | in[2] >> 6];
+        *dest++ = b64_charset[(in[0] & 0x3) << 4 | in[1] >> 4];
+        *dest++ = b64_charset[(in[1] & 0xF) << 2 | in[2] >> 6];
         *dest++ = b64_charset[in[2] & 0x3F];
+
+        in += 3;
     }
 
     switch (n % 3) {
     case 1:
         *dest++ = b64_charset[in[0] >> 2];
-        *dest++ = b64_charset[(in[0] & 0x03) << 4];
+        *dest++ = b64_charset[(in[0] & 0x3) << 4];
         *dest++ = '=';
         *dest++ = '=';
         break;
     case 2:
         *dest++ = b64_charset[in[0] >> 2];
-        *dest++ = b64_charset[(in[0] & 0x03) << 4 | in[1] >> 4];
-        *dest++ = b64_charset[(in[1] & 0x0F) << 2];
+        *dest++ = b64_charset[(in[0] & 0x3) << 4 | in[1] >> 4];
+        *dest++ = b64_charset[(in[1] & 0xF) << 2];
         *dest++ = '=';
         break;
     }
 
-    *dest = 0;
+    *dest++ = 0;
 }
 
 int b64_val(char c)
 {
-    static const uint8_t b64_table[] = {
-        [0 ... 255] = 64, ['A'] = 0,  ['B'] = 1,  ['C'] = 2,  ['D'] = 3,
+    static const char b64_table[] = {
+        [0 ... 255] = -1, ['A'] = 0,  ['B'] = 1,  ['C'] = 2,  ['D'] = 3,
         ['E'] = 4,        ['F'] = 5,  ['G'] = 6,  ['H'] = 7,  ['I'] = 8,
         ['J'] = 9,        ['K'] = 10, ['L'] = 11, ['M'] = 12, ['N'] = 13,
         ['O'] = 14,       ['P'] = 15, ['Q'] = 16, ['R'] = 17, ['S'] = 18,
@@ -327,51 +125,53 @@ int b64_val(char c)
     return b64_table[(unsigned char)c];
 }
 
-int b64_decode(const char *restrict src, void *restrict dest)
+int b64_decode(const char *restrict src, void *restrict dest, size_t size)
 {
+    int a, b, c, d;
+    int i = 0;
     uint8_t *out = dest;
-    size_t len = strlen(src);
+    uint8_t *out_end = out + size;
 
-    if (len % 4)
-        return -1;
-
-    size_t pad = len > 0 ? (src[len - 1] == '=') + (src[len - 2] == '=') : 0;
-    const char *end = src + len - 3 - pad;
-
-    while (src < end) {
-        uint8_t a, b, c, d;
-
-        if ((a = b64_val(*src++)) > 63 || (b = b64_val(*src++)) > 63 ||
-            (c = b64_val(*src++)) > 63 || (d = b64_val(*src++)) > 63)
-            return -1;
+    while ((a = b64_val(src[i++])) > 0 && (b = b64_val(src[i++])) > 0 &&
+           (c = b64_val(src[i++])) > 0 && (d = b64_val(src[i++])) > 0) {
+        if (out + 2 >= out_end)
+            return ENOMEM;
 
         *out++ = a << 2 | b >> 4;
         *out++ = b << 4 | c >> 2;
-        *out++ = c << 6 | d;
+        *out++ = c << 6 | d >> 0;
     }
 
-    if (pad == 2) {
-        uint8_t a, b;
+    src += --i & ~3;
 
-        if ((a = b64_val(*src++)) > 63 || (b = b64_val(*src++)) > 63)
-            return -1;
+    switch (i % 4) {
+    case 0:
+        return !!src[0] * EINVAL;
+
+    case 1:
+        return EINVAL;
+
+    case 2:
+        if (src[2] && (src[2] != '=' || src[3] != '=' || src[4]))
+            return EINVAL;
+
+        if (out >= out_end)
+            return ENOMEM;
 
         *out++ = a << 2 | b >> 4;
-    } else if (pad == 1) {
-        uint8_t a, b, c;
+        break;
 
-        if ((a = b64_val(*src++)) > 63 || (b = b64_val(*src++)) > 63 ||
-            (c = b64_val(*src++)) > 63)
-            return -1;
+    case 3:
+        if (src[3] && (src[3] != '=' || src[4]))
+            return EINVAL;
+
+        if (out + 1 >= out_end)
+            return ENOMEM;
 
         *out++ = a << 2 | b >> 4;
         *out++ = b << 4 | c >> 2;
+        break;
     }
 
     return 0;
-}
-
-size_t strlen_safe(const char *str)
-{
-    return !str ? 0 : strlen(str);
 }

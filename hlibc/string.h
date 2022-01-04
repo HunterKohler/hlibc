@@ -16,45 +16,6 @@
 char *stralloc(size_t n);
 
 /*
- * Allocates enough memory to store concatenated strings. Returns `NULL` on
- * error.
- */
-char *astrcat(const char *src1, const char *src2);
-
-/*
- * Allocates and returns memory for the concat of `n` strings in an array
- * pointed to by `src`. Will ignore null strings.
- */
-char *strcat_n(const char **src, size_t n);
-
-/*
- * Allocate and copy substring in `src` on `[begin, end)`, or an
- * empty-null-terminated string when `end < begin`.
- */
-char *substr(const char *src, size_t begin, size_t end);
-
-/*
- * Library `strcmp()` with null checking.
- */
-int strcmp_safe(const char *a, const char *b);
-
-/*
- * Compares strings for case-insensitive equality including `NULL` checks.
- * `strcmp()` may cause a segmentation fault if passed `NULL`.
- */
-int strcasecmp_safe(const char *a, const char *b);
-
-/*
- * Library `memcmp()` with null checking.
- */
-int memcmp_safe(const void *a, const void *b, size_t n);
-
-/*
- * Library `strlen()` with null checking.
- */
-size_t strlen_safe(const char *str);
-
-/*
  * Copies `n` bytes to new buffer starting at `src`. Returns `NULL` on failure.
  */
 void *memdup(const void *src, size_t n);
@@ -63,12 +24,6 @@ void *memdup(const void *src, size_t n);
  * Returns hex value of char, or -1 if invalid character.
  */
 int hex_val(char c);
-
-/*
- * Removes leading and trailing whitespace from string in-place. Returns
- * new length.
- */
-size_t strtrim(char *c);
 
 /*
  * Hex-encoded size of `n` bytes of memory.
@@ -81,17 +36,18 @@ size_t hex_encode_size(size_t n);
 size_t hex_decode_size(size_t n);
 
 /*
- * Writes hex representation as a null terminated string  of `n` bytes of
- * memory from `ptr` into `dest`. `dest` should point to a buffer of at least
- * `2 * n + 1` bytes.
+ * Encodes `n` bytes from source into a hex encoded string at `dest`.
  */
 void hex_encode(const void *restrict src, size_t n, char *restrict dest);
 
 /*
- * Writes the values of a hex encoded string `str` to memory at `dest`. `dest`
- * should point to a buffer at least `ceil(strlen(str) / 2.0) + 1` bytes long.
+ * Writes at most `size` hex-decoded bytes from string `src` to `dest`.
+ *
+ * Errors:
+ * `EINVAL` The input was not a valid hex encoded string.
+ * `ENOMEM` The decoded representation of `src` is larger than `size`.
  */
-int hex_decode(const char *restrict src, void *restrict dest);
+int hex_decode(const char *restrict src, void *restrict dest, size_t size);
 
 /*
  * Returns Base 64 value of `c`.
@@ -116,45 +72,16 @@ size_t b64_decode_size(const char *src, size_t n);
 void b64_encode(const void *restrict src, size_t n, char *restrict dest);
 
 /*
- * Writes the binary buffer represented by the Base 64 encoded string `src`
- * to `dest`. `src` must be null terminated. `src` and `dest` may not overlap.
+ * Writes at most `size` bytes of the base64 decoded representation of `src`
+ * to `dest`.
+ *
+ * Allows both correctly padded, and unpadded inputs.
+ *
+ * Errors:
+ * `EINVAL` The input was not a valid base64 encoded string.
+ * `ENOMEM` The decoded representation of `src` is larger than `size`.
  */
-int b64_decode(const char *restrict src, void *restrict dest);
-
-char *__to_string_ll(long long src, char *dest, unsigned int base);
-char *__to_string_ull(unsigned long long src, char *dest, unsigned int base);
-char *__to_string_c(char src, char *dest);
-char *__to_string_b(bool src, char *dest);
-char *__to_string_ld(long double src, char *dest);
-char *__to_string_cld(complex long double src, char *dest);
-
-/*
- * Generic stringification for primitives. 128-bit-wide integer types not
- * supported.
- */
-// clang-format off
-#define to_string(src, dest, ...)             \
-    _Generic((src),                           \
-        signed char: __to_string_ll,          \
-        short: __to_string_ll,                \
-        int: __to_string_ll,                  \
-        long: __to_string_ll,                 \
-        long long: __to_string_ll,            \
-        unsigned char: __to_string_ull,       \
-        unsigned short: __to_string_ull,      \
-        unsigned int: __to_string_ull,        \
-        unsigned long: __to_string_ull,       \
-        unsigned long long: __to_string_ull,  \
-        float: __to_string_ld,                \
-        double: __to_string_ld,               \
-        long double: __to_string_ld,          \
-        complex float: __to_string_cld,       \
-        complex double: __to_string_cld,      \
-        complex long double: __to_string_cld, \
-        char: __to_string_c,                  \
-        bool: __to_string_b                   \
-    )(src, dest, ## __VA_ARGS__)
-// clang-format on
+int b64_decode(const char *restrict src, void *restrict dest, size_t size);
 
 /*
  * Retrieve the name of an `errno` value specified by `code`. If the name is

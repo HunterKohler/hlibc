@@ -180,14 +180,19 @@ typedef unsigned __int128 __uint128;
 typedef __int128_t int128_t;
 typedef __uint128_t uint128_t;
 
-#define swap(a, b)                                  \
-    do {                                            \
+#define swap(a, b)                                 \
+    do {                                           \
         static_assert(types_compatible((a), (b))); \
-        typeof(*a) *__a = (a);                      \
-        typeof(*b) *__b = (b);                      \
-        typeof(*a) __tmp = *__a;                    \
-        *__a = *__b;                                \
-        *__b = __tmp;                               \
+        typeof(*a) *__a = (a);                     \
+        typeof(*b) *__b = (b);                     \
+        typeof(*a) __tmp = *__a;                   \
+        *__a = *__b;                               \
+        *__b = __tmp;                              \
     } while (0)
+
+#define for_each(it, array)                                             \
+    for (typeof(&*(array)) it = (array),                                \
+                           __for_each_end##it = it + array_size(array); \
+         it != __for_each_end##it; it++)
 
 #endif

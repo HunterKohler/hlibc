@@ -25,6 +25,8 @@ AttributeMacros:
 BinPackArguments: true
 BinPackParameters: true
 BreakBeforeBraces: Custom
+ForEachMacros:
+    - for_each
 BraceWrapping:
     AfterClass: false
     AfterControlStatement: false
