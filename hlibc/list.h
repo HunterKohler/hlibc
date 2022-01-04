@@ -17,9 +17,18 @@ struct list_node {
 };
 
 /*
- * Static initializer for `struct list node`.
+ * Static initializer for `struct list_node`.
  */
-#define LIST_INIT(name) ({ .next = &(name), .prev = &(name) })
+#define LIST_NODE_INIT(name) ({ .next = &(name), .prev = &(name) })
+
+/*
+ * Dynamic initializer for `struct list node`.
+ */
+static inline void list_node_init(struct list_node *node)
+{
+    node->next = node;
+    node->prev = node;
+}
 
 static inline void __list_add(struct list_node *item, struct list_node *prev,
                               struct list_node *next)
@@ -30,19 +39,10 @@ static inline void __list_add(struct list_node *item, struct list_node *prev,
     item->prev = prev;
 }
 
-static inline void __list_del(struct list_node *prev, struct list_node *next)
+static inline void __list_rm(struct list_node *prev, struct list_node *next)
 {
     prev->next = next;
     next->prev = prev;
-}
-
-/*
- * Dynamic initializer for `struct list node`.
- */
-static inline void list_node_init(struct list_node *node)
-{
-    node->next = node;
-    node->prev = node;
 }
 
 static inline void list_add(struct list_node *item, struct list_node *node)
@@ -55,21 +55,21 @@ static inline void list_add_tail(struct list_node *item, struct list_node *node)
     __list_add(item, node->prev, node);
 }
 
-static inline void list_del(struct list_node *node)
+static inline void list_rm(struct list_node *node)
 {
-    __list_del(node->prev, node->next);
+    __list_rm(node->prev, node->next);
 }
 
 static inline void list_move(struct list_node *item, struct list_node *node)
 {
-    list_del(item);
+    list_rm(item);
     list_add(item, node);
 }
 
 static inline void list_move_tail(struct list_node *item,
                                   struct list_node *node)
 {
-    list_del(item);
+    list_rm(item);
     list_add_tail(node);
 }
 
@@ -86,7 +86,7 @@ static inline void list_swap(struct list_node *a, struct list_node *b)
     struct list_node *tmp = a->prev;
 
     if (a != b) {
-        list_del(a);
+        list_rm(a);
         list_replace(b, a);
         list_add(tmp, b);
     }
