@@ -34,7 +34,7 @@ BIN := $(sort $(MISC_BIN) $(TEST_BIN))
 
 .PHONY: all clean misc test run_tests
 
-all: $(MISC_BIN) $(TEST_BIN) $(LIB_ARCHIVE)
+all: $(LIB_ARCHIVE) $(TEST_BIN) $(MISC_BIN)
 
 clean:
 	@rm -rf bin build
