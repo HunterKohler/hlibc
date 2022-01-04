@@ -9,7 +9,7 @@ CFLAGS := \
 	-Wextra \
 	-Wno-sign-compare \
 	-Wno-override-init \
-	-Wno-fallthrough \
+	-Wno-implicit-fallthrough \
 	-Wno-unused-function
 
 CPPFLAGS := -MD -MP -I./
@@ -38,6 +38,8 @@ all: $(MISC_BIN) $(TEST_BIN) $(LIB_ARCHIVE)
 
 clean:
 	@rm -rf bin build
+
+remake: | clean all
 
 lib: $(LIB_ARCHIVE)
 misc: $(MISC_BIN)
