@@ -62,7 +62,7 @@ char *json_strerror(int err);
  * On success, `json_next_token` returns `0`, otherwise, it returns some
  * `enum json_error` as an integer.
  */
-int json_next_token(const char *str, struct json_token *token);
+int json_next_token(char *str, struct json_token *token);
 
 // enum json_type {
 //     JSON_ARRAY,

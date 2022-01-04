@@ -5,7 +5,7 @@
 #include <ctype.h>
 #include <hlibc/json.h>
 
-int json_next_token(const char *str, struct json_token *token)
+int json_next_token(char *str, struct json_token *token)
 {
     while (*str == ' ' || *str == '\t' || *str == '\n' || *str == '\r')
         str++;
