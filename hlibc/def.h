@@ -14,6 +14,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdnoreturn.h>
 #include <complex.h>
 #include <errno.h>
@@ -137,6 +138,9 @@
         sizeof(a) / sizeof((a)[0]); \
     })
 
+#undef LITTLE_ENDIAN
+#undef BIG_ENDIAN
+
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 #define LITTLE_ENDIAN
 #elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
@@ -145,6 +149,27 @@
 #error There may be a byte order issue. Try fixing macros. Do not try to use \
        a middle endian machine because I will rain hellfire upon you.
 #endif
+
+#ifndef DEBUG
+#define DEBUG 0
+#endif
+
+#define debug_printf(fmt, ...)                              \
+    do {                                                    \
+        if (DEBUG) {                                        \
+            flockfile(stdout);                              \
+            fprintf(stdout, "%s:%d: ", __FILE__, __LINE__); \
+            fprintf(stdout, fmt, __VA_ARGS__);              \
+            fprintf(stdout, "\n");                          \
+            fflush(stdout);                                 \
+            funlockfile(stdout);                            \
+        }                                                   \
+    } while (0)
+
+static inline void *zalloc(size_t size)
+{
+    return calloc(1, size);
+}
 
 /*
  * Reference:
@@ -157,7 +182,7 @@ typedef __uint128_t uint128_t;
 
 #define swap(a, b)                                  \
     do {                                            \
-        _Static_assert(types_compatible((a), (b))); \
+        static_assert(types_compatible((a), (b))); \
         typeof(*a) *__a = (a);                      \
         typeof(*b) *__b = (b);                      \
         typeof(*a) __tmp = *__a;                    \
