@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2021 Hunter Kohler <jhunterkohler@gmail.com>
+ */
+
 #include <hlibc/string.h>
 
 #include <assert.h>
