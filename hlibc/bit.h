@@ -112,7 +112,7 @@ static inline bool bit_test_and_clear(void *base, int i)
 static inline bool bit_test_and_flip(void *base, int i)
 {
     bool old = bit_test(base, i);
-    bit_clear(base, i);
+    bit_flip(base, i);
     return old;
 }
 
@@ -169,6 +169,17 @@ static inline uint64_t rotr64(uint64_t x, size_t n)
 static inline uint128_t rotr128(uint128_t x, size_t n)
 {
     return (x >> n) | (x << (128 - n));
+}
+
+static inline size_t hamming_dist(const void *a, const void *b, size_t n)
+{
+    const uint8_t *x = a;
+    const uint8_t *y = b;
+
+    size_t dist = 0;
+    for(int i = 0; i < n; i++)
+        dist += __builtin_popcount(x[i] ^ y[i]);
+    return dist;
 }
 
 #ifdef LITTLE_ENDIAN
