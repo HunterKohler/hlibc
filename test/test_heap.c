@@ -76,6 +76,4 @@ int main()
     test_heapify();
     test_heap_add();
     test_heap_pop();
-
-    printf("done\n");
 }

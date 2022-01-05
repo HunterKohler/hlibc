@@ -9,7 +9,7 @@
 #define RIGHT(n) (((i) << 1) + 2)
 
 static void *heap_up(size_t target, void *base, size_t size,
-                     bool (*less)(void *, void *))
+                     bool (*less)(const void *, const void *))
 {
     uint8_t *begin = base;
     size_t i;
@@ -28,7 +28,7 @@ static void *heap_up(size_t target, void *base, size_t size,
 }
 
 static void heap_down(size_t target, void *base, size_t n, size_t size,
-                      bool (*less)(void *, void *))
+                      bool (*less)(const void *, const void *))
 {
     uint8_t *begin = base;
     uint8_t *end = base + n * size;
@@ -64,7 +64,8 @@ static void heap_down(size_t target, void *base, size_t n, size_t size,
     }
 }
 
-void heapify(void *base, size_t n, size_t size, bool (*less)(void *, void *))
+void heapify(void *base, size_t n, size_t size,
+             bool (*less)(const void *, const void *))
 {
     for (int i = 0; i < n; i++) {
         heap_up(i, base, size, less);
@@ -72,7 +73,7 @@ void heapify(void *base, size_t n, size_t size, bool (*less)(void *, void *))
 }
 
 void *heap_add(void *elem, void *base, size_t n, size_t size,
-               bool (*less)(void *, void *))
+               bool (*less)(const void *, const void *))
 {
     uint8_t *begin = base;
     memcpy(begin + n * size, elem, size);
@@ -80,7 +81,7 @@ void *heap_add(void *elem, void *base, size_t n, size_t size,
 }
 
 void heap_pop(void *copy, void *base, size_t n, size_t size,
-              bool (*less)(void *, void *))
+              bool (*less)(const void *, const void *))
 {
     uint8_t *begin = base;
 
@@ -97,7 +98,8 @@ void heap_pop(void *copy, void *base, size_t n, size_t size,
     heap_down(0, base, n, size, less);
 }
 
-bool is_minheap(void *base, size_t n, size_t size, bool (*less)(void *, void *))
+bool is_minheap(void *base, size_t n, size_t size,
+                bool (*less)(const void *, const void *))
 {
     uint8_t *begin = base;
     uint8_t *end = base + n * size;
