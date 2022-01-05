@@ -1,5 +1,7 @@
 SHELL = bash
 
+RUN_BINS := ./tools/run_bins.py
+
 CFLAGS := \
 	-g \
 	-O0 \
@@ -46,7 +48,10 @@ misc: $(MISC_BIN)
 test: $(TEST_BIN)
 
 run_tests: $(TEST_BIN)
-	@./tools/run_tests $(TEST_BIN)
+	@$(RUN_BINS) $(TEST_BIN)
+
+run_misc: $(MISC_BIN)
+	@$(RUN_BINS) $(MISC_BIN)
 
 $(BIN): bin/% : build/%.o $(LIB_ARCHIVE)
 	@mkdir -p $(@D)
