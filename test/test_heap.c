@@ -4,9 +4,11 @@
 #include <assert.h>
 #include <hlibc/heap.h>
 
-bool less_int(void *a, void *b)
+bool less_int(const void *a, const void *b)
 {
-    return *((int *)a) < *((int *)b);
+    const int *x = a;
+    const int *y = b;
+    return *x < *y;
 }
 
 void test_heapify()
