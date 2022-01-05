@@ -1,11 +1,10 @@
 /*
- * Copyright (C) 2021 Hunter Kohler <jhunterkohler@gmail.com>
+ * Copyright (C) 2021-2022 Hunter Kohler <jhunterkohler@gmail.com>
  */
 
 #ifndef HLIBC_STRING_H_
 #define HLIBC_STRING_H_
 
-#include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 #include <hlibc/def.h>
@@ -19,6 +18,16 @@ char *stralloc(size_t n);
  * Copies `n` bytes to new buffer starting at `src`. Returns `NULL` on failure.
  */
 void *memdup(const void *src, size_t n);
+
+/*
+ * Swaps `n` bytes between `a` and `b`.
+ *
+ * Notes:
+ * Compiling with sse/sse2 or avx/avx2 and level 3 optimization will vectorize
+ * the loop, and make it as fast (if not faster) as a partially unrolled loop,
+ * and faster than copying to a local buffer (static storage or not).
+ */
+void memswap(void *restrict a, void *restrict b, size_t n);
 
 /*
  * Returns hex value of char, or -1 if invalid character.

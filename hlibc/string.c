@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Hunter Kohler <jhunterkohler@gmail.com>
+ * Copyright (C) 2021-2022 Hunter Kohler <jhunterkohler@gmail.com>
  */
 
 #include <stdlib.h>
@@ -22,6 +22,18 @@ void *memdup(const void *src, size_t n)
     if (ret)
         memcpy(ret, src, n);
     return ret;
+}
+
+void memswap(void *restrict a, void *restrict b, size_t n)
+{
+    uint8_t *x = a;
+    uint8_t *y = b;
+
+    for (int i = 0; i < n; i++) {
+        uint8_t tmp = x[i];
+        x[i] = y[i];
+        y[i] = tmp;
+    }
 }
 
 int hex_val(char c)
@@ -77,7 +89,7 @@ void b64_encode(const void *restrict src, size_t n, char *restrict dest)
     const uint8_t *in = src;
     const uint8_t *in_last = src + n - 3;
 
-    while(in <= in_last) {
+    while (in <= in_last) {
         *dest++ = b64_charset[in[0] >> 2];
         *dest++ = b64_charset[(in[0] & 0x3) << 4 | in[1] >> 4];
         *dest++ = b64_charset[(in[1] & 0xF) << 2 | in[2] >> 6];
@@ -132,8 +144,8 @@ int b64_decode(const char *restrict src, void *restrict dest, size_t size)
     uint8_t *out = dest;
     uint8_t *out_end = out + size;
 
-    while ((a = b64_val(src[i++])) > 0 && (b = b64_val(src[i++])) > 0 &&
-           (c = b64_val(src[i++])) > 0 && (d = b64_val(src[i++])) > 0) {
+    while ((a = b64_val(src[i++])) >= 0 && (b = b64_val(src[i++])) >= 0 &&
+           (c = b64_val(src[i++])) >= 0 && (d = b64_val(src[i++])) >= 0) {
         if (out + 2 >= out_end)
             return ENOMEM;
 
