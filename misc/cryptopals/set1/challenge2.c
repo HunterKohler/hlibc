@@ -11,7 +11,7 @@ int main()
     const char key[] = "686974207468652062756C6C277320657965";
     const char expected[] = "746865206B696420646F6E277420706C6179";
 
-    size_t n = strlen(hex);
+    size_t n = strlen(hex) / 2;
 
     char x[100];
     char y[100];
@@ -26,6 +26,4 @@ int main()
 
     hex_encode(xor_out, n, encoded);
     assert(!strcmp(expected, encoded));
-
-    printf("Success\n");
 }

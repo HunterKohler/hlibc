@@ -17,9 +17,7 @@ int main()
     char base64_out[100] = { 0 };
 
     hex_decode(hex, hex_out, 100);
-    b64_encode(hex, (array_size(hex) - 1) / 2, base64_out);
+    b64_encode(hex_out, (array_size(hex) - 1) / 2, base64_out);
 
     assert(!strcmp(base64_out, base64));
-
-    printf("Success\n");
 }
