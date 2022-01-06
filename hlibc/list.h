@@ -19,7 +19,8 @@ struct list_node {
 /*
  * Static initializer for `struct list_node`.
  */
-#define LIST_NODE_INIT(name) ({ .next = &(name), .prev = &(name) })
+#define LIST_NODE_INIT(name) \
+    ((struct list_node){ .next = &(name), .prev = &(name) })
 
 /*
  * Dynamic initializer for `struct list node`.
@@ -70,7 +71,7 @@ static inline void list_move_tail(struct list_node *item,
                                   struct list_node *node)
 {
     list_rm(item);
-    list_add_tail(node);
+    list_add_tail(item, node);
 }
 
 static inline void list_replace(struct list_node *old, struct list_node *item)
@@ -107,7 +108,7 @@ static inline bool list_empty(struct list_node *node)
     return node->next == node;
 }
 
-#define list_entry(node, type, member) container_of(node, type, member);
+#define list_entry(node, type, member) container_of(node, type, member)
 
 #define list_first_entry(node, type, member) \
     list_entry((node)->next, type, member)
@@ -116,18 +117,18 @@ static inline bool list_empty(struct list_node *node)
     list_entry((node)->prev, type, member)
 
 #define list_next_entry(entry, member) \
-    list_entry((entry)->member->next, typeof(*(entry)), member)
+    list_entry((entry)->member.next, typeof(*(entry)), member)
 
 #define list_prev_entry(entry, member) \
-    list_entry((entry)->member->prev, typeof(*(entry)), member)
+    list_entry((entry)->member.prev, typeof(*(entry)), member)
 
 #define list_for_each_entry(it, node, member)              \
     for (it = list_first_entry(node, typeof(*it), member); \
-         it->member != (node); it = list_next_entry(it, member))
+         &it->member != (node); it = list_next_entry(it, member))
 
 #define list_for_each_entry_safe(it, tmp, head, member)    \
     for (it = list_first_entry(node, typeof(*it), member), \
         tmp = list_next_entry(it, member);                 \
-         it->member != (node); it = tmp, tmp = list_next_entry(tmp))
+         &it->member != (node); it = tmp, tmp = list_next_entry(tmp))
 
 #endif
