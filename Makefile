@@ -3,21 +3,27 @@ SHELL = bash
 RUN_BINS := ./tools/run_bins.py
 
 CFLAGS := \
-	-g \
-	-O0 \
 	-std=c11 \
-	-fanalyzer \
 	-Wall \
 	-Wextra \
 	-Wno-sign-compare \
 	-Wno-override-init \
 	-Wno-implicit-fallthrough \
-	-Wno-unused-function
+	-Wno-unused-function \
+	-fanalyzer
 
 CPPFLAGS := -MD -MP -I./
-
 LDFLAGS :=
 LDLIBS := -pthread -lm
+
+DEBUG ?= 1
+
+ifeq ($(DEBUG), 1)
+	CFLAGS += -g -O0 -coverage
+	LDFLAGS += -coverage
+else
+	CFLAGS += -O3
+endif
 
 LIB_ARCHIVE := build/hlibc.a
 
@@ -62,6 +68,6 @@ $(OBJ): build/%.o : %.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 $(LIB_ARCHIVE): $(LIB_OBJ)
-	ar -rcs $@ $^
+	$(AR) -rcs $@ $^
 
 -include $(shell find build -name *.d 2>/dev/null)
