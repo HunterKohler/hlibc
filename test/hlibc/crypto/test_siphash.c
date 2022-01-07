@@ -92,7 +92,7 @@ void test_siphash()
     }
 }
 
-int main()
-{
-    test_siphash();
-}
+// int main()
+// {
+//     test_siphash();
+// }

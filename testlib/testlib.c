@@ -2,7 +2,7 @@
 #include <setjmp.h>
 #include <hlibc/list.h>
 #include <hlibc/math.h>
-#include "testlib.h"
+#include <testlib/testlib.h>
 
 struct list_node testlib_groups = LIST_NODE_INIT(testlib_groups);
 struct list_node testlib_tests = LIST_NODE_INIT(testlib_tests);
@@ -168,6 +168,7 @@ noreturn void testlib_run(struct testlib_options *opts,
                           struct testlib_test **tests, size_t test_count,
                           struct testlib_group **groups, size_t group_count)
 {
+    bool fails = false;
     struct testlib_group *group;
     struct list_node *group_instances =
         testlib_malloc(sizeof(*group_instances));
@@ -198,6 +199,7 @@ noreturn void testlib_run(struct testlib_options *opts,
 
             if (setjmp(testlib_fail_jmp)) {
                 struct testlib_fail *fail = testlib_active_test->fail;
+                fails = true;
 
                 printf("%s failed\n", testlib_active_test->test->name);
                 printf("%s:%zu:\n", fail->location.file, fail->location.line);
@@ -218,7 +220,7 @@ noreturn void testlib_run(struct testlib_options *opts,
         }
     }
 
-    exit(0);
+    exit(fails);
 }
 #pragma GCC diagnostic pop
 

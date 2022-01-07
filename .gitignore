@@ -58,6 +58,10 @@ clover.xml
 coverage/
 lcov-report/
 *.lcov
+*.gcno
+*.gcda
+*.gcov
+*.info
 
 # Environment
 .env

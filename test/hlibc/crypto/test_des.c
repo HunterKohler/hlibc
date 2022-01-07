@@ -132,18 +132,18 @@ void main_test_vector()
     }
 }
 
-int main()
-{
-    test_des_IP();
-    test_des_IP_inv();
-    test_des_E();
-    test_des_P();
-    test_des_S();
-    test_des_left_shift();
-    test_des_PC_1();
-    test_des_PC_2();
-    main_test_vector();
-}
+// int main()
+// {
+//     test_des_IP();
+//     test_des_IP_inv();
+//     test_des_E();
+//     test_des_P();
+//     test_des_S();
+//     test_des_left_shift();
+//     test_des_PC_1();
+//     test_des_PC_2();
+//     main_test_vector();
+// }
 
 /*
  * Test vectors for DES Electronic Code Book (ECB) implementation, derived from:

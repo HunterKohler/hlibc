@@ -73,9 +73,9 @@ void test_heap_pop()
     }
 }
 
-int main()
-{
-    test_heapify();
-    test_heap_add();
-    test_heap_pop();
-}
+// int main()
+// {
+//     test_heapify();
+//     test_heap_add();
+//     test_heap_pop();
+// }

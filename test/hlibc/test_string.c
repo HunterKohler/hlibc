@@ -182,10 +182,10 @@ void test_hex_decode()
     }
 }
 
-int main()
-{
-    test_hex_encode();
-    test_hex_decode();
-    test_b64_encode();
-    test_b64_decode();
-}
+// int main()
+// {
+//     test_hex_encode();
+//     test_hex_decode();
+//     test_b64_encode();
+//     test_b64_decode();
+// }

@@ -89,7 +89,7 @@ static inline void list_swap(struct list_node *a, struct list_node *b)
     if (a != b) {
         list_rm(a);
         list_replace(b, a);
-        list_add(tmp, b);
+        list_add(b, tmp);
     }
 }
 

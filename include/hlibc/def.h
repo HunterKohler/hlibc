@@ -150,6 +150,13 @@
        a middle endian machine because I will rain hellfire upon you.
 #endif
 
+/*
+ * Reference:
+ * https://gcc.gnu.org/onlinedocs/gcc/Other-Builtins.html
+ */
+#define likely(x) __builtin_expect(!!(x), 1)
+#define unlikely(x) __builtin_expect(!!(x), 0)
+
 #ifndef DEBUG
 #define DEBUG 0
 #endif

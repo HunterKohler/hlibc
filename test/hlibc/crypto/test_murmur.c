@@ -45,7 +45,7 @@ void test_murmurhash3_x86_32()
     }
 }
 
-int main()
-{
-    test_murmurhash3_x86_32();
-}
+// int main()
+// {
+//     test_murmurhash3_x86_32();
+// }

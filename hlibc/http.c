@@ -2,451 +2,129 @@
  * Copyright (C) 2021 Hunter Kohler <jhunterkohler@gmail.com>
  */
 
-#include <stdlib.h>
 #include <ctype.h>
-#include <regex.h>
-#include <pthread.h>
-#include <hlibc/def.h>
 #include <hlibc/string.h>
-#include <hlibc/regex.h>
 #include <hlibc/http.h>
 
-regex_t re_uri;
-regex_t re_ip4;
-regex_t re_hostname;
-
-static void http_module_init_routine()
+/*
+ * tchar = "!" / "#" / "$" / "%" / "&" / "'" / "*" / "+" / "-" / "." /
+ *         "^" / "_" / "`" / "|" / "~" / DIGIT / ALPHA
+ */
+static bool is_tchar(char c)
 {
-    regcomp(&re_uri,
-            "^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?$",
-            REG_EXTENDED);
-    regcomp(
-        &re_ip4,
-        "^((25[0-5]|2[0-4]\\d|1?\\d{1,2})\\.){3}(25[0-5]|2[0-4]\\d|1?\\d{1,2})$",
-        REG_EXTENDED);
+    return isalnum(c) || strchr("!#$%&'*+-.^_`|~", c);
 }
 
-static void http_module_init()
+/*
+ * reason-phrase  = *( HTAB / SP / VCHAR / obs-text )
+ */
+static bool is_reason_char(char c)
 {
-    static pthread_once_t once = PTHREAD_ONCE_INIT;
-    pthread_once(&once, http_module_init_routine);
+    unsigned char v = c;
+    return v == 0x9 || (v >= 0x20 && v <= 0x7E) || (v >= 0x80);
 }
 
-static bool is_unreserved(char c)
+char *find_eol(const char *ptr)
 {
-    return isalnum(c) || c == '-' || c == '.' || c == '_' || c == '~';
+    return strstr(ptr, "\r\n");
 }
 
-static int is_percent_encoded(const char *str)
-{
-    return str[0] == '%' && isxdigit(str[1]) && isxdigit(str[2]);
-}
+enum http_msg_type {
+    HTTP_REQUEST,
+    HTTP_RESPONSE,
+};
 
-bool uri_equal(const struct URI *a, const struct URI *b)
-{
-    return a == b ||
-           (a && b && !strcmp_safe(a->scheme, b->scheme) &&
-            !strcmp_safe(a->host, b->host) &&
-            !strcmp_safe(a->userinfo, b->userinfo) &&
-            !strcmp_safe(a->path, b->path) &&
-            !strcmp_safe(a->query, b->query) &&
-            !strcmp_safe(a->fragment, b->fragment) && a->port == b->port);
-}
+struct http_msg {
+    char *method;
+    char *reason;
 
-char *uri_repr(const struct URI *uri)
-{
-    if (!uri)
-        return strdup("NULL");
+    int status;
+    int major;
+    int minor;
 
-    char *ret;
-    asprintf(&ret,
-             "(struct URI) {\n"
-             "    scheme: %s\n"
-             "    userinfo: %s\n"
-             "    host: %s\n"
-             "    port: %u\n"
-             "    path: %s\n"
-             "    query: %s\n"
-             "    fragment: %s\n"
-             "}",
-             uri->scheme, uri->userinfo, uri->host, uri->port, uri->path,
-             uri->query, uri->fragment);
-    return ret;
-}
+    enum http_msg_type type;
+};
 
-void destroy_uri(struct URI *uri)
-{
-    free(uri->scheme);
-    free(uri->host);
-    free(uri->path);
-    free(uri->query);
-    free(uri->fragment);
-    free(uri->userinfo);
-    memset(uri, 0, sizeof(*uri));
-}
-
-int normalize_uri(struct URI *uri)
-{
-    return 0;
-}
-
-int normalize_scheme(char *scheme)
-{
-    if (!isalpha(*scheme))
-        return EINVAL;
-
-    for (char *it = scheme; *it; it++) {
-        if (!isalnum(*it) && !strchr("+-.", *it))
-            return EINVAL;
-        *it = tolower(*it);
-    }
-
-    return 0;
-}
-
-int normalize_hostname(char *hostname)
-{
-    if (!isalnum(*hostname))
-        return EINVAL;
-
-    char *it = hostname + 1;
-    size_t len = 1;
-    size_t seglen = 1;
-
-    while (*it) {
-        *it = tolower(*it);
-        if (++seglen > 63 || ++len > 253 ||
-            (!isalnum(*it) &&
-             !(it[0] == '-' && isalnum(it[-1]) && isalnum(it[1]))))
-            return EINVAL;
-    }
-
-    return 0;
-}
-
-int parse_port(const char *str, uint16_t *dest, size_t *len)
-{
-    if (!str || !isdigit(str[0]))
-        return EINVAL;
-
-    uint32_t val = 0;
-    size_t pos = 0;
-
-    while (isdigit(str[pos]) && pos < 5)
-        val += str[pos++] - '0';
-
-    if (isdigit(str[pos]) || val >= 1 << 16)
-        return EOVERFLOW;
-
-    if (dest)
-        *dest = val;
-    if (len)
-        *len = pos;
-
-    return 0;
-}
-
-int parse_uri(struct URI *restrict uri, const char *str,
-              const struct URI *restrict base)
-{
-    http_module_init();
-
-    regmatch_t matches[10];
-    char *scheme = NULL;
-    char *authority = NULL;
-    char *path = NULL;
-    char *query = NULL;
-    char *fragment = NULL;
-
-    int err;
-
-    if ((err = regexec(&re_uri, str, ARRAY_SIZE(matches), matches, 0)) ||
-        (err = regmatch_text(str, &matches[2], &scheme)) ||
-        (err = regmatch_text(str, &matches[4], &authority)) ||
-        (err = regmatch_text(str, &matches[5], &path)) ||
-        (err = regmatch_text(str, &matches[7], &query)) ||
-        (err = regmatch_text(str, &matches[9], &fragment))) {
-        goto error;
-    }
-
-    // if (scheme) {
-    //     if (!valid_scheme(scheme))
-    //         goto error_invalid;
-    // } else {
-    //     if (!base) {
-    //         goto error_invalid;
-    //     } else if (!(scheme = strdup(base->scheme))) {
-    //         goto error_memory;
-    //     } else if (!authority) {
-    //         if (!(authority = strdup(base->authority)))
-    //             goto error_memory;
-
-    //         if (!path[0]) {
-    //             free(path);
-    //             if (!(path = strdup(base->path)) ||
-    //                 (!query && !(query = strdup(base->query)))) {
-    //                 goto error_memory;
-    //             }
-    //         } else if (path[0] != '/') {
-    //             size_t base_len = strlen(base->path);
-    //             size_t path_len = strlen(path);
-
-    //             if (base_len) {
-    //                 while (base_len && base->path[base_len - 1] != '/')
-    //                     base_len--;
-
-    //                 char *mem = malloc(base_len + path_len + 1);
-    //                 memcpy(mem, base->path, base_len);
-    //                 memcpy(mem + base_len, path_len);
-    //                 mem[base_len + path_len] = 0;
-    //             } else {
-    //                 char *mem = malloc(path_len + 2);
-    //                 if (!mem)
-    //                     goto error_memory;
-    //                 mem[0] = '/';
-    //                 memcpy(mem + 1, path, path_len + 1);
-    //                 free(path);
-    //             }
-    //         }
-    //     }
-    // }
-
-error_invalid:
-    err = EINVAL;
-    goto error;
-error_memory:
-    err = ENOMEM;
-    goto error;
-error:
-    destroy_uri(uri);
-    return err ? err : -1;
-}
-
-// memset(uri, 0, sizeof(*uri));
-
-// if (regmatch_len(match_scheme)) {
-//     size_t start = match_scheme->rm_so;
-//     size_t len = match_scheme->rm_eo - start;
-//     char *scheme = stralloc(len);
-//     uri->scheme = scheme;
-
-//     if (!scheme)
-//         goto error_memory;
-
-//     if (!isalpha(str[start]))
-//         goto error_invalid;
-
-//     for (int i = 0; i < len; i++) {
-//         char c = str[start + i];
-//         if (isalnum(c) || strchr("+-.", c))
-//             scheme[i] = tolower(c);
-//         else
-//             goto error_invalid;
-//     }
+// int http_parse_version(struct http_msg *msg, const char *src)
+// {
+//     if (src[0] != 'H' || src[1] != 'T' || src[2] != 'T' || src[3] != 'P' ||
+//         src[4] != '/' || !isdigit(src[5]) || src[6] != '.' || !isdigit(src[7]))
+//         return EINVAL;
+//     msg->major == src[5] - '0';
+//     msg->minor == src[7] - '0';
+//     return 0;
 // }
 
-// if (regmatch_len(match_authority)) {
-//     size_t start = match_authority->rm_so;
-//     size_t len = 0;
+// int http_parse_status(struct http_msg *msg, const char *src)
+// {
+//     if(!isdigit(src[0]) || !isdigit(src[1]) || !isdigit(src[2]))
+//         return EINVAL;
+//     msg->status = 100 * (src[0] - '0') + 10 * (src[1] - '0') + (src[2] - '0');
+//     return 0;
+// }
 
-//     while (isalnum(str[start + len]) ||
-//            strchr("-._~:!$&'()*+,;=", str[start + len]) ||
-//            is_percent_encoded(str + start + len))
-//         len++;
+// int http_parse_startline(struct http_msg *msg, const char *src, size_t *dist)
+// {
+//     const char *pos = src;
 
-//     if (str[start + len] == '@') {
-//         if (len > 0) {
-//             if (!(uri->userinfo = memdup(str + start, len + 1)))
-//                 goto error_memory;
+//     if (http_parse_version(msg, src)) {
+//         const char *sp = pos + 8
 
-//             uri->userinfo[len] = 0;
-//         }
+//         msg->type = HTTP_RESPONSE;
+//         pos += 8;
 
-//         start += len + 1;
-//     }
+//         if(pos[0] != ' ')
+//             goto error_inval;
 
-//     len = 0;
-//     if (str[start] == '[') {
-//         while (isxdigit(str[start + len]) || strchr(":.]", str[start + len]))
-//             len++;
+//         pos += 1;
 
-//         if (str[start + len - 1] != ']')
-//             goto error_invalid;
+//         if(http_parse_status(msg))
 
-//         uri->host = memdup(str + start, len + 1);
-//         if (!uri->host)
-//             goto error_memory;
+//         if(*pos[0] != ' ')
 
-//         uri->host[len] = 0;
-//         uri->host_type = URI_HOST_IP6;
-//         start += len;
-//         len = 0;
+//         if(*pos[0] != ' ' || http_parse_status(msg, pos + 1) || pos[4] != ' ')
+//             goto error_inval;
+
+//         pos += 5;
+//         msg->status =
+//             100 * (pos[4] - '0') + 10 * (pos[5] - '0') + (pos[6] - '0');
+
+//         pos += 8;
+//         msg->reason = pos;
+
+//         while (is_reason_char(pos[0]))
+//             pos++;
+
+//         if (memcmp(pos, "\r\n", 2))
+//             goto error_inval;
+
+//         msg->reason = strndup(msg->reason, pos - msg->reason);
+//         if (!msg->reason)
+//             goto error_nomem;
+
 //     } else {
-//         if ((len = strcspn(str + start, ":/?#")) > 253)
-//             goto error_invalid;
+//         msg->type = HTTP_REQUEST;
+//         msg->method = pos;
 
-//         char *host = memdup(str + start, len + 1);
-//         if (!host)
-//             goto error_memory;
+//         while (is_tchar(pos[0]))
+//             pos++;
 
-//         host[len] = 0;
-//         uri->host = host;
+//         if (*pos != ' ' || pos == msg->method)
+//             goto error_inval;
 
-//         if (!regexec(&re_ip4, host, 0, NULL, 0)) {
-//             uri->host_type = URI_HOST_IP4;
-//         } else {
-//             uri->host_type = URI_HOST_NAMED;
+//         msg->method = strndup(msg->reason, pos - msg->method);
+//         if (!msg->method)
+//             goto error_nomem;
 
-//             if (!isalnum(host[0]))
-//                 goto error_invalid;
+//         // actually parse uri here
+//         // ----------------
+//         pos = strpbrk(pos + 1, ' ');
+//         // ----------------
 
-//             for (int i = 0; i < len; i++) {
-//                 if (host[i] == '.' ?
-//                         !isalnum(host[i - 1]) || !isalnum(host[i + 1]) :
-//                         !isalnum(host[i]) && host[i] != '-')
-//                     goto error_invalid;
-
-//                 host[i] = tolower(host[i]);
-//             }
-//         }
-
-//         start += len;
-//         len = 0;
+//         if (pos[0] != ' ')
+//             goto error_inval;
 //     }
-
-//     if (str[start] == ':') {
-//         start++;
-
-//         int n = 0;
-//         int max_len = len + 5;
-
-//         while (len < max_len && isdigit(str[start + len]))
-//             n = 10 * n + str[start + len++] - '0';
-
-//         if (n >= 1 << 16)
-//             goto error_invalid;
-
-//         uri->port = n;
-//         start += len;
-//     }
-
-//     if (start != match_authority->rm_eo)
-//         goto error_invalid;
 // }
-
-// if (regmatch_len(match_path)) {
-//     size_t start = match_path->rm_so;
-//     size_t len = match_path->rm_eo - start;
-//     char *path = memdup(str + start, len + 1);
-//     uri->path = path;
-
-//     if (!path)
-//         goto error_memory;
-
-//     path[len] = 0;
-// }
-
-// if (regmatch_len(match_query)) {
-//     size_t start = match_query->rm_so;
-//     size_t len = match_query->rm_eo - start;
-//     char *query = memdup(str + start, len + 1);
-//     uri->query = query;
-
-//     if (!query)
-//         goto error_memory;
-
-//     query[len] = 0;
-// }
-
-// if (regmatch_len(match_fragment)) {
-//     size_t start = match_fragment->rm_so;
-//     size_t len = match_fragment->rm_eo - start;
-//     char *fragment = memdup(str + start, len + 1);
-//     uri->fragment = fragment;
-
-//     if (!fragment)
-//         goto error_memory;
-
-//     fragment[len] = 0;
-// }
-
-// return 0;
-
-// }
-
-char *normalize_path(const char *path)
-{
-    if (!path)
-        return NULL;
-
-    /* Temporary copy, and over-allocated buf for ease of implementation. */
-    size_t buf_len = 3 * strlen(path);
-    char *input = NULL;
-    char *buf = NULL;
-
-    if (!(input = strdup(path)) || !(buf = malloc(buf_len)))
-        goto error;
-
-    char *in = input;
-    char *out = buf;
-
-    while (*in) {
-        if (!memcmp(in, "//", 2)) {
-            in++;
-        } else if (!memcmp(in, "../", 3)) {
-            in += 3;
-        } else if (!memcmp(in, "./", 2)) {
-            in += 2;
-        } else if (!memcmp(in, "/./", 3)) {
-            in += 2;
-        } else if (!memcmp(in, "/.", 3)) {
-            *(++in) = '/';
-        } else if (!memcmp(in, "/../", 4)) {
-            in += 3;
-            while (out > buf && *out != '/')
-                out--;
-        } else if (!memcmp(in, "/..", 4)) {
-            *(in += 2) = '/';
-            while (out > buf && *out != '/')
-                out--;
-        } else if (!memcmp(in, "..", 3) || !memcmp(in, ".", 2)) {
-            break;
-        } else if (is_percent_encoded(in)) {
-            char c = hex_val(in[1]) * 16 + hex_val(in[2]);
-
-            if (is_unreserved(c)) {
-                *out++ = c;
-            } else {
-                *out++ = '%';
-                *out++ = toupper(in[1]);
-                *out++ = toupper(in[2]);
-            }
-
-            in += 3;
-        } else if (is_unreserved(*in) || *in == '/' || *in == '.') {
-            *out++ = *in++;
-        } else {
-            unsigned char c = *in++;
-            *out++ = '%';
-            *out++ = "0123456789ABCDEF"[c >> 4];
-            *out++ = "0123456789ABCDEF"[c & 0b1111];
-        }
-    }
-
-    size_t ret_len = out - buf;
-    char *ret = realloc(buf, ret_len + 1);
-    if (!ret)
-        goto error;
-
-    ret[ret_len] = 0;
-    free(input);
-    return ret;
-
-error:
-    free(buf);
-    free(input);
-    return NULL;
-}
 
 bool http_status_informational(int code)
 {
