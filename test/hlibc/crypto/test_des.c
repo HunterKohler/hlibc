@@ -7,14 +7,15 @@
 
 #include <hlibc/string.h>
 #include <hlibc/crypto/des.h>
+#include <testlib/testlib.h>
 
 #include <stdio.h>
 #include <assert.h>
 
-void test_des_left_shift()
+TEST(test_des_left_shift)
 {
-    static uint64_t key = 0xBD87A20E3BDAA0;
-    static uint64_t expected[] = {
+    uint64_t key = 0xBD87A20E3BDAA0;
+    uint64_t expected[] = {
         0x7B0F441C77B541, 0xF61E8828EF6A83, 0xD87A20B3BDAA0E, 0x61E882FEF6A838,
         0x87A20BDBDAA0E3, 0x1E882F6F6A838E, 0x7A20BD8DAA0E3B, 0xE882F616A838EF,
         0xD105EC3D5071DE, 0x4417B0F541C77B, 0x105EC3D5071DED, 0x417B0F441C77B5,
@@ -25,71 +26,71 @@ void test_des_left_shift()
 
     for (int i = 0; i < 16; i++) {
         k = des_left_shift(k, i);
-        assert(k == expected[i]);
+        ASSERT_EQ(k, expected[i]);
     }
 }
 
-void test_des_PC_1()
+TEST(test_des_PC_1)
 {
     uint64_t input = 0xBD87A20E3BDAA065;
     uint64_t expected = 0x67A0D533E8B391;
     uint64_t res = des_PC_1(input);
 
-    assert(res == expected);
+    ASSERT_EQ(res, expected);
 }
 
-void test_des_PC_2()
+TEST(test_des_PC_2)
 {
     uint64_t input = 0xBD87A20E3BDAA0;
     uint64_t expected = 0xCECD60BBCE16;
     uint64_t res = des_PC_2(input);
 
-    assert(res == expected);
+    ASSERT_EQ(res, expected);
 }
 
-void test_des_P()
+TEST(test_des_P)
 {
     uint64_t input = 0xBD87A20E;
     uint64_t expected = 0x89EA53B2;
     uint64_t res = des_P(input);
 
-    assert(res == expected);
+    ASSERT_EQ(res, expected);
 }
 
-void test_des_E()
+TEST(test_des_E)
 {
     uint64_t input = 0xBD87A20E;
     uint64_t expected = 0x5FBC0FD0405D;
     uint64_t res = des_E(input);
 
-    assert(res == expected);
+    ASSERT_EQ(res, expected);
 }
 
-void test_des_IP()
+TEST(test_des_IP)
 {
     uint64_t input = 0xBD87A20E3BDAA065;
     uint64_t expected = 0xA0318B9367D5393E;
     uint64_t res = des_IP(input);
 
-    assert(res == expected);
+    ASSERT_EQ(res, expected);
 }
 
-void test_des_IP_inv()
+TEST(test_des_IP_inv)
 {
     uint64_t input = 0xBD87A20E3BDAA065;
     uint64_t expected = 0xD2B553E1E0CE227C;
     uint64_t res = des_IP_inv(input);
 
-    assert(res == expected);
+    ASSERT_EQ(res, expected);
 }
 
-void test_des_S()
+TEST(test_des_S)
 {
     uint64_t input = 0xEE4B7E1DD004;
     uint32_t expected = 0x784C348;
     uint32_t res = des_S(input);
 
-    assert(res == expected);
+    ASSERT_EQ(res, expected);
 }
 
 struct des_test_case {
@@ -100,50 +101,9 @@ struct des_test_case {
 
 struct des_test_set {
     char *title;
+    size_t size;
     struct des_test_case *cases;
 };
-
-extern struct des_test_set des_test_vector[];
-
-void main_test_vector()
-{
-    struct des_test_set *ts;
-    struct des_test_case *tc;
-    for (ts = des_test_vector; ts->title; ts++) {
-        for (tc = ts->cases; tc->key || tc->plaintext || tc->ciphertext; tc++) {
-            uint64_t cipher = des(tc->plaintext, tc->key, DES_ENCRYPT);
-            uint64_t plain = des(tc->ciphertext, tc->key, DES_DECRYPT);
-
-            if (cipher != tc->ciphertext || plain != tc->plaintext) {
-                printf("Test: %s\n"
-                       "Case: %ld\n"
-                       "Plain: %llX\n"
-                       "Cipher: %llX\n"
-                       "Key: %llX\n"
-                       "Recieved Plain: %llX\n"
-                       "Recieved Cipher: %llX\n",
-                       ts->title, tc - ts->cases, tc->plaintext, tc->ciphertext,
-                       tc->key, plain, cipher);
-            }
-
-            assert(cipher == tc->ciphertext);
-            assert(plain == tc->plaintext);
-        }
-    }
-}
-
-// int main()
-// {
-//     test_des_IP();
-//     test_des_IP_inv();
-//     test_des_E();
-//     test_des_P();
-//     test_des_S();
-//     test_des_left_shift();
-//     test_des_PC_1();
-//     test_des_PC_2();
-//     main_test_vector();
-// }
 
 /*
  * Test vectors for DES Electronic Code Book (ECB) implementation, derived from:
@@ -160,6 +120,7 @@ void main_test_vector()
 struct des_test_set des_test_vector[] = {
     {
         .title = "IP, IP_inv, E Test",
+        .size = 64,
         .cases = ((struct des_test_case[]){
             { 0x0101010101010101, 0x95F8A5E5DD31D900, 0x8000000000000000 },
             { 0x0101010101010101, 0xDD7F121CA5015619, 0x4000000000000000 },
@@ -225,11 +186,11 @@ struct des_test_set des_test_vector[] = {
             { 0x0101010101010101, 0xD2FD8867D50D2DFE, 0x0000000000000004 },
             { 0x0101010101010101, 0x06E7EA22CE92708F, 0x0000000000000002 },
             { 0x0101010101010101, 0x166B40B44ABA4BD6, 0x0000000000000001 },
-            { 0 },
         }),
     },
     {
         .title = "PC1 and PC2 Test",
+        .size = 56,
         .cases = ((struct des_test_case[]){
             { 0x8001010101010101, 0x0000000000000000, 0x95A8D72813DAA94D },
             { 0x4001010101010101, 0x0000000000000000, 0x0EEC1487DD8C26D5 },
@@ -287,11 +248,11 @@ struct des_test_set des_test_vector[] = {
             { 0x0101010101010108, 0x0000000000000000, 0x5A594528BEBEF1CC },
             { 0x0101010101010104, 0x0000000000000000, 0xFCDB3291DE21F0C0 },
             { 0x0101010101010102, 0x0000000000000000, 0x869EFD7F9F265A09 },
-            { 0 },
         }),
     },
     {
         .title = "P Test",
+        .size = 32,
         .cases = ((struct des_test_case[]){
             { 0x1046913489980131, 0x0000000000000000, 0x88D55E54F54C97B4 },
             { 0x1007103489988020, 0x0000000000000000, 0x0C0CC00C83EA48FD },
@@ -325,11 +286,11 @@ struct des_test_set des_test_vector[] = {
             { 0x1002911598190104, 0x0000000000000000, 0x61C79C71921A2EF8 },
             { 0x1002911598100201, 0x0000000000000000, 0xE2F5728F0995013C },
             { 0x1002911698100101, 0x0000000000000000, 0x1AEAC39A61F0A464 },
-            { 0 },
         }),
     },
     {
         .title = "S-Box Test",
+        .size = 19,
         .cases = ((struct des_test_case[]){
             { 0x7CA110454A1A6E57, 0x01A1D6D039776742, 0x690F5B0D9A26939B },
             { 0x0131D9619DC1376E, 0x5CD54CA83DEF57DA, 0x7A389D10354BD271 },
@@ -350,8 +311,20 @@ struct des_test_set des_test_vector[] = {
             { 0x49E95D6D4CA229BF, 0x02FE55778117F12A, 0x5A6B612CC26CCE4A },
             { 0x018310DC409B26D6, 0x1D9D5C5018F728C2, 0x5F4C038ED12B2E41 },
             { 0x1C587F1C13924FEF, 0x305532286D6F295A, 0x63FAC0D034D9F793 },
-            { 0 },
         }),
-    },
-    { 0 }
+    }
 };
+
+TEST(test_des_test_vector)
+{
+    for (int i = 0; i < array_size(des_test_vector); i++) {
+        for (int j = 0; j < des_test_vector[i].size; j++) {
+            struct des_test_case *tc = des_test_vector[i].cases + j;
+            uint64_t cipher = des(tc->plaintext, tc->key, DES_ENCRYPT);
+            uint64_t plain = des(tc->ciphertext, tc->key, DES_DECRYPT);
+
+            ASSERT_EQ(cipher, tc->ciphertext);
+            ASSERT_EQ(plain, tc->plaintext);
+        }
+    }
+}

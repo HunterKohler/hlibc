@@ -75,6 +75,15 @@
         }                             \
     } while (0)
 
+#define ASSERT_NOT(cond)              \
+    do {                              \
+        bool __cond = !!(cond);       \
+        if (unlikely(__cond)) {       \
+            __CAPTURE(#cond, __cond); \
+            TESTLIB_FAIL_TEST()       \
+        }                             \
+    } while (0)
+
 #define ASSERT_EQ(a, b)                                        \
     do {                                                       \
         static_assert(sizeof((a)) == sizeof((b)),              \
@@ -101,14 +110,34 @@
         }                                                      \
     } while (0)
 
+#define ASSERT_STR_EQ(a, b)                                    \
+    do {                                                       \
+        const char *__a = (a);                                 \
+        const char *__b = (b);                                 \
+        if (unlikely(strcmp(__a, __b))) {                      \
+            __CAPTURE_STR(#a, __a);                            \
+            __CAPTURE_STR(#b, __b);                            \
+            TESTLIB_FAIL_TEST()                                \
+        }                                                      \
+    } while (0)
+
 #define CAPTURE(val) __CAPTURE(#val, val)
 #define CAPTURE_PTR(val) __CAPTURE_PTR(#val, val)
+#define CAPTURE_STR(val) __CAPTURE_STR(#val, val)
 
 #define __CAPTURE_PTR(expr, value)                                          \
     do {                                                                    \
         typeof(value) __value = (value);                                    \
         testlib_add_capture(&__value, sizeof(__value), TESTLIB_TYPE_ID_PTR, \
                             (expr), __FILE__, __LINE__, __func__);          \
+    } while (0)
+
+#define __CAPTURE_STR(expr, value)                                           \
+    do {                                                                     \
+        const char *__value = (value);                                       \
+        testlib_add_capture(__value, strlen(__value) + 1,                    \
+                            TESTLIB_TYPE_ID_STR, (expr), __FILE__, __LINE__, \
+                            __func__);                                       \
     } while (0)
 
 #define __CAPTURE(expr, value)                                          \
@@ -186,6 +215,7 @@ enum testlib_type_id {
 
     TESTLIB_TYPE_ID_BOOL,
     TESTLIB_TYPE_ID_PTR,
+    TESTLIB_TYPE_ID_STR,
 };
 
 /* clang-format off */
@@ -244,7 +274,7 @@ void testlib_location_init(struct testlib_location *location, const char *file,
 
 void testlib_location_destroy(struct testlib_location *location);
 
-void testlib_add_capture(void *value, size_t size, enum testlib_type_id type_id,
+void testlib_add_capture(const void *value, size_t size, enum testlib_type_id type_id,
                          const char *expr, const char *file, size_t line,
                          const char *func);
 

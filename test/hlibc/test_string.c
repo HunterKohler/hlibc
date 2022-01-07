@@ -3,10 +3,7 @@
  */
 
 #include <hlibc/string.h>
-
-#include <assert.h>
-#include <stdio.h>
-#include <unistd.h>
+#include <testlib/testlib.h>
 
 struct encoding_test_case {
     const char *plain;
@@ -60,59 +57,51 @@ struct encoding_test_case encoding_test_cases[] = {
     },
 };
 
-void test_b64_encode()
+TEST(test_b64_encode)
 {
+    struct encoding_test_case *tc;
     for_each (tc, encoding_test_cases) {
         char out[256] = { 0 };
-
         b64_encode(tc->plain, strlen(tc->plain), out);
-
-        assert(!strcmp(out, tc->b64));
+        ASSERT_STR_EQ(out, tc->b64);
     }
 }
 
-void test_b64_decode()
+TEST(test_b64_decode)
 {
-    /* testing with with padding */
+    struct encoding_test_case *tc;
+
+
+    /* With padding */
     for_each (tc, encoding_test_cases) {
         char out[256] = { 0 };
-
         int ret = b64_decode(tc->b64, out, array_size(out));
 
-        assert(!ret);
-        assert(!strcmp(tc->plain, out));
+        ASSERT_NOT(ret);
+        ASSERT_STR_EQ(tc->plain, out);
     }
 
-    /* testing with no padding */
+    /* Without padding */
     for_each (tc, encoding_test_cases) {
         char out[256] = { 0 };
-
         int ret = b64_decode(tc->b64_nopad, out, array_size(out));
 
-        assert(!ret);
-        assert(!strcmp(tc->plain, out));
+        ASSERT_NOT(ret);
+        ASSERT_STR_EQ(tc->plain, out);
     }
 
-    for_each (tc, encoding_test_cases) {
-        char out[256] = { 0 };
-
-        int ret = b64_decode(tc->b64_nopad, out, array_size(out));
-
-        assert(!ret);
-        assert(!strcmp(tc->plain, out));
-    }
-
-    { /* testing invalids */
+    { /* Invalid input */
         char out[256] = { 0 };
         char *invalid[] = { "a", "a=", "a==", "a===", "=", "(", "@", "ab==0" };
+        char **input;
 
-        for_each (input, invalid) {
-            int ret = b64_decode("a", out, array_size(out));
-            assert(ret == EINVAL);
+        for_each(input, invalid) {
+            int ret = b64_decode(*input, out, array_size(out));
+            ASSERT_EQ(ret, EINVAL);
         }
     }
 
-    /* testing small output buffer */
+    /* Short output buffer */
     for_each (tc, encoding_test_cases) {
         char out[256] = { 0 };
         int len = strlen(tc->plain);
@@ -120,49 +109,53 @@ void test_b64_decode()
 
         for (int i = 0; i < len; i++) {
             ret = b64_decode(tc->b64, out, i);
-            assert(ret == ENOMEM);
+            ASSERT_EQ(ret, ENOMEM);
 
             ret = b64_decode(tc->b64_nopad, out, i);
-            assert(ret == ENOMEM);
+            ASSERT_EQ(ret, ENOMEM);
         }
 
         ret = b64_decode(tc->b64, out, len);
-        assert(!ret);
+        ASSERT_NOT(ret);
 
         ret = b64_decode(tc->b64_nopad, out, len);
-        assert(!ret);
+        ASSERT_NOT(ret);
     }
 }
 
-void test_hex_encode()
+
+TEST(test_hex_encode)
 {
+    struct encoding_test_case *tc;
+
     for_each (tc, encoding_test_cases) {
         char out[256] = { 0 };
 
         hex_encode(tc->plain, strlen(tc->plain), out);
-
-        assert(!strcmp(out, tc->hex));
+        ASSERT_STR_EQ(out, tc->hex);
     }
 }
 
-void test_hex_decode()
+TEST(test_hex_decode)
 {
+    struct encoding_test_case *tc;
+
     for_each (tc, encoding_test_cases) {
         char out[256] = { 0 };
-
         int ret = hex_decode(tc->hex, out, array_size(out));
 
-        assert(!ret);
-        assert(!strcmp(out, tc->plain));
+        ASSERT_NOT(ret);
+        ASSERT_STR_EQ(out, tc->plain);
     }
 
     { /* testing invalids */
         char out[256] = { 0 };
         char *invalid[] = { "a", "x", "#", "abcde", "abcdefg" };
+        char **input;
 
-        for_each (input, invalid) {
-            int ret = b64_decode("a", out, array_size(out));
-            assert(ret == EINVAL);
+        for_each(input, invalid) {
+            int ret = hex_decode(*input, out, array_size(out));
+            ASSERT_EQ(ret, EINVAL);
         }
     }
 
@@ -174,18 +167,10 @@ void test_hex_decode()
 
         for (int i = 0; i < len; i++) {
             ret = hex_decode(tc->hex, out, i);
-            assert(ret == ENOMEM);
+            ASSERT_EQ(ret, ENOMEM);
         }
 
         ret = hex_decode(tc->hex, out, len);
-        assert(!ret);
+        ASSERT_NOT(ret);
     }
 }
-
-// int main()
-// {
-//     test_hex_encode();
-//     test_hex_decode();
-//     test_b64_encode();
-//     test_b64_decode();
-// }

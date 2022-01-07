@@ -50,7 +50,7 @@ void testlib_location_destroy(struct testlib_location *location)
     free(location->trace_syms);
 }
 
-void testlib_add_capture(void *value, size_t size, enum testlib_type_id type_id,
+void testlib_add_capture(const void *value, size_t size, enum testlib_type_id type_id,
                          const char *expr, const char *file, size_t line,
                          const char *func)
 {
@@ -157,6 +157,8 @@ static size_t testlib_type_stringify(enum testlib_type_id type_id, void *value,
         return snprintf(dest, size, "%s", *(bool *)value ? "true" : "false");
     case TESTLIB_TYPE_ID_PTR:
         return snprintf(dest, size, "%p", *(void **)value);
+    case TESTLIB_TYPE_ID_STR:
+        return snprintf(dest, size, "%s", (char *)value);
     default:
         return snprintf(dest, size, "(cannot serialize type)");
     }

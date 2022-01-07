@@ -197,9 +197,9 @@ typedef __uint128_t uint128_t;
         *__b = __tmp;                              \
     } while (0)
 
-#define for_each(it, array)                                             \
-    for (typeof(&*(array)) it = (array),                                \
-                           __for_each_end##it = it + array_size(array); \
-         it != __for_each_end##it; it++)
+#define for_each(it, arr)                                                     \
+    for (int __for_each_##it = 0;                                             \
+         ((it = (arr) + __for_each_##it), __for_each_##it < array_size(arr)); \
+         __for_each_##it++)
 
 #endif
