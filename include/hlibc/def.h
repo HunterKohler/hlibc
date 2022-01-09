@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Hunter Kohler <jhunterkohler@gmail.com>
+ * Copyright (C) 2021-2022 John Hunter Kohler <jhunterkohler@gmail.com>
  *
  * Project wide definition file. Defines many compiler specific macros,
  * and polyfills for certain headers.

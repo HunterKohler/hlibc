@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Hunter Kohler <jhunterkohler@gmail.com>
+ * Copyright (C) 2021-2022 John Hunter Kohler <jhunterkohler@gmail.com>
  *
  * Reference counting utility. Intended to be abstract for continued extension,
  * namely further guarentees of thread-safety.

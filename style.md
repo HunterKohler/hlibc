@@ -31,3 +31,7 @@ Use the typedefs `int128_t` , `uint128_t` in `<hlibc/def.h>` instead of the raw 
 ## Crypto
 
 Input/output to crypto algorithms should be considered little endian unless specifically specified otherwise. To maintain consistent API's, and reduce mental strain, take input by pointer, and write to pointer, instead of returning an integer. This should even be applied to utility hashes. Endian mistakes frequently occur when directly returning a value instead of writing, and non full int-width hashes are difficult to deal with, or impossible, since no one supports large types like 512 bits.
+
+---
+
+Copyright (C) 2021-2022 John Hunter Kohler <jhunterkohler@gmail.com>

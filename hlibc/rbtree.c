@@ -1,3 +1,6 @@
+/*
+ * Copyright (C) 2021-2022 John Hunter Kohler <jhunterkohler@gmail.com>
+ */
 #include <hlibc/rbtree.h>
 
 struct rb_node *rb_first(struct rb_tree *tree)

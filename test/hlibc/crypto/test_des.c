@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Hunter Kohler <jhunterkohler@gmail.com>
+ * Copyright (C) 2021-2022 John Hunter Kohler <jhunterkohler@gmail.com>
  *
  * Begins with individual by hand cases, then uses larger testing vector
  * for integration testing.

@@ -26,4 +26,4 @@
 
 ---
 
-Copyright 2020-2021 John Hunter Kohler. All rights reserved.
+Copyright (C) 2021-2022 John Hunter Kohler <jhunterkohler@gmail.com>

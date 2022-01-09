@@ -1,4 +1,7 @@
-#include <hlibc/heap.h>
+/*
+ * Copyright (C) 2021-2022 John Hunter Kohler <jhunterkohler@gmail.com>
+ */
+
 #include <testlib/testlib.h>
 
 bool less_int(const void *a, const void *b)

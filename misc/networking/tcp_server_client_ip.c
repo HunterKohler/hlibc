@@ -1,3 +1,6 @@
+/*
+ * Copyright (C) 2021-2022 John Hunter Kohler <jhunterkohler@gmail.com>
+ */
 #include <limits.h>
 #include <sys/types.h>
 #include <sys/socket.h>

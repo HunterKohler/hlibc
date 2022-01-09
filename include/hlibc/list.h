@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Hunter Kohler <jhunterkohler@gmail.com>
+ * Copyright (C) 2021-2022 John Hunter Kohler <jhunterkohler@gmail.com>
  *
  * Circular-doubly linked list. Follows struct-embedded pattern, with
  * homogeneous nodes. Methods are all inlined due to size and theoretical
