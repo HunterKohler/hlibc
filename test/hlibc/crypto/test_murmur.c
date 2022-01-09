@@ -2,13 +2,11 @@
  * Copyright (C) 2021-2022 John Hunter Kohler <jhunterkohler@gmail.com>
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <assert.h>
-#include <hlibc/crypto/murmur.h>
+#include <testlib/testlib.h>
 #include <hlibc/bit.h>
+#include <hlibc/crypto/murmur.h>
 
-void test_murmurhash3_x86_32()
+TEST(test_murmurhash3_x86_32)
 {
     struct test_case {
         const char *input;
@@ -38,14 +36,8 @@ void test_murmurhash3_x86_32()
     uint32_t out;
     struct test_case *tc;
 
-    for (int i = 0; i < array_size(test_vector); i++) {
-        tc = test_vector + i;
+    for_each (tc, test_vector) {
         murmurhash3_x86_32(tc->input, tc->len, tc->seed, &out);
-        assert(le32_to_cpu(out) == tc->expected);
+        ASSERT_EQ(le32_to_cpu(out), tc->expected);
     }
 }
-
-// int main()
-// {
-//     test_murmurhash3_x86_32();
-// }

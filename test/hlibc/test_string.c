@@ -2,8 +2,8 @@
  * Copyright (C) 2021-2022 John Hunter Kohler <jhunterkohler@gmail.com>
  */
 
-#include <hlibc/string.h>
 #include <testlib/testlib.h>
+#include <hlibc/string.h>
 
 struct encoding_test_case {
     const char *plain;
@@ -92,7 +92,7 @@ TEST(test_b64_decode)
 
     { /* Invalid input */
         char out[256] = { 0 };
-        char *invalid[] = { "a", "a=", "a==", "a===", "=", "(", "@", "ab==0" };
+        char *invalid[] = { "a", "a=", "abc#","a==", "a===", "=", "(", "@", "ab==0" };
         char **input;
 
         for_each(input, invalid) {
@@ -174,3 +174,14 @@ TEST(test_hex_decode)
         ASSERT_NOT(ret);
     }
 }
+
+TEST(test_stralloc)
+{
+    char *tmp = stralloc(10);
+
+    if(tmp == NULL) {
+        printf("no u\n");
+    }
+}
+
+

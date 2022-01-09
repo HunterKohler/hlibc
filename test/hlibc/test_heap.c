@@ -3,6 +3,7 @@
  */
 
 #include <testlib/testlib.h>
+#include <hlibc/heap.h>
 
 bool less_int(const void *a, const void *b)
 {

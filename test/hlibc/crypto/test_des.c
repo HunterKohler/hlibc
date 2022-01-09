@@ -5,12 +5,11 @@
  * for integration testing.
  */
 
+#include <stdio.h>
+
+#include <testlib/testlib.h>
 #include <hlibc/string.h>
 #include <hlibc/crypto/des.h>
-#include <testlib/testlib.h>
-
-#include <stdio.h>
-#include <assert.h>
 
 TEST(test_des_left_shift)
 {

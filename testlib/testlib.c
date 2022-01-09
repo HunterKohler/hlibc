@@ -124,7 +124,7 @@ static void testlib_init_root()
     testlib_register_group(root);
 }
 
-static size_t testlib_type_stringify(enum testlib_type_id type_id, void *value,
+static size_t testlib_type_stringify(enum testlib_type_id type_id, void *value, size_t value_size,
                                      char *dest, size_t size)
 {
     switch (type_id) {
@@ -162,6 +162,10 @@ static size_t testlib_type_stringify(enum testlib_type_id type_id, void *value,
         return snprintf(dest, size, "%p", *(void **)value);
     case TESTLIB_TYPE_ID_STR:
         return snprintf(dest, size, "%s", (char *)value);
+    case TESTLIB_TYPE_ID_MEM:
+        size_t ret = min(value_size * 2, size - 1) & ~1;
+        hex_encode(value, ret / 2, dest);
+        return strlen(dest);
     default:
         return snprintf(dest, size, "(cannot serialize type)");
     }
@@ -214,7 +218,7 @@ noreturn void testlib_run(struct testlib_options *opts,
                                      list) {
                     char tmp[1024];
                     testlib_type_stringify(capture->type_id, capture->value,
-                                           tmp, 1024);
+                                           capture->size, tmp, 1024);
                     printf("%s := %s\n", capture->expr, tmp);
                 }
 

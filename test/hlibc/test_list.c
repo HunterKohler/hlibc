@@ -2,6 +2,7 @@
  * Copyright (C) 2021-2022 John Hunter Kohler <jhunterkohler@gmail.com>
  */
 #include <testlib/testlib.h>
+#include <hlibc/list.h>
 
 TEST(test_list_node_init)
 {
