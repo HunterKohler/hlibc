@@ -53,7 +53,7 @@ void hex_encode(const void *restrict src, size_t n, char *restrict dest)
 {
     static const char hex_charset[] = "0123456789ABCDEF";
 
-    const char *in = src;
+    const unsigned char *in = src;
     for (int i = 0; i < n; i++) {
         *dest++ = hex_charset[in[i] >> 4];
         *dest++ = hex_charset[in[i] & 15];

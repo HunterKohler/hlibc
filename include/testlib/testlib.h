@@ -1,8 +1,8 @@
 /*
  * Copyright (C) 2021 Hunter Kohler <jhunterkohler@gmail.com>
  */
-#ifndef HLIBC_TESTLIB_H_
-#define HLIBC_TESTLIB_H_
+#ifndef TESTLIB_H_
+#define TESTLIB_H_
 
 #include <string.h>
 #include <time.h>
@@ -121,9 +121,30 @@
         }                                                      \
     } while (0)
 
+#define ASSERT_MEM_EQ(a, b, size)                              \
+    do {                                                       \
+        const void *__a = (a);                                 \
+        const void *__b = (b);                                 \
+        size_t __size = (size);                                \
+        if (unlikely(memcmp(__a, __b, __size))) {              \
+            __CAPTURE_MEM(#a, __a, __size);                    \
+            __CAPTURE_MEM(#b, __b, __size);                    \
+            TESTLIB_FAIL_TEST()                                \
+        }                                                      \
+    } while (0)
+
 #define CAPTURE(val) __CAPTURE(#val, val)
 #define CAPTURE_PTR(val) __CAPTURE_PTR(#val, val)
 #define CAPTURE_STR(val) __CAPTURE_STR(#val, val)
+#define CAPTURE_MEM(val, size) __CAPTURE_MEM(#val, val, size)
+
+#define __CAPTURE(expr, value)                                          \
+    do {                                                                \
+        typeof(value) __value = (value);                                \
+        testlib_add_capture(&__value, sizeof(__value),                  \
+                            TESTLIB_TYPE_ID(__value), (expr), __FILE__, \
+                            __LINE__, __func__);                        \
+    } while (0)
 
 #define __CAPTURE_PTR(expr, value)                                          \
     do {                                                                    \
@@ -140,13 +161,14 @@
                             __func__);                                       \
     } while (0)
 
-#define __CAPTURE(expr, value)                                          \
-    do {                                                                \
-        typeof(value) __value = (value);                                \
-        testlib_add_capture(&__value, sizeof(__value),                  \
-                            TESTLIB_TYPE_ID(__value), (expr), __FILE__, \
-                            __LINE__, __func__);                        \
+#define __CAPTURE_MEM(expr, value, size)                                     \
+    do {                                                                     \
+        const void *__value = (value);                                       \
+        testlib_add_capture(__value, (size),                                 \
+                            TESTLIB_TYPE_ID_MEM, (expr), __FILE__, __LINE__, \
+                            __func__);                                       \
     } while (0)
+
 
 struct testlib_location {
     char *file;
@@ -216,6 +238,7 @@ enum testlib_type_id {
     TESTLIB_TYPE_ID_BOOL,
     TESTLIB_TYPE_ID_PTR,
     TESTLIB_TYPE_ID_STR,
+    TESTLIB_TYPE_ID_MEM,
 };
 
 /* clang-format off */

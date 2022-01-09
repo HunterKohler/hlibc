@@ -5,12 +5,19 @@
 #include <unistd.h>
 #include <hlibc/sys.h>
 
-ssize_t page_size()
+size_t page_size()
 {
-    return sysconf(_SC_PAGESIZE);
+    static size_t ret;
+    return ret ? ret : (ret = sysconf(_SC_PAGESIZE));
 }
 
-ssize_t core_count()
+size_t core_count()
 {
-    return sysconf(_SC_NPROCESSORS_ONLN);
+    static size_t ret;
+    return ret ? ret : (ret = sysconf(_SC_NPROCESSORS_ONLN));
+}
+
+void *pageof(const void *addr)
+{
+    return (void *)((uintptr_t)addr & ~(page_size() - 1));
 }
