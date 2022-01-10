@@ -24,13 +24,17 @@ double sigmoid(double x)
 
 unsigned int floor_log2(unsigned int x)
 {
-    return CHAR_BIT * sizeof(x) - __builtin_clz(x) - 1;
+    return (CHAR_BIT * sizeof(x) - 1) - __builtin_clz(x);
+}
+
+unsigned int ceil_log2(unsigned int x)
+{
+    return !!(x & (x - 1)) * (floor_log2(x - 1) + 1);
 }
 
 unsigned int floor_log10(unsigned int x)
 {
-    /* Using unsigned char to save space. */
-    static unsigned char pow2_width[] = {
+    static unsigned int pow2_width[] = {
         1, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5,  5,
         5, 6, 6, 6, 7, 7, 7, 7, 8, 8, 8, 9, 9, 9, 10, 10,
     };
@@ -42,4 +46,30 @@ unsigned int floor_log10(unsigned int x)
 
     int digits = pow2_width[floor_log2(x) + 1];
     return digits - (x < pow10[digits - 1]);
+}
+
+int gcd(int a, int b)
+{
+    a = abs(a);
+    b = abs(b);
+
+    if (a < b) {
+        int c = a;
+        a = b;
+        b = c;
+    }
+
+    while (b > 1) {
+        int c = a % b;
+        a = b;
+        b = c;
+    }
+
+    return a;
+}
+
+int lcm(int a, int b)
+{
+    int c = gcd(a, b);
+    return abs(a * b) / (c + !c);
 }

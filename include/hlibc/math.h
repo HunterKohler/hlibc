@@ -47,8 +47,28 @@ double sigmoid(double x);
 unsigned int floor_log2(unsigned int x);
 
 /*
+ * Fast ceiling log base 2.
+ */
+unsigned int ceil_log2(unsigned int x);
+
+/*
  * Fast floor log base 10.
  */
 unsigned int floor_log10(unsigned int x);
+
+/*
+ * Fast floor log base 10.
+ */
+unsigned int ceil_log10(unsigned int x);
+
+/*
+ * Greatest common divisor.
+ */
+int gcd(int a, int b);
+
+/*
+ * Least common multiple.
+ */
+int lcm(int a, int b);
 
 #endif

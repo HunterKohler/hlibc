@@ -97,6 +97,50 @@
         }                                                      \
     } while (0)
 
+#define ASSERT_GT(a, b)         \
+    do {                        \
+        typeof(a) __a = (a);    \
+        typeof(b) __b = (b);    \
+        if (unlikely(a <= b)) { \
+            __CAPTURE(#a, __a); \
+            __CAPTURE(#b, __b); \
+            TESTLIB_FAIL_TEST() \
+        }                       \
+    } while (0)
+
+#define ASSERT_LT(a, b)         \
+    do {                        \
+        typeof(a) __a = (a);    \
+        typeof(b) __b = (b);    \
+        if (unlikely(a >= b)) { \
+            __CAPTURE(#a, __a); \
+            __CAPTURE(#b, __b); \
+            TESTLIB_FAIL_TEST() \
+        }                       \
+    } while (0)
+
+#define ASSERT_GTE(a, b)        \
+    do {                        \
+        typeof(a) __a = (a);    \
+        typeof(b) __b = (b);    \
+        if (unlikely(a < b)) {  \
+            __CAPTURE(#a, __a); \
+            __CAPTURE(#b, __b); \
+            TESTLIB_FAIL_TEST() \
+        }                       \
+    } while (0)
+
+#define ASSERT_LTE(a, b)        \
+    do {                        \
+        typeof(a) __a = (a);    \
+        typeof(b) __b = (b);    \
+        if (unlikely(a > b)) {  \
+            __CAPTURE(#a, __a); \
+            __CAPTURE(#b, __b); \
+            TESTLIB_FAIL_TEST() \
+        }                       \
+    } while (0)
+
 #define ASSERT_PTR_EQ(a, b)                                    \
     do {                                                       \
         static_assert(sizeof((a)) == sizeof((b)),              \
@@ -110,27 +154,27 @@
         }                                                      \
     } while (0)
 
-#define ASSERT_STR_EQ(a, b)                                    \
-    do {                                                       \
-        const char *__a = (a);                                 \
-        const char *__b = (b);                                 \
-        if (unlikely(strcmp(__a, __b))) {                      \
-            __CAPTURE_STR(#a, __a);                            \
-            __CAPTURE_STR(#b, __b);                            \
-            TESTLIB_FAIL_TEST()                                \
-        }                                                      \
+#define ASSERT_STR_EQ(a, b)               \
+    do {                                  \
+        const char *__a = (a);            \
+        const char *__b = (b);            \
+        if (unlikely(strcmp(__a, __b))) { \
+            __CAPTURE_STR(#a, __a);       \
+            __CAPTURE_STR(#b, __b);       \
+            TESTLIB_FAIL_TEST()           \
+        }                                 \
     } while (0)
 
-#define ASSERT_MEM_EQ(a, b, size)                              \
-    do {                                                       \
-        const void *__a = (a);                                 \
-        const void *__b = (b);                                 \
-        size_t __size = (size);                                \
-        if (unlikely(memcmp(__a, __b, __size))) {              \
-            __CAPTURE_MEM(#a, __a, __size);                    \
-            __CAPTURE_MEM(#b, __b, __size);                    \
-            TESTLIB_FAIL_TEST()                                \
-        }                                                      \
+#define ASSERT_MEM_EQ(a, b, size)                 \
+    do {                                          \
+        const void *__a = (a);                    \
+        const void *__b = (b);                    \
+        size_t __size = (size);                   \
+        if (unlikely(memcmp(__a, __b, __size))) { \
+            __CAPTURE_MEM(#a, __a, __size);       \
+            __CAPTURE_MEM(#b, __b, __size);       \
+            TESTLIB_FAIL_TEST()                   \
+        }                                         \
     } while (0)
 
 #define CAPTURE(val) __CAPTURE(#val, val)
@@ -153,22 +197,19 @@
                             (expr), __FILE__, __LINE__, __func__);          \
     } while (0)
 
-#define __CAPTURE_STR(expr, value)                                           \
-    do {                                                                     \
-        const char *__value = (value);                                       \
-        testlib_add_capture(__value, strlen(__value) + 1,                    \
-                            TESTLIB_TYPE_ID_STR, (expr), __FILE__, __LINE__, \
-                            __func__);                                       \
+#define __CAPTURE_STR(expr, value)                                             \
+    do {                                                                       \
+        const char *__value = (value);                                         \
+        testlib_add_capture(__value, strlen(__value) + 1, TESTLIB_TYPE_ID_STR, \
+                            (expr), __FILE__, __LINE__, __func__);             \
     } while (0)
 
-#define __CAPTURE_MEM(expr, value, size)                                     \
-    do {                                                                     \
-        const void *__value = (value);                                       \
-        testlib_add_capture(__value, (size),                                 \
-                            TESTLIB_TYPE_ID_MEM, (expr), __FILE__, __LINE__, \
-                            __func__);                                       \
+#define __CAPTURE_MEM(expr, value, size)                                  \
+    do {                                                                  \
+        const void *__value = (value);                                    \
+        testlib_add_capture(__value, (size), TESTLIB_TYPE_ID_MEM, (expr), \
+                            __FILE__, __LINE__, __func__);                \
     } while (0)
-
 
 struct testlib_location {
     char *file;
@@ -297,9 +338,9 @@ void testlib_location_init(struct testlib_location *location, const char *file,
 
 void testlib_location_destroy(struct testlib_location *location);
 
-void testlib_add_capture(const void *value, size_t size, enum testlib_type_id type_id,
-                         const char *expr, const char *file, size_t line,
-                         const char *func);
+void testlib_add_capture(const void *value, size_t size,
+                         enum testlib_type_id type_id, const char *expr,
+                         const char *file, size_t line, const char *func);
 
 void testlib_capture_destroy(struct testlib_capture *capture);
 

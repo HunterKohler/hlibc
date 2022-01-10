@@ -3,6 +3,9 @@ SHELL = bash
 
 AR = /usr/bin/ar
 RM = rm -rf
+LCOV = $(shell which lcov)
+GCOV = $(shell which gcov)
+GENHTML = $(shell which genhtml)
 
 CFLAGS = \
 	-std=c11 \
@@ -23,17 +26,12 @@ LDLIBS = -pthread -lm
 DEBUG ?= 1
 
 ifeq ($(DEBUG), 1)
-	CFLAGS += -g -O0 -coverage -fsanitize=address
-	LDFLAGS += -coverage -fsanitize=address
+	CFLAGS += -g -O0 -coverage -fsanitize=address -fno-inline \
+		-fno-inline-small-functions -fno-default-inline
+	LDFLAGS += -g -coverage -fsanitize=address
 else
 	CFLAGS += -O3
 endif
-
-LCOVFLAGS = \
-	--no-external \
-	--capture \
-	--directory . \
-	--output-file coverage/lcov.info
 
 SRC_HLIBC := $(shell find hlibc -name \*.c)
 SRC_TESTLIB := $(shell find testlib -name \*.c)
@@ -59,31 +57,42 @@ SHARED_LIB_HLIBC := build/shared/libhlibc.so
 SHARED_OBJS := $(sort $(SHARED_OBJ_HLIBC))
 SHARED_LIBS := $(sort $(SHARED_LIB_HLIBC))
 
-.PHONY: all clean coverage test_hlibc
+.PHONY: all clean coverage
 
-all: $(LIBS) $(OBJS) $(BINS) $(SHARED_LIBS) $(SHARED_OBJS)
+all: $(LIBS) $(OBJS) $(BINS) $(SHARED_LIBS) $(SHARED_OBJS) coverage
 
 clean:
 	$(RM) build bin coverage
 
 remake: | clean all
 
-coverage: coverage/lcov.info coverage/html/index.html
+COV_HLIBC_BASELINE = coverage/hlibc/baseline.info
+COV_HLIBC_TEST = coverage/hlibc/test.info
+COV_HLIBC_INFO = coverage/hlibc/lcov.info
+COV_HLIBC_HTML = coverage/hlibc/html/index.html
 
-build/tests_result: $(BIN_TEST_HLIBC)
+coverage: $(COV_HLIBC_HTML)
+
+$(COV_HLIBC_BASELINE): $(BIN_TEST_HLIBC)
 	@mkdir -p $(@D)
-	./$(BIN_TEST_HLIBC) ; echo $$? > $@
+	$(RM) $$(find build -name '*.gcda')
+	$(LCOV) --config ./.lcovrc --gcov-tool $(GCOV) --capture --initial \
+		--directory build/shared/hlibc --output-file $@
 
-coverage/lcov.info: build/tests_result
+$(COV_HLIBC_TEST): $(COV_HLIBC_BASELINE) $(BIN_TEST_HLIBC)
 	@mkdir -p $(@D)
-	lcov $(LCOVFLAGS)
+	$(BIN_TEST_HLIBC) || true
+	$(LCOV) --config ./.lcovrc --gcov-tool $(GCOV) --capture \
+		--directory build/shared/hlibc --output-file $@
 
-coverage/html/index.html: coverage/lcov.info
+$(COV_HLIBC_INFO): $(COV_HLIBC_TEST) $(COV_HLIBC_BASELINE)
 	@mkdir -p $(@D)
-	genhtml --output-directory coverage/html coverage/lcov.info
+	$(LCOV) --config ./.lcovrc --gcov-tool $(GCOV) \
+		$(addprefix --add-tracefile ,$^) --output-file $@
 
-view_coverage: coverage/html/index.html
-	open $<
+$(COV_HLIBC_HTML): $(COV_HLIBC_INFO)
+	@mkdir -p $(@D)
+	$(GENHTML) --config ./.lcovrc --output-directory coverage/hlibc/html $<
 
 $(SHARED_OBJS): CFLAGS += -fpic
 $(SHARED_OBJS): build/shared/%.o : %.c
