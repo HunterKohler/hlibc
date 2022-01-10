@@ -38,7 +38,7 @@ void memswap(void *restrict a, void *restrict b, size_t n)
 
 int hex_val(char c)
 {
-    static char hex_val_table[] = {
+    static int hex_val_table[] = {
         [0 ... 255] = -1, ['0'] = 0,  ['1'] = 1,  ['2'] = 2,  ['3'] = 3,
         ['4'] = 4,        ['5'] = 5,  ['6'] = 6,  ['7'] = 7,  ['8'] = 8,
         ['9'] = 9,        ['a'] = 10, ['b'] = 11, ['c'] = 12, ['d'] = 13,
@@ -64,9 +64,9 @@ void hex_encode(const void *restrict src, size_t n, char *restrict dest)
 
 int hex_decode(const char *restrict src, void *restrict dest, size_t size)
 {
+    int a, b;
     int i = 0;
-    int a;
-    int b;
+    uint8_t *out = dest;
 
     while (*src) {
         if ((a = hex_val(*src++)) < 0 || (b = hex_val(*src++)) < 0)
@@ -75,10 +75,31 @@ int hex_decode(const char *restrict src, void *restrict dest, size_t size)
         if (i == size)
             return ENOMEM;
 
-        ((char *)dest)[i++] = (a << 4) + b;
+        out[i++] = (a << 4) + b;
     }
 
     return 0;
+}
+
+int b64_val(char c)
+{
+    static const int b64_table[] = {
+        [0 ... 255] = -1, ['A'] = 0,  ['B'] = 1,  ['C'] = 2,  ['D'] = 3,
+        ['E'] = 4,        ['F'] = 5,  ['G'] = 6,  ['H'] = 7,  ['I'] = 8,
+        ['J'] = 9,        ['K'] = 10, ['L'] = 11, ['M'] = 12, ['N'] = 13,
+        ['O'] = 14,       ['P'] = 15, ['Q'] = 16, ['R'] = 17, ['S'] = 18,
+        ['T'] = 19,       ['U'] = 20, ['V'] = 21, ['W'] = 22, ['X'] = 23,
+        ['Y'] = 24,       ['Z'] = 25, ['a'] = 26, ['b'] = 27, ['c'] = 28,
+        ['d'] = 29,       ['e'] = 30, ['f'] = 31, ['g'] = 32, ['h'] = 33,
+        ['i'] = 34,       ['j'] = 35, ['k'] = 36, ['l'] = 37, ['m'] = 38,
+        ['n'] = 39,       ['o'] = 40, ['p'] = 41, ['q'] = 42, ['r'] = 43,
+        ['s'] = 44,       ['t'] = 45, ['u'] = 46, ['v'] = 47, ['w'] = 48,
+        ['x'] = 49,       ['y'] = 50, ['z'] = 51, ['0'] = 52, ['1'] = 53,
+        ['2'] = 54,       ['3'] = 55, ['4'] = 56, ['5'] = 57, ['6'] = 58,
+        ['7'] = 59,       ['8'] = 60, ['9'] = 61, ['+'] = 62, ['/'] = 63,
+    };
+
+    return b64_table[(unsigned char)c];
 }
 
 void b64_encode(const void *restrict src, size_t n, char *restrict dest)
@@ -114,27 +135,6 @@ void b64_encode(const void *restrict src, size_t n, char *restrict dest)
     }
 
     *dest++ = 0;
-}
-
-int b64_val(char c)
-{
-    static const char b64_table[] = {
-        [0 ... 255] = -1, ['A'] = 0,  ['B'] = 1,  ['C'] = 2,  ['D'] = 3,
-        ['E'] = 4,        ['F'] = 5,  ['G'] = 6,  ['H'] = 7,  ['I'] = 8,
-        ['J'] = 9,        ['K'] = 10, ['L'] = 11, ['M'] = 12, ['N'] = 13,
-        ['O'] = 14,       ['P'] = 15, ['Q'] = 16, ['R'] = 17, ['S'] = 18,
-        ['T'] = 19,       ['U'] = 20, ['V'] = 21, ['W'] = 22, ['X'] = 23,
-        ['Y'] = 24,       ['Z'] = 25, ['a'] = 26, ['b'] = 27, ['c'] = 28,
-        ['d'] = 29,       ['e'] = 30, ['f'] = 31, ['g'] = 32, ['h'] = 33,
-        ['i'] = 34,       ['j'] = 35, ['k'] = 36, ['l'] = 37, ['m'] = 38,
-        ['n'] = 39,       ['o'] = 40, ['p'] = 41, ['q'] = 42, ['r'] = 43,
-        ['s'] = 44,       ['t'] = 45, ['u'] = 46, ['v'] = 47, ['w'] = 48,
-        ['x'] = 49,       ['y'] = 50, ['z'] = 51, ['0'] = 52, ['1'] = 53,
-        ['2'] = 54,       ['3'] = 55, ['4'] = 56, ['5'] = 57, ['6'] = 58,
-        ['7'] = 59,       ['8'] = 60, ['9'] = 61, ['+'] = 62, ['/'] = 63,
-    };
-
-    return b64_table[(unsigned char)c];
 }
 
 int b64_decode(const char *restrict src, void *restrict dest, size_t size)
