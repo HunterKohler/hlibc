@@ -52,16 +52,6 @@ unsigned int floor_log2(unsigned int x);
 unsigned int ceil_log2(unsigned int x);
 
 /*
- * Fast floor log base 10.
- */
-unsigned int floor_log10(unsigned int x);
-
-/*
- * Fast floor log base 10.
- */
-unsigned int ceil_log10(unsigned int x);
-
-/*
  * Greatest common divisor.
  */
 int gcd(int a, int b);

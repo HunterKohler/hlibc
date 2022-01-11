@@ -1,8 +1,21 @@
 /*
  * Copyright (C) 2021-2022 John Hunter Kohler <jhunterkohler@gmail.com>
  */
-#include <testlib/testlib.h>
+#include <testctl/testctl.h>
 #include <hlibc/list.h>
+
+struct container {
+    char buf[128];
+    struct list_node list;
+};
+
+void container_list_init(struct container *conts, size_t count)
+{
+    for (int i = 0; i < count; i++)
+        list_node_init(&conts[i].list);
+    for (int i = 1; i < count; i++)
+        list_add_tail(&conts[i].list, &conts[0].list);
+}
 
 TEST(test_list_node_init)
 {
@@ -132,6 +145,7 @@ TEST(test_list_swap)
     list_add(&first, &x);
     list_add(&second, &y);
     list_swap(&first, &second);
+    list_swap(&first, &first);
 
     ASSERT_PTR_EQ(x.next, &second);
     ASSERT_PTR_EQ(x.prev, &second);
@@ -141,4 +155,72 @@ TEST(test_list_swap)
     ASSERT_PTR_EQ(y.prev, &first);
     ASSERT_PTR_EQ(first.next, &y);
     ASSERT_PTR_EQ(first.prev, &y);
+}
+
+TEST(test_list_entry)
+{
+    struct container *res;
+    struct container conts[1];
+    container_list_init(conts, array_size(conts));
+
+    res = list_entry(&conts[0].list, struct container, list);
+    ASSERT_PTR_EQ(res, &conts[0]);
+}
+
+TEST(test_list_next_entry)
+{
+    struct container conts[2];
+    container_list_init(conts, array_size(conts));
+    ASSERT_PTR_EQ(list_next_entry(conts, list), &conts[1]);
+    ASSERT_PTR_EQ(list_next_entry(conts + 1, list), &conts[0]);
+}
+
+TEST(test_list_prev_entry)
+{
+    struct container conts[2];
+    container_list_init(conts, array_size(conts));
+    ASSERT_PTR_EQ(list_prev_entry(conts, list), &conts[1]);
+    ASSERT_PTR_EQ(list_prev_entry(conts + 1, list), &conts[0]);
+}
+
+TEST(test_list_first_entry)
+{
+    struct container conts[2];
+    container_list_init(conts, array_size(conts));
+    ASSERT_PTR_EQ(list_first_entry(&conts[0].list, struct container, list),
+                  &conts[1]);
+}
+
+TEST(test_list_last_entry)
+{
+    struct container conts[2];
+    container_list_init(conts, array_size(conts));
+    ASSERT_PTR_EQ(list_last_entry(&conts[0].list, struct container, list),
+                  &conts[1]);
+}
+
+TEST(test_list_for_each)
+{
+    struct list_node *it;
+    struct container conts[15];
+    container_list_init(conts, array_size(conts));
+
+    int i = 1;
+    list_for_each (it, &conts[0].list)
+        ASSERT_PTR_EQ(it, &conts[i++].list);
+
+    ASSERT_PTR_EQ(it, &conts[0].list);
+}
+
+TEST(test_list_for_each_entry)
+{
+    struct container *it;
+    struct container conts[15];
+    container_list_init(conts, array_size(conts));
+
+    int i = 1;
+    list_for_each_entry (it, &conts[0].list, list)
+        ASSERT_PTR_EQ(it, &conts[i++]);
+
+    ASSERT_PTR_EQ(it, &conts[0]);
 }

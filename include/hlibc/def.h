@@ -38,10 +38,6 @@
 #define noreturn _Noreturn
 #endif
 
-#ifndef typeof
-#define typeof __typeof
-#endif
-
 #ifndef complex
 #define complex _Complex
 #endif
@@ -72,7 +68,7 @@
 #endif
 
 /*
- * Should actually be `0` until C23, but this has slightly better error
+ * Should actually be `0` until C23, but this has slightly bettser error
  * checking most places. Either way, let built in headers define when possible.
  *
  * Reference:
@@ -81,6 +77,8 @@
 #ifndef false
 #define false ((_Bool)+0u)
 #endif
+
+#define typeof __typeof
 
 #define types_compatible(a, b) \
     (__builtin_types_compatible_p(typeof(a), typeof(b)))
@@ -126,10 +124,12 @@
 
 /* clang-format on */
 
-#define container_of(ptr, type, member)                   \
-    ({                                                    \
-        const typeof(((type *)0)->member) *__ptr = (ptr); \
-        (type *)((char *)__ptr - offsetof(type, member)); \
+#define container_of(ptr, type, member)                                        \
+    ({                                                                         \
+        void *__ptr = (ptr);                                                   \
+        static_assert(types_compatible(*(ptr), ((type *)0)->member) || \
+                      types_compatible(*(ptr), void));                         \
+        (type *)(__ptr - offsetof(type, member));                             \
     })
 
 #define array_size(a)               \
@@ -197,6 +197,9 @@ typedef __uint128_t uint128_t;
         *__b = __tmp;                              \
     } while (0)
 
+/*
+ * Use `it` to iterate through each
+ */
 #define for_each(it, arr)                                                     \
     for (int __for_each_##it = 0;                                             \
          ((it = (arr) + __for_each_##it), __for_each_##it < array_size(arr)); \

@@ -29,23 +29,7 @@ unsigned int floor_log2(unsigned int x)
 
 unsigned int ceil_log2(unsigned int x)
 {
-    return !!(x & (x - 1)) * (floor_log2(x - 1) + 1);
-}
-
-unsigned int floor_log10(unsigned int x)
-{
-    static unsigned int pow2_width[] = {
-        1, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5,  5,
-        5, 6, 6, 6, 7, 7, 7, 7, 8, 8, 8, 9, 9, 9, 10, 10,
-    };
-
-    static unsigned int pow10[] = {
-        0,      10,      100,      1000,      10000,
-        100000, 1000000, 10000000, 100000000, 1000000000,
-    };
-
-    int digits = pow2_width[floor_log2(x) + 1];
-    return digits - (x < pow10[digits - 1]);
+    return floor_log2(x) + !!(x & (x - 1));
 }
 
 int gcd(int a, int b)
@@ -59,7 +43,7 @@ int gcd(int a, int b)
         b = c;
     }
 
-    while (b > 1) {
+    while (b) {
         int c = a % b;
         a = b;
         b = c;

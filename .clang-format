@@ -27,8 +27,22 @@ BinPackParameters: true
 BreakBeforeBraces: Custom
 ForEachMacros:
     - for_each
+    - list_for_each
+    - list_for_each_safe
+    - list_for_each_rev
+    - list_for_each_rev_safe
     - list_for_each_entry
     - list_for_each_entry_safe
+    - list_for_each_entry_rev
+    - list_for_each_entry_rev_safe
+    - hlist_for_each
+    - hlist_for_each_safe
+    - hlist_for_each_rev
+    - hlist_for_each_rev_safe
+    - hlist_for_each_entry
+    - hlist_for_each_entry_safe
+    - hlist_for_each_entry_rev
+    - hlist_for_each_entry_rev_safe
 BraceWrapping:
     AfterClass: false
     AfterControlStatement: false

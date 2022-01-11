@@ -93,12 +93,12 @@ static inline void list_swap(struct list_node *a, struct list_node *b)
     }
 }
 
-static inline bool list_is_head(struct list_node *item, struct list_node *node)
+static inline bool list_is_first(struct list_node *item, struct list_node *node)
 {
     return node->prev == item;
 }
 
-static inline bool list_is_tail(struct list_node *item, struct list_node *node)
+static inline bool list_is_last(struct list_node *item, struct list_node *node)
 {
     return node->next == item;
 }
@@ -108,13 +108,21 @@ static inline bool list_empty(struct list_node *node)
     return node->next == node;
 }
 
-#define list_entry(node, type, member) container_of(node, type, member)
+#define __assert_list_node(x) \
+    ({ static_assert(types_compatible((x), struct list_node)); })
 
-#define list_first_entry(node, type, member) \
-    list_entry((node)->next, type, member)
+#define list_entry(node, type, member)           \
+    ({                                           \
+        __assert_list_node(*(node));             \
+        __assert_list_node(((type *)0)->member); \
+        container_of(node, type, member);        \
+    })
 
-#define list_last_entry(node, type, member) \
-    list_entry((node)->prev, type, member)
+#define list_first_entry(head, type, member) \
+    list_entry((head)->next, type, member)
+
+#define list_last_entry(head, type, member) \
+    list_entry((head)->prev, type, member)
 
 #define list_next_entry(entry, member) \
     list_entry((entry)->member.next, typeof(*(entry)), member)
@@ -122,13 +130,18 @@ static inline bool list_empty(struct list_node *node)
 #define list_prev_entry(entry, member) \
     list_entry((entry)->member.prev, typeof(*(entry)), member)
 
-#define list_for_each_entry(it, node, member)              \
-    for (it = list_first_entry(node, typeof(*it), member); \
-         &it->member != (node); it = list_next_entry(it, member))
+#define list_for_each(pos, head)                                  \
+    for (__assert_list_node(*(head)), __assert_list_node(*(pos)), \
+         pos = (head)->next;                                      \
+         pos != (head); pos = pos->next)
 
-#define list_for_each_entry_safe(it, tmp, head, member)    \
-    for (it = list_first_entry(node, typeof(*it), member), \
-        tmp = list_next_entry(it, member);                 \
-         &it->member != (node); it = tmp, tmp = list_next_entry(tmp))
+#define list_for_each_entry(pos, head, member)                 \
+    for (pos = list_first_entry(head, typeof(*(pos)), member); \
+         &pos->member != head; pos = list_next_entry(pos, member))
+
+#define list_for_each_entry_safe(pos, tmp, head, member)       \
+    for (pos = list_first_entry(head, typeof(*(pos)), member), \
+        tmp = list_next_entry(pos, member);                    \
+         &tmp->member != head; pos = tmp, tmp = list_next_entry(tmp, member))
 
 #endif

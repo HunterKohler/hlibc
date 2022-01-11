@@ -7,7 +7,7 @@
 
 #include <stdio.h>
 
-#include <testlib/testlib.h>
+#include <testctl/testctl.h>
 #include <hlibc/string.h>
 #include <hlibc/crypto/des.h>
 
