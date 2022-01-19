@@ -11,7 +11,6 @@
 #define SIPHASH_BLOCK_SIZE 8
 #define SIPHASH_KEY_SIZE 16
 
-
 /*
  * SipHash 2-4
  *

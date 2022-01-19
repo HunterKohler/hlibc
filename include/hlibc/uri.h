@@ -50,5 +50,4 @@ bool is_ipv6(const char *str);
 bool is_ipv4(const char *str);
 bool is_ipfuture(const char *str);
 
-
 #endif

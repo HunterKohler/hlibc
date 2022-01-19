@@ -177,7 +177,7 @@ static inline size_t hamming_dist(const void *a, const void *b, size_t n)
     const uint8_t *y = b;
 
     size_t dist = 0;
-    for(int i = 0; i < n; i++)
+    for (int i = 0; i < n; i++)
         dist += __builtin_popcount(x[i] ^ y[i]);
     return dist;
 }
