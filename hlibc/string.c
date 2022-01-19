@@ -8,6 +8,11 @@
 #include <hlibc/bit.h>
 #include <hlibc/string.h>
 
+void *zalloc(size_t n)
+{
+    return calloc(1, n);
+}
+
 char *stralloc(size_t n)
 {
     char *buf = malloc(n + 1);
@@ -185,5 +190,55 @@ int b64_decode(const char *restrict src, void *restrict dest, size_t size)
         break;
     }
 
+    return 0;
+}
+
+int int128_to_string(int128_t val, char *buf, size_t buf_size)
+{
+    char tmp[40];
+    int scale = 1 - 2 * (val < 0);
+    int i = 0;
+
+    if (!val)
+        tmp[i++] = '0';
+
+    while (val) {
+        tmp[i++] = scale * (val % 10) + '0';
+        val /= 10;
+    }
+
+    if (scale == -1)
+        tmp[i++] = '-';
+
+    if (i + 1 > buf_size)
+        return ENOMEM;
+
+    for (int j = 0; j < i; j++)
+        buf[j] = tmp[i - 1 - j];
+
+    buf[i] = 0;
+    return 0;
+}
+
+int uint128_to_string(uint128_t val, char *buf, size_t buf_size)
+{
+    char tmp[40];
+    int i = 0;
+
+    if (!val)
+        tmp[i++] = '0';
+
+    while (val) {
+        tmp[i++] = (val % 10) + '0';
+        val /= 10;
+    }
+
+    if (i + 1 > buf_size)
+        return ENOMEM;
+
+    for (int j = 0; j < i; j++)
+        buf[j] = tmp[i - 1 - j];
+
+    buf[i] = 0;
     return 0;
 }

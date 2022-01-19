@@ -7,6 +7,24 @@
 
 #include <hlibc/def.h>
 
+/*
+ * Reference:
+ * https://gcc.gnu.org/onlinedocs/gcc/Integer-Overflow-Builtins.html
+ */
+#define add_overflow(a, b, dest) __builtin_add_overflow((a), (b), (dest))
+
+/*
+ * Reference
+ * https://gcc.gnu.org/onlinedocs/gcc/Integer-Overflow-Builtins.html
+ */
+#define sub_overflow(a, b, dest) __builtin_sub_overflow((a), (b), (dest))
+
+/*
+ * Reference
+ * https://gcc.gnu.org/onlinedocs/gcc/Integer-Overflow-Builtins.html
+ */
+#define mul_overflow(a, b, dest) __builtin_mul_overflow((a), (b), (dest))
+
 #define max(a, b)              \
     ({                         \
         typeof(a) __a = (a);   \

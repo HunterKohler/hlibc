@@ -30,10 +30,6 @@
 #define thread_local _Thread_local
 #endif
 
-#ifndef static_assert
-#define static_assert _Static_assert
-#endif
-
 #ifndef noreturn
 #define noreturn _Noreturn
 #endif
@@ -52,6 +48,10 @@
 
 #ifndef bool
 #define bool _Bool
+#endif
+
+#ifndef static_assert
+#define static_assert _Static_assert
 #endif
 
 /* clang-format off */
@@ -124,12 +124,12 @@
 
 /* clang-format on */
 
-#define container_of(ptr, type, member)                                        \
-    ({                                                                         \
-        void *__ptr = (ptr);                                                   \
+#define container_of(ptr, type, member)                                \
+    ({                                                                 \
+        void *__ptr = (ptr);                                           \
         static_assert(types_compatible(*(ptr), ((type *)0)->member) || \
-                      types_compatible(*(ptr), void));                         \
-        (type *)(__ptr - offsetof(type, member));                             \
+                      types_compatible(*(ptr), void));                 \
+        (type *)(__ptr - offsetof(type, member));                      \
     })
 
 #define array_size(a)               \
@@ -173,19 +173,17 @@
         }                                                   \
     } while (0)
 
-static inline void *zalloc(size_t size)
-{
-    return calloc(1, size);
-}
-
 /*
  * Reference:
  * https://en.cppreference.com/w/c/language/type
  * https://gcc.gnu.org/onlinedocs/gcc/_005f_005fint128.html
  */
-typedef unsigned __int128 __uint128;
-typedef __int128_t int128_t;
-typedef __uint128_t uint128_t;
+typedef __int128 int128_t;
+typedef unsigned __int128 uint128_t;
+
+#define UINT128_MAX ((uint128_t)-1)
+#define INT128_MAX (((int128_t)0x7fffffffffffffff << 64) | 0xffffffffffffffff)
+#define INT128_MIN (-INT128_MAX - 1)
 
 #define swap(a, b)                                 \
     do {                                           \

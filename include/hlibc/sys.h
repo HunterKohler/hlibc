@@ -7,9 +7,19 @@
 
 #include <stddef.h>
 
+/*
+ * Get system's core count.
+ */
 size_t core_count();
-size_t page_size();
-void *pageof(const void *addr);
 
+/*
+ * Get system's page size.
+ */
+size_t page_size();
+
+/*
+ * Get the starting address of the page containing `addr`.
+ */
+void *pageof(const void *addr);
 
 #endif
