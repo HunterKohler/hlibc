@@ -10,7 +10,7 @@ GENHTML = $(shell which genhtml)
 CPPFLAGS = -MD -MP -I./include
 CFLAGS = -fanalyzer -fpic -pthread -std=c11 -Wall -Wextra \
 	-Wno-implicit-fallthrough -Wno-override-init -Wno-sign-compare \
-	-Wno-unused-function
+	-Wno-unused-function -Wno-analyzer-malloc-leak
 LDFLAGS = -Lbuild/lib -pthread
 LDLIBS =
 
@@ -30,14 +30,14 @@ endif
 
 SRC_HLIBC = $(shell find hlibc -name \*.c)
 SRC_HLIBC_TEST = $(shell find test/hlibc -name \*.c)
-SRC_TESTCTL = $(shell find testctl -name \*.c)
+SRC_TESTCTL = $(shell find htest -name \*.c)
 
 OBJ_HLIBC = $(patsubst %.c,build/%.o,$(SRC_HLIBC))
 OBJ_HLIBC_TEST = $(patsubst %.c,build/%.o,$(SRC_HLIBC_TEST))
 OBJ_TESTCTL = $(patsubst %.c,build/%.o,$(SRC_TESTCTL))
 
 LIB_HLIBC = build/lib/libhlibc.so
-LIB_TESTCTL = build/lib/libtestctl.so
+LIB_TESTCTL = build/lib/libhtest.so
 
 BIN_HLIBC_TEST = bin/test/hlibc
 
@@ -58,7 +58,7 @@ DIRS = $(sort $(dir $(ALLS)))
 
 $(shell $(MKDIR) $(DIRS))
 
-.PHONY: all clean remake coverage
+.PHONY: all clean remake coverage hlibc_test format
 
 all: $(ALLS)
 
@@ -66,6 +66,12 @@ clean:
 	$(RM) bin build coverage
 
 remake: | clean all
+
+hlibc_test: $(BIN_HLIBC_TEST)
+	$(BIN_HLIBC_TEST)
+
+format:
+	@./scripts/format $(SRC) include
 
 coverage: $(COVS)
 
@@ -85,7 +91,7 @@ $(LIB_TESTCTL): $(OBJ_TESTCTL) | $(LIB_HLIBC)
 $(LIB_TESTCTL): LDLIBS += -lhlibc
 
 $(BIN_HLIBC_TEST): $(OBJ_HLIBC_TEST) | $(LIB_HLIBC) $(LIB_TESTCTL)
-$(BIN_HLIBC_TEST): LDLIBS += -lhlibc -ltestctl
+$(BIN_HLIBC_TEST): LDLIBS += -lhlibc -lhtest
 
 $(COV_HLIBC_INIT): $(LIB_HLIBC_TEST)
 	$(RM) $$(find build -name '*.gcda')
