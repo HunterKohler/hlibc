@@ -9,6 +9,11 @@
 #include <errno.h>
 #include <hlibc/def.h>
 
+struct string_view {
+    const char *str;
+    size_t size;
+};
+
 /*
  * Allocated length `n` zero-d buffer.
  */
@@ -53,6 +58,11 @@ size_t hex_decode_size(size_t n);
  * Encodes `n` bytes from source into a hex encoded string at `dest`.
  */
 void hex_encode(const void *restrict src, size_t n, char *restrict dest);
+
+/*
+ * Encodes a single byte 'src' to 'dest'. Does not append null terminator.
+ */
+void hex_encode_byte(uint8_t src, char *dest);
 
 /*
  * Writes at most `size` hex-decoded bytes from string `src` to `dest`.

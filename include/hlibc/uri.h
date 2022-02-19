@@ -1,53 +1,32 @@
-/*
- * Copyright (C) 2021-2022 John Hunter Kohler <jhunterkohler@gmail.com>
- */
-
 #ifndef HLIBC_URI_H_
 #define HLIBC_URI_H_
 
-#include <ctype.h>
-#include <string.h>
+#include <hlibc/ctype.h>
 #include <hlibc/string.h>
-#include <hlibc/def.h>
 
-enum uri_host_type {
-    URI_HOST_IP4,
-    URI_HOST_IP6,
-    URI_HOST_IP_FUTURE,
-    URI_HOST_DNS,
-    URI_HOST_UNKNOWN,
+struct string_view {
+    const char *str;
+    size_t size;
 };
 
-struct uri {
-    char *scheme;
-    char *userinfo;
-    char *host;
-    char *path;
-    char *query;
-    char *fragment;
-    uint16_t port;
+enum uri_host_type {
+    URI_HOST_IPV4,
+    URI_HOST_IPV6,
+    URI_HOST_IPVF,
+    URI_HOST_NAME,
+};
+
+struct uri_segments {
+    struct string_view scheme;
+    struct string_view userinfo;
+    struct string_view host;
+    struct string_view port;
+    struct string_view path;
+    struct string_view query;
+    struct string_view fragment;
     enum uri_host_type host_type;
 };
 
-int uri_init(struct uri *target);
-void uri_destroy(struct uri *target);
-
-/*
- * Sets `dest`'s scheme to a normalized copy of `scheme`.
- *
- * Per RFC 3986:
- * scheme = ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )
- */
-int uri_set_scheme(struct uri *dest, const char *src);
-
-int uri_set_host(struct uri *dest, const char *src);
-int uri_set_userinfo(struct uri *dest, const char *src);
-int uri_set_port(struct uri *dest, uint16_t port);
-int uri_parse_segments(struct uri *dest, const char *ptr);
-
-bool is_dns(const char *str);
-bool is_ipv6(const char *str);
-bool is_ipv4(const char *str);
-bool is_ipfuture(const char *str);
+int uri_parse_segments(const char *src, struct uri_segments *dest);
 
 #endif

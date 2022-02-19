@@ -1,333 +1,436 @@
-/*
- * Copyright (C) 2021-2022 John Hunter Kohler <jhunterkohler@gmail.com>
- */
-
+#include <stddef.h>
 #include <ctype.h>
+#include <stdlib.h>
 #include <string.h>
-#include <hlibc/string.h>
 #include <hlibc/uri.h>
 
-int uri_init(struct uri *target)
+const char scheme_cset[256] = {
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0,
+    0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+};
+
+const char userinfo_cset[256] = {
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1,
+    0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+};
+
+const char name_cset[256] = {
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1,
+    0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+};
+
+const char query_cset[256] = {
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1,
+    0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+};
+
+const char fragment_cset[256] = {
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1,
+    0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+};
+
+const char ipvf_cset[256] = {
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1,
+    0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+};
+
+const char path_cset[256] = {
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1,
+    0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+};
+
+static bool is_pct_enc(const char *pos)
 {
-    memset(target, 0, sizeof(*target));
-    return 0;
+    return pos[0] == '%' && isxdigit(pos[1]) && isxdigit(pos[2]);
 }
 
-void uri_destroy(struct uri *target)
+static bool is_scheme_cset(const char *pos)
 {
-    free(target->scheme);
-    free(target->userinfo);
-    free(target->host);
-    free(target->query);
-    free(target->fragment);
+    return scheme_cset[(unsigned)*pos];
 }
 
-int uri_set_scheme(struct uri *dest, const char *src)
+static bool is_userinfo_cset(const char *pos)
 {
-    if (!src) {
-        free(dest->scheme);
-        dest->scheme = NULL;
-        return 0;
-    }
-
-    if (!isalpha(src[0]))
-        return EINVAL;
-
-    char *scheme = strdup(src);
-    if (!scheme)
-        return ENOMEM;
-
-    while (isalnum(*scheme) || *scheme == '+' || *scheme == '-' ||
-           *scheme == '.')
-        *scheme = tolower(*scheme);
-
-    if (*scheme) {
-        free(dest->scheme);
-        dest->scheme = scheme;
-        return 0;
-    } else {
-        free(scheme);
-        return EINVAL;
-    }
+    return userinfo_cset[(unsigned)*pos] || is_pct_enc(pos);
 }
 
-int uri_set_host(struct uri *dest, const char *src)
+static bool is_query_cset(const char *pos)
 {
-    if (!src) {
-        free(dest->host);
-        dest->host = NULL;
-        return 0;
-    }
-
-    char *host;
-    enum uri_host_type type = is_ipv4(src)     ? URI_HOST_IP4 :
-                              is_ipv6(src)     ? URI_HOST_IP6 :
-                              is_ipfuture(src) ? URI_HOST_IP_FUTURE :
-                              is_dns(src)      ? URI_HOST_DNS :
-                                                 URI_HOST_UNKNOWN;
-
-    if (type == URI_HOST_UNKNOWN) {
-        size_t len = strlen(src);
-        host = malloc(3 * len);
-        if (!host)
-            return ENOMEM;
-
-        len = 0;
-        while (*src) {
-            if (src[0] == '%' && isxdigit(src[1]) && isxdigit(src[2])) {
-                int val = 16 * hex_val(src[1]) + hex_val(src[2]);
-
-                if (isalnum(val) || strchr("!$&'()*+,;=-._~", val)) {
-                    host[len++] = val;
-                    src += 3;
-                } else {
-                    host[len++] = *src++;
-                    host[len++] = toupper(*src++);
-                    host[len++] = toupper(*src++);
-                }
-            } else if (isalnum(*src) || strchr("!$&'()*+,;=-._~", *src)) {
-                host[len++] = *src++;
-            } else {
-                host[len++] = '%';
-                host[len++] = *src / 16;
-                host[len++] = *src % 16;
-                src += 1;
-            }
-        }
-
-        char *buf = realloc(host, len + 1);
-        if (!buf) {
-            free(host);
-            return ENOMEM;
-        }
-
-        buf[len] = 0;
-        host = buf;
-    } else {
-        host = strdup(src);
-        if (!host)
-            return ENOMEM;
-    }
-
-    free(dest->host);
-    dest->host = host;
-    dest->host_type = type;
-    return 0;
+    return query_cset[(unsigned)*pos] || is_pct_enc(pos);
 }
 
-int uri_set_userinfo(struct uri *dest, const char *src)
+static bool is_fragment_cset(const char *pos)
 {
-    if (!src) {
-        free(dest->userinfo);
-        dest->userinfo = NULL;
-        return 0;
-    }
-
-    int len = strlen(src);
-    char *userinfo = malloc(3 * len + 1);
-    if (!userinfo)
-        return ENOMEM;
-
-    len = 0;
-    while (*src) {
-        if (src[0] == '%' && isxdigit(src[1]) && isxdigit(src[2])) {
-            char val = 16 * hex_val(src[1]) + hex_val(src[2]);
-
-            if (isalnum(val) || strchr("!$&'()*+,;=-._~:", val)) {
-                userinfo[len++] = *src++;
-                userinfo[len++] = *src++;
-                userinfo[len++] = *src++;
-            } else {
-                userinfo[len++] = val;
-                src += 3;
-            }
-        } else if (isalnum(src[0]) || strchr("!$&'()*+,;=-._~:", src[0])) {
-            userinfo[len++] = '%';
-            userinfo[len++] = src[0] / 16;
-            userinfo[len++] = src[0] % 16;
-            src += 1;
-        } else {
-            userinfo[len++] = *src++;
-        }
-    }
-
-    char *buf = realloc(userinfo, len + 1);
-    if (!buf) {
-        free(userinfo);
-        return ENOMEM;
-    }
-
-    buf[len] = 0;
-    dest->userinfo = buf;
-    return 0;
+    return fragment_cset[(unsigned)*pos] || is_pct_enc(pos);
 }
 
-int uri_set_port(struct uri *dest, uint16_t port)
+static bool is_name_cset(const char *pos)
 {
-    dest->port = port;
-    return 0;
+    return name_cset[(unsigned)*pos] || is_pct_enc(pos);
 }
 
-int uri_parse_segments(struct uri *dest, const char *ptr)
+static bool is_ipvf_cset(const char *pos)
 {
-    size_t len;
-    memset(dest, 0, sizeof(*dest));
+    return ipvf_cset[(unsigned)*pos];
+}
 
-    if (!ptr)
-        return EINVAL;
+static bool is_path_cset(const char *pos)
+{
+    return path_cset[(unsigned)*pos] || is_pct_enc(pos);
+}
 
-    len = strcspn(ptr, ":/?#");
-    len *= ptr[len] == ':';
+int parse_scheme(const char **src_pos)
+{
+    const char *pos = *src_pos;
 
-    if (len) {
-        dest->scheme = strndup(ptr, len);
-        if (!dest->scheme)
-            goto error_nomem;
+    if (isalpha(*pos)) {
+        while (is_scheme_cset(pos))
+            pos++;
 
-        ptr += len + 1;
-    }
-
-    if (!memcmp("//", ptr, 2)) {
-        ptr += 2;
-        len = strcspn(ptr, "@/?#");
-
-        if (ptr[len] == '@') {
-            dest->userinfo = strndup(ptr, len);
-            if (!dest->userinfo)
-                goto error_nomem;
-
-            ptr += len + 1;
-        }
-
-        if (ptr[0] == '[') {
-            len = strcspn(ptr, "]/?#");
-            if (ptr[len++] != ']')
-                goto error_inval;
-        } else {
-            len = strcspn(ptr, ":/?#");
-        }
-
-        dest->host = strndup(ptr, len);
-        if (!dest->host)
-            goto error_nomem;
-
-        ptr += len;
-        if (ptr[0] == ':') {
-            ptr += 1;
-            len = strcspn(ptr, "/?#");
-            if (!len || len > 5 || ptr[0] == '0')
-                goto error_inval;
-
-            int val = 0;
-            for (int i = 0; i < len; i++) {
-                if (!isdigit(ptr[i]))
-                    goto error_inval;
-                val = 10 * val + ptr[i] - '0';
-            }
-
-            if (val > (1 << 16))
-                goto error_inval;
-
-            dest->port = val;
-            ptr += len;
+        if (*pos++ == ':') {
+            *src_pos = pos;
+            return 0;
         }
     }
 
-    len = strcspn(ptr, "?#");
-    dest->path = strndup(ptr, len);
-    if (!dest->path)
-        goto error_nomem;
-
-    ptr += len;
-
-    if (ptr[0] == '?') {
-        ptr += 1;
-        len = strcspn(ptr, "#");
-        dest->query = strndup(ptr, len);
-        if (!dest->path)
-            goto error_nomem;
-
-        ptr += len;
-    }
-
-    if (ptr[0] == '#') {
-        ptr += 1;
-        dest->query = strdup(ptr);
-        if (!dest->query)
-            goto error_nomem;
-    }
-
-    return 0;
-error_nomem:
-    uri_destroy(dest);
-    return ENOMEM;
-error_inval:
-    uri_destroy(dest);
     return EINVAL;
 }
 
-bool is_dns(const char *str)
+int parse_userinfo(const char **src_pos)
 {
-    if (!str || !isalnum(*str))
-        return false;
+    const char *pos = *src_pos;
 
-    int labels = 1;
-    int label_len = 1;
-    int i = 1;
+    while (is_userinfo_cset(pos))
+        pos++;
 
-    for (; i < 254 && str[i]; i++) {
-        if (str[i] == '.') {
-            if (!isalnum(str[i - 1]) || !isalnum(str[i + 1]) || label_len > 63)
-                return false;
-
-            labels += 1;
-            label_len = 0;
-        } else if (isalnum(str[i]) || str[i] == '-') {
-            label_len += 1;
-        } else {
-            return false;
-        }
+    if (*pos++ == '@') {
+        *src_pos = pos;
+        return 0;
     }
 
-    return !str[i] && label_len >= 2 && label_len <= 63 && labels >= 2 &&
-           isalnum(str[i - 1]);
+    return EINVAL;
 }
 
-bool is_ipv6(const char *str)
+int parse_query(const char **src_pos)
 {
-    return false;
+    const char *pos = *src_pos;
+
+    while (is_query_cset(pos))
+        pos++;
+
+    *src_pos = pos;
+    return 0;
 }
 
-bool is_ipfuture(const char *str)
+int parse_fragment(const char **src_pos)
 {
-    return false;
+    const char *pos = *src_pos;
+
+    while (is_fragment_cset(pos))
+        pos++;
+
+    *src_pos = pos;
+    return 0;
 }
 
-bool is_ipv4(const char *str)
+int parse_name(const char **src_pos)
 {
+    const char *pos = *src_pos;
+
+    while (is_name_cset(pos))
+        pos++;
+
+    *src_pos = pos;
+    return 0;
+}
+
+int parse_ipv4(const char **src_pos)
+{
+    const char *pos = *src_pos;
+
     for (int i = 0; i < 4; i++) {
-        if (isdigit(str[0])) {
-            if (isdigit(str[1])) {
-                if (str[0] == '0')
-                    return false;
-                if (isdigit(str[2])) {
-                    if (255 < 100 * (str[0] - '0') + 10 * (str[1] - '0') +
-                                  (str[2] - '0'))
-                        return false;
-                    str += 3;
-                } else {
-                    str += 2;
-                }
+        int val = 0;
+
+        if (isdigit(*pos)) {
+            if (*pos == '0') {
+                pos++;
             } else {
-                str += 1;
+                val = 10 * val + *pos++ - '0';
+                if (isdigit(*pos)) {
+                    val = 10 * val + *pos++ - '0';
+                    if (isdigit(*pos)) {
+                        val = 10 * val + *pos++ - '0';
+                        if (val > 255)
+                            return EINVAL;
+                    }
+                }
             }
         } else {
-            return false;
+            return EINVAL;
         }
 
-        if (i == 3 ? *str : *str++ != '.')
-            return false;
+        if (i < 3 && *pos++ != '.')
+            return EINVAL;
     }
 
-    return true;
+    *src_pos = pos;
+    return 0;
+}
+
+int parse_ipv6(const char **src_pos)
+{
+    const char *pos = *src_pos;
+    const char *last = pos;
+    bool comp = false;
+    int count = 0;
+
+    if (*pos++ != '[')
+        return EINVAL;
+
+    while (comp + count < 8) {
+        if (*pos == ':') {
+            pos++;
+            if (*pos == ':') {
+                if (comp)
+                    return EINVAL;
+
+                pos++;
+                comp = true;
+            }
+        } else if (*pos == '.') {
+            pos = last;
+            count += 2;
+            if (parse_ipv4(&pos))
+                return EINVAL;
+            break;
+        }
+
+        if (*pos == ']')
+            break;
+
+        last = pos;
+        if (hlib_isxdigit(*pos)) {
+            pos++;
+            if (hlib_isxdigit(*pos)) {
+                pos++;
+                if (hlib_isxdigit(*pos)) {
+                    pos++;
+                    if (hlib_isxdigit(*pos))
+                        pos++;
+                }
+            }
+
+            count++;
+        } else {
+            return EINVAL;
+        }
+    }
+
+    if (*pos++ != ']' || (comp ? count >= 8 : count < 8))
+        return EINVAL;
+
+    *src_pos = pos;
+    return 0;
+}
+
+int parse_ipvf(const char **src_pos)
+{
+    const char *pos = *src_pos;
+
+    if (*pos++ != '[' || *pos++ != 'v' || !isxdigit(*pos++))
+        return EINVAL;
+
+    while (isxdigit(*pos))
+        pos++;
+
+    if (*pos++ != '.' || !is_ipvf_cset(pos++))
+        return EINVAL;
+
+    while (is_ipvf_cset(pos))
+        pos++;
+
+    if (*pos++ != ']')
+        return EINVAL;
+
+    *src_pos = pos;
+    return 0;
+}
+
+int parse_port(const char **src_pos)
+{
+    const char *pos = *src_pos;
+
+    while (isdigit(*pos))
+        pos++;
+
+    *src_pos = pos;
+    return 0;
+}
+
+static int parse_path(const char **src_pos, bool scheme, bool authority)
+{
+    const char *pos = *src_pos;
+
+    if (authority) {
+        if (*pos != '/' && is_path_cset(pos))
+            return EINVAL;
+    } else if (!scheme) {
+        while (is_path_cset(pos) && *pos != '/') {
+            if (*pos == ':')
+                return EINVAL;
+            pos++;
+        }
+    }
+
+    while (is_path_cset(pos))
+        pos++;
+
+    *src_pos = pos;
+    return 0;
+}
+
+/*
+ * For an invalid URI, the contents of `dest` are undefined.
+ */
+int uri_parse_segments_switch(const char *src, struct uri_segments *dest)
+{
+    const char *pos = src;
+    const char *last = src;
+
+    memset(dest, 0, sizeof(*dest));
+
+    if (!parse_scheme(&pos)) {
+        dest->scheme.str = last;
+        dest->scheme.size = pos - last - 1;
+        last = pos;
+    }
+
+    pos = last;
+    if (*pos++ == '/' && *pos++ == '/') {
+        last = pos;
+
+        if (!parse_userinfo(&pos)) {
+            dest->userinfo.str = last;
+            dest->userinfo.size = pos - last - 1;
+            last = pos;
+        }
+
+        if (!parse_ipvf(&pos))
+            dest->host_type = URI_HOST_IPVF;
+        else if (!parse_ipv6(&pos))
+            dest->host_type = URI_HOST_IPV6;
+        else if (!parse_ipv4(&pos))
+            dest->host_type = URI_HOST_IPV4;
+        else if (!parse_name(&pos))
+            dest->host_type = URI_HOST_NAME;
+        else
+            return EINVAL;
+
+        dest->host.str = last;
+        dest->host.size = pos - last;
+        last = pos;
+
+        if (*pos == ':') {
+            last = ++pos;
+            if (parse_port(&pos))
+                return EINVAL;
+
+            dest->port.str = last;
+            dest->port.size = pos - last;
+            last = pos;
+        }
+    }
+
+    pos = last;
+    if (parse_path(&pos, dest->scheme.str, dest->host.str)) {
+        return EINVAL;
+    } else {
+        dest->path.str = last;
+        dest->path.size = pos - last;
+    }
+
+    if (*pos == '?') {
+        last = ++pos;
+        if (parse_query(&pos)) {
+            return EINVAL;
+        } else {
+            dest->query.str = last;
+            dest->query.size = pos - last;
+        }
+    }
+
+    if (*pos == '#') {
+        last = ++pos;
+        if (parse_fragment(&pos)) {
+            return EINVAL;
+        } else {
+            dest->fragment.str = last;
+            dest->fragment.size = pos - last;
+        }
+    }
+
+    return *pos ? EINVAL : 0;
 }

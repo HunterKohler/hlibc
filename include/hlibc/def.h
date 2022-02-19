@@ -157,6 +157,12 @@
 #define likely(x) __builtin_expect(!!(x), 1)
 #define unlikely(x) __builtin_expect(!!(x), 0)
 
+/*
+ * Reference:
+ * https://gcc.gnu.org/onlinedocs/gcc/Other-Builtins.html
+ */
+#define choose_expr __builtin_choose_expr
+
 #ifndef DEBUG
 #define DEBUG 0
 #endif
