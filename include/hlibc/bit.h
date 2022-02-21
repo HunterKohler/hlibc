@@ -77,7 +77,7 @@
  */
 static inline bool bit_test(const void *base, int i)
 {
-    return ((uint8_t *)base)[i >> 3] & (1 << (i % 8));
+    return (((const uint8_t *)base)[i >> 3] >> (7 - (i & 7))) & 1;
 }
 
 static inline void bit_set(void *base, int i)
