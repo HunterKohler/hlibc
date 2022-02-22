@@ -4,11 +4,6 @@
 #include <hlibc/ctype.h>
 #include <hlibc/string.h>
 
-struct string_view {
-    const char *str;
-    size_t size;
-};
-
 enum uri_host_type {
     URI_HOST_IPV4,
     URI_HOST_IPV6,
@@ -28,5 +23,12 @@ struct uri_segments {
 };
 
 int uri_parse_segments(const char *src, struct uri_segments *dest);
+
+int uri_normalize_scheme(const char *src, char *dest);
+int uri_normalize_userinfo(const char *src, char *dest);
+int uri_normalize_host(const char *src, char *dest);
+int uri_normalize_path(const char *src, char *dest);
+int uri_normalize_query(const char *src, char *dest);
+int uri_normalize_fragment(const char *src, char *dest);
 
 #endif
