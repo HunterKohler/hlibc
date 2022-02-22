@@ -1,110 +1,73 @@
 # Copyright (C) 2021-2022 John Hunter Kohler <jhunterkohler@gmail.com>
 SHELL = bash
 
-AR = /usr/bin/ar
-RM = rm -rf
-MKDIR = mkdir -p
-LCOV = $(shell which lcov)
-GENHTML = $(shell which genhtml)
-
 CPPFLAGS = -MD -MP -I./include
-CFLAGS = -fanalyzer -fpic -pthread -std=c11 -Wall -Wextra \
-	-Wno-implicit-fallthrough -Wno-override-init -Wno-sign-compare \
-	-Wno-unused-function -Wno-analyzer-malloc-leak
-LDFLAGS = -Lbuild/lib -pthread
+CFLAGS = \
+	-fanalyzer \
+	-fpic \
+	-std=c11 \
+	-Wall \
+	-Wextra \
+	-Wno-implicit-fallthrough \
+	-Wno-sign-compare \
+	-Wno-unused-function \
+	-Wno-override-init \
+	-Wno-analyzer-malloc-leak \
+	-Wno-analyzer-free-of-non-heap
+LDFLAGS = -L./build/hlibc -pthread
 LDLIBS =
 
 DEBUG ?= 1
 
 ifeq ($(DEBUG), 1)
 	CPPFLAGS += -DDEBUG=1
-	CFLAGS += -coverage -fno-inline -fsanitize=address -g3 -O0
-	LDFLAGS += -coverage -fsanitize=address
+	CFLAGS += -fno-inline -g3 -O0
+	LDFLAGS +=
 	LDLIBS +=
 else
-	CPPFLAGS +=
-	CFLAGS += -O3 -march=native
+	CPPFLAGS += -DDEBUG=0
+	CFLAGS += -O3
 	LDFLAGS += -O3
 	LDLIBS +=
 endif
 
-SRC_HLIBC = $(shell find hlibc -name \*.c)
-SRC_HLIBC_TEST = $(shell find test/hlibc -name \*.c)
-SRC_TESTCTL = $(shell find htest -name \*.c)
+HLIBC_SRC = $(shell find hlibc -name \*.c)
+HLIBC_OBJ = $(patsubst %.c,build/%.o,$(HLIBC_SRC))
+HLIBC_SO = build/hlibc/hlibc.so
 
-OBJ_HLIBC = $(patsubst %.c,build/%.o,$(SRC_HLIBC))
-OBJ_HLIBC_TEST = $(patsubst %.c,build/%.o,$(SRC_HLIBC_TEST))
-OBJ_TESTCTL = $(patsubst %.c,build/%.o,$(SRC_TESTCTL))
+TEST_SRC = $(shell find test -name \*.c)
+TEST_OBJ = $(patsubst %.c,build/%.o,$(TEST_SRC))
+TEST_SO = build/test/test.so
 
-LIB_HLIBC = build/lib/libhlibc.so
-LIB_TESTCTL = build/lib/libhtest.so
+HTEST_SRC = $(shell find htest -name \*.c)
+HTEST_OBJ = $(patsubst %.c,build/%.o,$(HTEST_SRC))
+HTEST_SO = build/htest/htest.so
 
-BIN_HLIBC_TEST = bin/test/hlibc
+$(shell mkdir -p $(sort $(dir $(HLIBC_OBJ) $(HTEST_OBJ) $(TEST_OBJ))))
 
-COV_HLIBC_INIT = coverage/hlibc/init.info
-COV_HLIBC_TEST = coverage/hlibc/test.info
-COV_HLIBC_INFO = coverage/hlibc/lcov.info
-COV_HLIBC_HTML = coverage/hlibc/index.html
+.PHONY: all clean
 
-SRCS = $(SRC_HLIBC) $(SRC_TESTCTL) $(SRC_HLIBC_TEST)
-OBJS = $(OBJ_HLIBC) $(OBJ_TESTCTL) $(OBJ_HLIBC_TEST)
-LIBS = $(LIB_HLIBC) $(LIB_TESTCTL)
-BINS = $(BIN_HLIBC_TEST)
-COVS = $(COV_HLIBC_INIT) $(COV_HLIBC_TEST) $(COV_HLIBC_INFO) \
-	$(COV_HLIBC_HTML)
-
-ALLS = $(LIBS) $(OBJS) $(SRCS) $(BINS) $(COVS)
-DIRS = $(sort $(dir $(ALLS)))
-
-$(shell $(MKDIR) $(DIRS))
-
-.PHONY: all clean remake coverage hlibc_test format
-
-all: $(ALLS)
+all: $(HLIBC_OBJ) $(HTEST_OBJ) $(TEST_OBJ) $(HLIBC_SO) $(HTEST_SO) $(TEST_SO)
 
 clean:
-	$(RM) bin build coverage
+	$(RM) -r bin build
 
-remake: | clean all
+$(HLIBC_SO): $(HLIBC_OBJ)
+$(HTEST_SO): $(HTEST_OBJ) $(HLIBC_SO)
+$(TEST_SO): $(TEST_OBJ) $(HTEST_SO) $(HLIBC_SO)
 
-hlibc_test: $(BIN_HLIBC_TEST)
-	$(BIN_HLIBC_TEST)
-
-format:
-	@./scripts/format $(SRC) include
-
-coverage: $(COVS)
+hlibc: $(HLIBC_SO)
+htest: $(HTEST_SO)
+test: $(TEST_SO)
+	@python -c 'from ctypes import CDLL; CDLL("$<").htest_run_global_suites()'
 
 build/%.o: %.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 build/%.so:
-	$(CC) $(LDFLAGS) $(LDLIBS) -shared $(filter-out %.so, $^) -o $@
+	$(CC) $(LDFLAGS) $(LDLIBS) -shared $^ -o $@
 
 bin/%:
-	$(CC) $(LDFLAGS) $(LDLIBS) $(filter-out %.so, $^) -o $@
-
-$(LIB_HLIBC): $(OBJ_HLIBC)
-$(LIB_HLIBC): LDLIBS +=
-
-$(LIB_TESTCTL): $(OBJ_TESTCTL) | $(LIB_HLIBC)
-$(LIB_TESTCTL): LDLIBS += -lhlibc
-
-$(BIN_HLIBC_TEST): $(OBJ_HLIBC_TEST) | $(LIB_HLIBC) $(LIB_TESTCTL)
-$(BIN_HLIBC_TEST): LDLIBS += -lhlibc -lhtest
-
-$(COV_HLIBC_INIT): $(LIB_HLIBC_TEST)
-	$(RM) $$(find build -name '*.gcda')
-	$(LCOV) -c -i -d build -o $@
-
-$(COV_HLIBC_TEST): $(COV_HLIBC_INIT) $(BIN_HLIBC_TEST)
-	$(BIN_HLIBC_TEST)
-	$(LCOV) -c -d build -o $@
-
-$(COV_HLIBC_INFO): $(COV_HLIBC_INIT) $(COV_HLIBC_TEST)
-	$(LCOV) $(addprefix -a ,$^) -o $@
-
-$(COV_HLIBC_HTML): $(COV_HLIBC_INFO)
-	$(GENHTML) -o $(@D) $^
+	$(CC) $(LDFLAGS) $(LDLIBS) $^ -o $@
 
 -include $(shell find build -name \*.d 2>/dev/null)
