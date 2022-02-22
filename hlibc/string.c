@@ -41,30 +41,52 @@ void memswap(void *restrict a, void *restrict b, size_t n)
     }
 }
 
+void memzero(void *ptr, size_t n)
+{
+    memset(ptr, 0, n);
+}
+
+static const int16_t hex_val_table[256] = {
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0,  1,  2,  3,  4,  5,  6,  7,  8,
+    9,  -1, -1, -1, -1, -1, -1, -1, 10, 11, 12, 13, 14, 15, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, 10, 11, 12, 13, 14, 15, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1,
+};
+
 int hex_val(char c)
 {
-    static int hex_val_table[] = {
-        [0 ... 255] = -1, ['0'] = 0,  ['1'] = 1,  ['2'] = 2,  ['3'] = 3,
-        ['4'] = 4,        ['5'] = 5,  ['6'] = 6,  ['7'] = 7,  ['8'] = 8,
-        ['9'] = 9,        ['a'] = 10, ['b'] = 11, ['c'] = 12, ['d'] = 13,
-        ['e'] = 14,       ['f'] = 15, ['A'] = 10, ['B'] = 11, ['C'] = 12,
-        ['D'] = 13,       ['E'] = 14, ['F'] = 15,
-    };
-
     return hex_val_table[(unsigned char)c];
 }
 
+const char hex_cset[] = "0123456789ABCDEF";
+
 void hex_encode(const void *restrict src, size_t n, char *restrict dest)
 {
-    static const char hex_charset[] = "0123456789ABCDEF";
+    const uint8_t *pos = src;
+    const uint8_t *end = pos + n;
 
-    const unsigned char *in = src;
-    for (int i = 0; i < n; i++) {
-        *dest++ = hex_charset[in[i] >> 4];
-        *dest++ = hex_charset[in[i] & 15];
+    while (pos < end) {
+        hex_encode_byte(*pos++, dest);
+        dest += 2;
     }
 
     *dest = 0;
+}
+
+void hex_encode_byte(uint8_t src, char *dest)
+{
+    dest[0] = hex_cset[src >> 4];
+    dest[1] = hex_cset[src & 15];
 }
 
 int hex_decode(const char *restrict src, void *restrict dest, size_t size)

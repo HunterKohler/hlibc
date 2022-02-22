@@ -31,13 +31,13 @@ void *memdup(const void *src, size_t n);
 
 /*
  * Swaps `n` bytes between `a` and `b`.
- *
- * Notes:
- * Compiling with sse/sse2 or avx/avx2 and level 3 optimization will vectorize
- * the loop, and make it as fast (if not faster) as a partially unrolled loop,
- * and faster than copying to a local buffer (static storage or not).
  */
 void memswap(void *restrict a, void *restrict b, size_t n);
+
+/*
+ * Sets memory to zero.
+ */
+void memzero(void *ptr, size_t n);
 
 /*
  * Returns hex value of char, or -1 if invalid character.
