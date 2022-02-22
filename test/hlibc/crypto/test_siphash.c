@@ -2,7 +2,8 @@
  * Copyright (C) 2021-2022 John Hunter Kohler <jhunterkohler@gmail.com>
  */
 
-#include <testctl/testctl.h>
+#include <string.h>
+#include <htest/htest.h>
 #include <hlibc/crypto/siphash.h>
 
 const uint8_t siphash_test_vector[64][8] = {
@@ -72,23 +73,30 @@ const uint8_t siphash_test_vector[64][8] = {
     { 0x72, 0x45, 0x06, 0xEB, 0x4C, 0x32, 0x8A, 0x95 },
 };
 
-TEST(test_siphash)
+void test_siphash(struct htest *test)
 {
     uint8_t key[16];
     uint8_t input[64];
     uint64_t out;
 
-    for (int i = 0; i < array_size(key); i++)
+    for (int i = 0; i < 16; i++)
         key[i] = i;
 
     for (int i = 0; i < 64; i++) {
         input[i] = i;
         siphash(input, i, key, &out);
-        ASSERT_MEM_EQ(&out, siphash_test_vector + i, sizeof(out));
+        HTEST_ASSERT_MEM_EQ(test, &out, siphash_test_vector + i, sizeof(out));
     }
 }
 
-// int main()
-// {
-//     test_siphash();
-// }
+struct htest_unit siphash_units[] = {
+    HTEST_UNIT(test_siphash),
+    {},
+};
+
+struct htest_suite siphash_test_suite = {
+    .name = "siphash test suite",
+    .units = siphash_units,
+};
+
+HTEST_DECLARE_SUITES(&siphash_test_suite);

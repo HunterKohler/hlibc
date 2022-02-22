@@ -2,11 +2,11 @@
  * Copyright (C) 2021-2022 John Hunter Kohler <jhunterkohler@gmail.com>
  */
 
-#include <testctl/testctl.h>
 #include <hlibc/bit.h>
 #include <hlibc/crypto/murmur.h>
+#include <htest/htest.h>
 
-TEST(test_murmurhash3_x86_32)
+void test_murmurhash3_x86_32(struct htest *test)
 {
     struct test_case {
         const char *input;
@@ -34,10 +34,23 @@ TEST(test_murmurhash3_x86_32)
     };
 
     uint32_t out;
-    struct test_case *tc;
 
-    for_each (tc, test_vector) {
-        murmurhash3_x86_32(tc->input, tc->len, tc->seed, &out);
-        ASSERT_EQ(le32_to_cpu(out), tc->expected);
+    for (int i = 0; i < array_size(test_vector); i++) {
+        murmurhash3_x86_32(test_vector[i].input, test_vector[i].len,
+                           test_vector[i].seed, &out);
+
+        HTEST_ASSERT_EQ(test, le32_to_cpu(out), test_vector[i].expected);
     }
 }
+
+struct htest_unit murmur_test_units[] = {
+    HTEST_UNIT(test_murmurhash3_x86_32),
+    {},
+};
+
+struct htest_suite murmur_test_suite = {
+    .name = "murmurhash test suite",
+    .units = murmur_test_units,
+};
+
+HTEST_DECLARE_SUITES(&murmur_test_suite);

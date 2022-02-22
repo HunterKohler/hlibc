@@ -7,11 +7,11 @@
 
 #include <stdio.h>
 
-#include <testctl/testctl.h>
 #include <hlibc/string.h>
 #include <hlibc/crypto/des.h>
+#include <htest/htest.h>
 
-TEST(test_des_left_shift)
+void test_des_left_shift(struct htest *test)
 {
     uint64_t key = 0xBD87A20E3BDAA0;
     uint64_t expected[] = {
@@ -25,71 +25,71 @@ TEST(test_des_left_shift)
 
     for (int i = 0; i < 16; i++) {
         k = des_left_shift(k, i);
-        ASSERT_EQ(k, expected[i]);
+        HTEST_ASSERT_EQ(test, k, expected[i]);
     }
 }
 
-TEST(test_des_PC_1)
+void test_des_PC_1(struct htest *test)
 {
     uint64_t input = 0xBD87A20E3BDAA065;
     uint64_t expected = 0x67A0D533E8B391;
     uint64_t res = des_PC_1(input);
 
-    ASSERT_EQ(res, expected);
+    HTEST_ASSERT_EQ(test, res, expected);
 }
 
-TEST(test_des_PC_2)
+void test_des_PC_2(struct htest *test)
 {
     uint64_t input = 0xBD87A20E3BDAA0;
     uint64_t expected = 0xCECD60BBCE16;
     uint64_t res = des_PC_2(input);
 
-    ASSERT_EQ(res, expected);
+    HTEST_ASSERT_EQ(test, res, expected);
 }
 
-TEST(test_des_P)
+void test_des_P(struct htest *test)
 {
     uint64_t input = 0xBD87A20E;
     uint64_t expected = 0x89EA53B2;
     uint64_t res = des_P(input);
 
-    ASSERT_EQ(res, expected);
+    HTEST_ASSERT_EQ(test, res, expected);
 }
 
-TEST(test_des_E)
+void test_des_E(struct htest *test)
 {
     uint64_t input = 0xBD87A20E;
     uint64_t expected = 0x5FBC0FD0405D;
     uint64_t res = des_E(input);
 
-    ASSERT_EQ(res, expected);
+    HTEST_ASSERT_EQ(test, res, expected);
 }
 
-TEST(test_des_IP)
+void test_des_IP(struct htest *test)
 {
     uint64_t input = 0xBD87A20E3BDAA065;
     uint64_t expected = 0xA0318B9367D5393E;
     uint64_t res = des_IP(input);
 
-    ASSERT_EQ(res, expected);
+    HTEST_ASSERT_EQ(test, res, expected);
 }
 
-TEST(test_des_IP_inv)
+void test_des_IP_inv(struct htest *test)
 {
     uint64_t input = 0xBD87A20E3BDAA065;
     uint64_t expected = 0xD2B553E1E0CE227C;
     uint64_t res = des_IP_inv(input);
 
-    ASSERT_EQ(res, expected);
+    HTEST_ASSERT_EQ(test, res, expected);
 }
 
-TEST(test_des_S)
+void test_des_S(struct htest *test)
 {
     uint64_t input = 0xEE4B7E1DD004;
     uint32_t expected = 0x784C348;
     uint32_t res = des_S(input);
 
-    ASSERT_EQ(res, expected);
+    HTEST_ASSERT_EQ(test, res, expected);
 }
 
 struct des_test_case {
@@ -314,7 +314,7 @@ struct des_test_set des_test_vector[] = {
     }
 };
 
-TEST(test_des_test_vector)
+void test_des_test_vector(struct htest *test)
 {
     for (int i = 0; i < array_size(des_test_vector); i++) {
         for (int j = 0; j < des_test_vector[i].size; j++) {
@@ -322,8 +322,23 @@ TEST(test_des_test_vector)
             uint64_t cipher = des(tc->plaintext, tc->key, DES_ENCRYPT);
             uint64_t plain = des(tc->ciphertext, tc->key, DES_DECRYPT);
 
-            ASSERT_EQ(cipher, tc->ciphertext);
-            ASSERT_EQ(plain, tc->plaintext);
+            HTEST_ASSERT_EQ(test, cipher, tc->ciphertext);
+            HTEST_ASSERT_EQ(test, plain, tc->plaintext);
         }
     }
 }
+
+struct htest_unit des_test_units[] = {
+    HTEST_UNIT(test_des_left_shift),  HTEST_UNIT(test_des_PC_1),
+    HTEST_UNIT(test_des_PC_2),        HTEST_UNIT(test_des_P),
+    HTEST_UNIT(test_des_E),           HTEST_UNIT(test_des_IP),
+    HTEST_UNIT(test_des_IP_inv),      HTEST_UNIT(test_des_S),
+    HTEST_UNIT(test_des_test_vector), {}
+};
+
+struct htest_suite des_test_suite = {
+    .name = "DES test suite",
+    .units = des_test_units,
+};
+
+HTEST_DECLARE_SUITES(&des_test_suite);

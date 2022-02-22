@@ -2,7 +2,7 @@
  * Copyright (C) 2021-2022 John Hunter Kohler <jhunterkohler@gmail.com>
  */
 
-#include <testctl/testctl.h>
+#include <htest/htest.h>
 #include <hlibc/string.h>
 
 struct encoding_test_case {
@@ -12,7 +12,7 @@ struct encoding_test_case {
     const char *b64_nopad;
 };
 
-struct encoding_test_case encoding_test_cases[] = {
+const struct encoding_test_case encoding_test_cases[] = {
     {
         .plain = "",
         .hex = "",
@@ -57,127 +57,135 @@ struct encoding_test_case encoding_test_cases[] = {
     },
 };
 
-TEST(test_b64_encode)
+void test_b64_encode(struct htest *test)
 {
-    struct encoding_test_case *tc;
-    for_each (tc, encoding_test_cases) {
+    for (int i = 0; i < array_size(encoding_test_cases); i++) {
+        const struct encoding_test_case *tc = encoding_test_cases + i;
         char out[256] = { 0 };
+
         b64_encode(tc->plain, strlen(tc->plain), out);
-        ASSERT_STR_EQ(out, tc->b64);
+        HTEST_ASSERT_STR_EQ(test, out, tc->b64);
     }
 }
 
-TEST(test_b64_decode)
+void test_b64_decode(struct htest *test)
 {
-    struct encoding_test_case *tc;
-
-
     /* With padding */
-    for_each (tc, encoding_test_cases) {
+    for (int i = 0; i < array_size(encoding_test_cases); i++) {
+        const struct encoding_test_case *tc = encoding_test_cases + i;
         char out[256] = { 0 };
+
         int ret = b64_decode(tc->b64, out, array_size(out));
 
-        ASSERT_NOT(ret);
-        ASSERT_STR_EQ(tc->plain, out);
+        HTEST_ASSERT_NOT(test, ret);
+        HTEST_ASSERT_STR_EQ(test, tc->plain, out);
     }
 
     /* Without padding */
-    for_each (tc, encoding_test_cases) {
+    for (int i = 0; i < array_size(encoding_test_cases); i++) {
+        const struct encoding_test_case *tc = encoding_test_cases + i;
         char out[256] = { 0 };
+
         int ret = b64_decode(tc->b64_nopad, out, array_size(out));
 
-        ASSERT_NOT(ret);
-        ASSERT_STR_EQ(tc->plain, out);
+        HTEST_ASSERT_NOT(test, ret);
+        HTEST_ASSERT_STR_EQ(test, tc->plain, out);
     }
 
     { /* Invalid input */
         char out[256] = { 0 };
-        char *invalid[] = { "a", "a=", "abc#","a==", "a===", "=", "(", "@", "ab==0" };
-        char **input;
+        char *invalid[] = { "a", "a=", "abc#", "a==",  "a===",
+                            "=", "(",  "@",    "ab==0" };
 
-        for_each(input, invalid) {
-            int ret = b64_decode(*input, out, array_size(out));
-            ASSERT_EQ(ret, EINVAL);
+        for (int i = 0; i < array_size(invalid); i++) {
+            int ret = b64_decode(invalid[i], out, array_size(out));
+            HTEST_ASSERT_EQ(test, ret, EINVAL);
         }
     }
 
     /* Short output buffer */
-    for_each (tc, encoding_test_cases) {
+    for (int i = 0; i < array_size(encoding_test_cases); i++) {
+        const struct encoding_test_case *tc = encoding_test_cases + i;
         char out[256] = { 0 };
         int len = strlen(tc->plain);
         int ret;
 
         for (int i = 0; i < len; i++) {
             ret = b64_decode(tc->b64, out, i);
-            ASSERT_EQ(ret, ENOMEM);
+            HTEST_ASSERT_EQ(test, ret, ENOMEM);
 
             ret = b64_decode(tc->b64_nopad, out, i);
-            ASSERT_EQ(ret, ENOMEM);
+            HTEST_ASSERT_EQ(test, ret, ENOMEM);
         }
 
         ret = b64_decode(tc->b64, out, len);
-        ASSERT_NOT(ret);
+        HTEST_ASSERT_NOT(test, ret);
 
         ret = b64_decode(tc->b64_nopad, out, len);
-        ASSERT_NOT(ret);
+        HTEST_ASSERT_NOT(test, ret);
     }
 }
 
-
-TEST(test_hex_encode)
+void test_hex_encode(struct htest *test)
 {
-    struct encoding_test_case *tc;
-
-    for_each (tc, encoding_test_cases) {
+    for (int i = 0; i < array_size(encoding_test_cases); i++) {
+        const struct encoding_test_case *tc = encoding_test_cases + i;
         char out[256] = { 0 };
 
         hex_encode(tc->plain, strlen(tc->plain), out);
-        ASSERT_STR_EQ(out, tc->hex);
+        HTEST_ASSERT_STR_EQ(test, out, tc->hex);
     }
 }
 
-TEST(test_hex_decode)
+void test_hex_decode(struct htest *test)
 {
-    struct encoding_test_case *tc;
-
-    for_each (tc, encoding_test_cases) {
+    for (int i = 0; i < array_size(encoding_test_cases); i++) {
+        const struct encoding_test_case *tc = encoding_test_cases + i;
         char out[256] = { 0 };
         int ret = hex_decode(tc->hex, out, array_size(out));
 
-        ASSERT_NOT(ret);
-        ASSERT_STR_EQ(out, tc->plain);
+        HTEST_ASSERT_NOT(test, ret);
+        HTEST_ASSERT_STR_EQ(test, out, tc->plain);
     }
 
     { /* testing invalids */
         char out[256] = { 0 };
         char *invalid[] = { "a", "x", "#", "abcde", "abcdefg" };
-        char **input;
 
-        for_each(input, invalid) {
-            int ret = hex_decode(*input, out, array_size(out));
-            ASSERT_EQ(ret, EINVAL);
+        for (int i = 0; i < array_size(invalid); i++) {
+            int ret = hex_decode(invalid[i], out, array_size(out));
+            HTEST_ASSERT_EQ(test, ret, EINVAL);
         }
     }
 
     /* testing small output buffer */
-    for_each (tc, encoding_test_cases) {
+    for (int i = 0; i < array_size(encoding_test_cases); i++) {
+        const struct encoding_test_case *tc = encoding_test_cases + i;
         char out[256] = { 0 };
         int len = strlen(tc->plain);
         int ret;
 
         for (int i = 0; i < len; i++) {
             ret = hex_decode(tc->hex, out, i);
-            ASSERT_EQ(ret, ENOMEM);
+            HTEST_ASSERT_EQ(test, ret, ENOMEM);
         }
 
         ret = hex_decode(tc->hex, out, len);
-        ASSERT_NOT(ret);
+        HTEST_ASSERT_NOT(test, ret);
     }
 }
 
-// TEST(test_stralloc)
-// {
-//     char *tmp = stralloc(10);
-// }
+struct htest_unit string_test_units[] = {
+    HTEST_UNIT(test_b64_encode),
+    HTEST_UNIT(test_b64_decode),
+    HTEST_UNIT(test_hex_encode),
+    HTEST_UNIT(test_hex_decode),
+    {},
+};
 
+struct htest_suite string_test_suite = {
+    .name = "string test suite",
+    .units = string_test_units,
+};
 
+HTEST_DECLARE_SUITES(&string_test_suite);
