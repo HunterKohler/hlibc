@@ -140,7 +140,7 @@ void md5_finalize(struct md5_context *restrict ctx, void *restrict dest)
         mod = -1;
     }
 
-    *((uint64_t *)(ctx->tail + 7)) = cpu_to_le64(ctx->size << 3);
+    ((uint64_t *)ctx->tail)[7] = cpu_to_le64(ctx->size << 3);
 
     memset(ctx->tail + mod + 1, 0, 55 - mod);
     md5_process_chunk(ctx, ctx->tail);

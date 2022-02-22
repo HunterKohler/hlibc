@@ -49,9 +49,8 @@ static inline void md2_update_state(struct md2_context *restrict ctx,
     int tmp = 0;
     int buffer[32];
 
-    memcpy(buffer, data, 16);
-
     for (int i = 0; i < 16; i++) {
+        buffer[i] = data[i];
         buffer[i + 16] = ctx->state[i] ^ data[i];
     }
 
@@ -84,7 +83,7 @@ static inline void md2_update_state(struct md2_context *restrict ctx,
 
 void md2_init(struct md2_context *ctx)
 {
-    memzero(ctx, sizeof(ctx));
+    memzero(ctx, sizeof(*ctx));
 }
 
 void md2_update(struct md2_context *restrict ctx, const void *restrict input,
@@ -117,15 +116,15 @@ void md2_update(struct md2_context *restrict ctx, const void *restrict input,
 
 void md2_finalize(struct md2_context *ctx, void *dest)
 {
-    int used = (ctx->size & 15);
+    int used = ctx->size & 15;
     int comp = 16 - used;
 
     for (int i = used; i < 16; i++) {
         ctx->tail[i] = comp;
     }
 
-    md2_update_checksum(ctx, ctx->checksum);
-    md2_update_state(ctx, ctx->checksum);
+    md2_update_checksum(ctx, ctx->tail);
+    md2_update_state(ctx, ctx->tail);
     md2_update_state(ctx, ctx->checksum);
 
     memcpy(dest, ctx->state, 16);
