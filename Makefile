@@ -21,8 +21,8 @@ DEBUG ?= 1
 
 ifeq ($(DEBUG), 1)
 	CPPFLAGS += -DDEBUG=1
-	CFLAGS += -fno-inline -g3 -O0
-	LDFLAGS +=
+	CFLAGS += -fno-inline -g3 -O0 -fsanitize=address
+	LDFLAGS += -fsanitize=address
 	LDLIBS +=
 else
 	CPPFLAGS += -DDEBUG=0
@@ -38,16 +38,19 @@ HLIBC_SO = build/hlibc/hlibc.so
 TEST_SRC = $(shell find test -name \*.c)
 TEST_OBJ = $(patsubst %.c,build/%.o,$(TEST_SRC))
 TEST_SO = build/test/test.so
+TEST_BIN = bin/test
 
 HTEST_SRC = $(shell find htest -name \*.c)
 HTEST_OBJ = $(patsubst %.c,build/%.o,$(HTEST_SRC))
 HTEST_SO = build/htest/htest.so
 
-$(shell mkdir -p $(sort $(dir $(HLIBC_OBJ) $(HTEST_OBJ) $(TEST_OBJ))))
+$(shell mkdir -p $(sort $(dir $(HLIBC_OBJ) $(HTEST_OBJ) $(TEST_OBJ) \
+	 $(HLIBC_SO) $(HTEST_SO)  $(TEST_SO) $(TEST_BIN))))
 
 .PHONY: all clean
 
-all: $(HLIBC_OBJ) $(HTEST_OBJ) $(TEST_OBJ) $(HLIBC_SO) $(HTEST_SO) $(TEST_SO)
+all: $(HLIBC_OBJ) $(HTEST_OBJ) $(TEST_OBJ) $(HLIBC_SO) $(HTEST_SO) $(TEST_SO) \
+	$(TEST_BIN)
 
 clean:
 	$(RM) -r bin build
@@ -56,10 +59,13 @@ $(HLIBC_SO): $(HLIBC_OBJ)
 $(HTEST_SO): $(HTEST_OBJ) $(HLIBC_SO)
 $(TEST_SO): $(TEST_OBJ) $(HTEST_SO) $(HLIBC_SO)
 
+$(TEST_BIN): $(TEST_OBJ) $(HLIBC_OBJ) $(HTEST_OBJ)
+
 hlibc: $(HLIBC_SO)
 htest: $(HTEST_SO)
-test: $(TEST_SO)
-	@python -c 'from ctypes import CDLL; CDLL("$<").htest_run_global_suites()'
+
+test: $(TEST_BIN)
+	$(TEST_BIN)
 
 build/%.o: %.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
