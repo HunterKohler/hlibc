@@ -17,7 +17,7 @@ struct md5_context {
     uint8_t tail[64];
 };
 
-void md5_init(struct md5_context *context);
+void md5_init(struct md5_context *ctx);
 void md5_update(struct md5_context *restrict ctx, const void *restrict src,
                 size_t size);
 void md5_finalize(struct md5_context *restrict ctx, void *restrict dest);

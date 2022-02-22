@@ -106,11 +106,11 @@ void md5_update(struct md5_context *restrict ctx, const void *restrict src,
 {
     const uint8_t *data = src;
     const uint8_t *end = data + size;
-    uint8_t used = ctx->size & 0x3F;
+    int used = ctx->size & 0x3F;
     ctx->size += size;
 
     if (used) {
-        uint8_t comp = 64 - used;
+        int comp = 64 - used;
 
         if (size < comp) {
             memcpy(ctx->tail + used, data, size);
