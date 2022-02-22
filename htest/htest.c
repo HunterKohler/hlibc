@@ -9,14 +9,14 @@ struct htest_resource_handle {
     void (*destroy)(void *);
 };
 
-int htest_init(struct htest *test, const char *name, FILE *global_log,
-               FILE *test_log)
+int htest_init(struct htest *test, const char *name, FILE *log)
 {
+    memset(test, 0, sizeof(*test));
+
     test->data = NULL;
     test->status = HTEST_PASSED;
     test->name = name;
-    test->global_log = global_log;
-    test->test_log = test_log;
+    test->log = log;
 
     list_node_init(&test->resources);
     return 0;
@@ -52,10 +52,12 @@ void *htest_create_resource(struct htest *test, struct htest_resource *res,
     return handle->data;
 }
 
-int htest_run_suite(struct htest_suite *suite, FILE *global_log, FILE *test_log)
+int htest_run_suite(struct htest_suite *suite, FILE *log)
 {
     struct htest_stats stats = {};
     struct htest test = {};
+
+    suite->log = log;
 
     htest_log(HTEST_INFO, suite, "# Suite: %s", suite->name);
 
@@ -63,7 +65,7 @@ int htest_run_suite(struct htest_suite *suite, FILE *global_log, FILE *test_log)
         size_t test_num = unit - suite->units + 1;
         stats.total++;
 
-        if (htest_init(&test, unit->name, global_log, test_log)) {
+        if (htest_init(&test, unit->name, log)) {
             htest_log(HTEST_ERROR, suite, "Failed to initialize test case: %s",
                       unit->name);
             continue;
@@ -86,20 +88,21 @@ int htest_run_suite(struct htest_suite *suite, FILE *global_log, FILE *test_log)
         case HTEST_SKIPPED:
             stats.skipped++;
             htest_log(HTEST_INFO, &test, "ok %zu - %s # SKIP%s%s", test_num,
-                      test.name, test.status_msg ? " " : "",
-                      test.status_msg ? test.status_msg : "");
+                      test.name, *test.status_msg ? " " : "",
+                      *test.status_msg ? test.status_msg : "");
             break;
         case HTEST_PASSED:
             stats.passed++;
+
             htest_log(HTEST_INFO, &test, "ok %zu - %s%s%s", test_num, test.name,
-                      test.status_msg ? " # " : "",
-                      test.status_msg ? test.status_msg : "");
+                      *test.status_msg ? " # " : "",
+                      *test.status_msg ? test.status_msg : "");
             break;
         case HTEST_FAILED:
             stats.failed++;
             htest_log(HTEST_INFO, &test, "not ok %zu - %s%s%s", test_num,
-                      test.name, test.status_msg ? " # " : "",
-                      test.status_msg ? test.status_msg : "");
+                      test.name, *test.status_msg ? " # " : "",
+                      *test.status_msg ? test.status_msg : "");
             break;
         }
 
@@ -172,20 +175,36 @@ void __htest_assert(const struct htest_assertion *assertion)
     }
 }
 
-void __htest_log(enum htest_log_level level, FILE *global_log, FILE *test_log,
-                 const char *fmt, ...)
+/*
+ * Log level is an unused param (haven't figured out logging levels yet). And
+ * currently unnamed only because GCC f****** ***** **** ** *** ***.
+ */
+void __htest_log(enum htest_log_level, FILE *log, const char *fmt, ...)
 {
     va_list ap;
 
-    if (global_log) {
+    if (log) {
         va_start(ap, fmt);
-        vfprintf(global_log, fmt, ap);
+        vfprintf(log, fmt, ap);
         va_end(ap);
     }
+}
 
-    if (test_log) {
-        va_start(ap, fmt);
-        vfprintf(test_log, fmt, ap);
-        va_end(ap);
+struct list_node __htest_global_suite_list =
+    LIST_NODE_INIT(__htest_global_suite_list);
+
+void __htest_declare_suites(struct htest_suite **suites, size_t n)
+{
+    for (int i = 0; i < n; i++) {
+        list_add(&suites[i]->list, &__htest_global_suite_list);
+    }
+}
+
+void htest_run_global_suites()
+{
+    struct htest_suite *suite;
+
+    list_for_each_entry (suite, &__htest_global_suite_list, list) {
+        htest_run_suite(suite, stdout);
     }
 }

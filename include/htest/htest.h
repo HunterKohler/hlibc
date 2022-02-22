@@ -1,5 +1,5 @@
-#ifndef HTEST_H_
-#define HTEST_H_
+#ifndef HTEST_TEST_H_
+#define HTEST_TEST_H_
 
 #include <stdarg.h>
 #include <string.h>
@@ -43,8 +43,7 @@ struct htest {
      */
     const char *name;
 
-    FILE *test_log;
-    FILE *global_log;
+    FILE *log;
 
     char status_msg[HTEST_STATUS_MSG_SIZE];
     enum htest_status status;
@@ -73,8 +72,12 @@ struct htest_suite {
      */
     void (*destroy)(struct htest *);
 
-    FILE *global_log;
-    FILE *test_log;
+    FILE *log;
+
+    /*
+     * Member node of global or other suite list.
+     */
+    struct list_node list;
 };
 
 struct htest_unit {
@@ -106,8 +109,7 @@ struct htest_resource {
 /*
  * Initialize `struct htest` instance.
  */
-int htest_init(struct htest *test, const char *name, FILE *global_log,
-               FILE *test_log);
+int htest_init(struct htest *test, const char *name, FILE *log);
 
 /*
  * Destroy `struct htest` and associated resources.
@@ -122,11 +124,9 @@ void *htest_create_resource(struct htest *test, struct htest_resource *res,
                             void *arg);
 
 /*
- * Runs all tests in the suite, logging appropriatly if `global_log` and/or
- * `test_log` are provided.
+ * Runs all tests in the suite, logging appropriatly.
  */
-int htest_run_suite(struct htest_suite *suite, FILE *global_log,
-                    FILE *test_log);
+int htest_run_suite(struct htest_suite *suite, FILE *log);
 
 /*
  * Pass a test. Optionally pass a message. Semantically equivalent to
@@ -146,14 +146,12 @@ noreturn void htest_skip(struct htest *test, const char *msg);
 noreturn void htest_fail(struct htest *test, const char *msg);
 
 void __htest_assert(const struct htest_assertion *assertion);
-void __htest_log(enum htest_log_level level, FILE *global_log, FILE *test_log,
-                 const char *fmt, ...);
+void __htest_log(enum htest_log_level level, FILE *log, const char *fmt, ...);
 
-#define htest_log(level, target, fmt, ...)                             \
-    do {                                                               \
-        typeof(target) __target = (target);                            \
-        __htest_log((level), __target->global_log, __target->test_log, \
-                    fmt "\n", ##__VA_ARGS__);                          \
+#define htest_log(level, target, fmt, ...)                            \
+    do {                                                              \
+        typeof(target) __target = (target);                           \
+        __htest_log((level), __target->log, fmt "\n", ##__VA_ARGS__); \
     } while (0)
 
 #define htest_error(test, fmt, ...)                                    \
@@ -267,8 +265,8 @@ void __htest_log(enum htest_log_level level, FILE *global_log, FILE *test_log,
 #define HTEST_ASSERT_STR_EQ(test, a, b)                 \
     do {                                                \
         struct htest *__test = (test);                  \
-        char *__a = (a);                                \
-        char *__b = (b);                                \
+        const char *__a = (a);                          \
+        const char *__b = (b);                          \
         __HTEST_ASSERT(__test, !strcmp(__a, __b),       \
                        "Expected strings to be equal"); \
     } while (0)
@@ -276,10 +274,48 @@ void __htest_log(enum htest_log_level level, FILE *global_log, FILE *test_log,
 #define HTEST_ASSERT_STR_NE(test, a, b)                     \
     do {                                                    \
         struct htest *__test = (test);                      \
-        char *__a = (a);                                    \
-        char *__b = (b);                                    \
+        const char *__a = (a);                              \
+        const char *__b = (b);                              \
         __HTEST_ASSERT(__test, strcmp(__a, __b),            \
                        "Expected strings to not be equal"); \
     } while (0)
+
+#define HTEST_ASSERT_MEM_EQ(test, a, b, size)             \
+    do {                                                  \
+        struct htest *__test = (test);                    \
+        const void *__a = (a);                            \
+        const void *__b = (b);                            \
+        size_t __size = (size);                           \
+        __HTEST_ASSERT(__test, !memcmp(__a, __b, __size), \
+                       "Expected memory to be equal");    \
+    } while (0)
+
+#define HTEST_ASSERT_MEM_NE(test, a, b, size)                \
+    do {                                                     \
+        struct htest *__test = (test);                       \
+        const void *__a = (a);                               \
+        const void *__b = (b);                               \
+        size_t __size = (size);                              \
+        __HTEST_ASSERT(__test, memcmp(__a, __b, __sizesize), \
+                       "Expected memory to not be equal");   \
+    } while (0)
+
+extern struct list_node __htest_global_suite_list;
+
+void __htest_declare_suites(struct htest_suite **suites, size_t n);
+
+#define __HTEST_DECLARE_SUITES(unique_array, unique_constructor, ...)   \
+    static struct htest_suite *unique_array[] = { __VA_ARGS__ };        \
+    static __attribute__((constructor)) void unique_constructor()       \
+    {                                                                   \
+        __htest_declare_suites(unique_array, array_size(unique_array)); \
+    }
+
+#define HTEST_DECLARE_SUITES(...)                                  \
+    __HTEST_DECLARE_SUITES(UNIQUE_ID(__htest_declare_array),       \
+                           UNIQUE_ID(__htest_declare_constructor), \
+                           __VA_ARGS__)
+
+void htest_run_global_suites();
 
 #endif
