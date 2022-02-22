@@ -2,6 +2,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
+#include <hlibc/ctype.h>
 #include <hlibc/uri.h>
 
 const char scheme_cset[256] = {
@@ -146,7 +147,7 @@ static int parse_scheme(const char **src_pos)
 {
     const char *pos = *src_pos;
 
-    if (!isalpha(*pos))
+    if (!hlib_isalpha(*pos))
         return EINVAL;
 
     while (is_scheme_cset(pos))
@@ -195,6 +196,12 @@ static int parse_fragment(const char **src_pos)
     return 0;
 }
 
+int ipv4_bin(const char *restrict src, void *restrict dest);
+void ipv4_str(const void *restrict src, char *restrict dest);
+int ipv6_bin(const char *restrict src, void *restrict dest);
+void ipv6_str(const void *restrict src, char *restrict dest);
+int ipv6_norm(const char *restrict src, char *restrict dest);
+
 void ipv4_str(const void *restrict src, char *restrict dest)
 {
     const uint8_t *bin = src;
@@ -215,7 +222,7 @@ void ipv4_str(const void *restrict src, char *restrict dest)
 int ipv4_bin(const char *restrict src, void *restrict dest)
 {
     uint8_t *bin = dest;
-    const char *pos = *src;
+    const char *pos = src;
 
     for (int i = 0; i < 4; i++) {
         int val = 0;
@@ -248,11 +255,10 @@ int ipv4_bin(const char *restrict src, void *restrict dest)
 }
 
 static inline void ipv6_str_part(const uint8_t *restrict bin,
-                                 char **restrict destptr)
+                                 char *restrict *destptr)
 {
     static const char hex_cset[] = "0123456789abcdef";
     char *dest = *destptr;
-    bool skip = true;
     uint8_t vals[] = {
         hex_cset[bin[0] >> 4],
         hex_cset[bin[0] & 15],
@@ -286,7 +292,7 @@ void ipv6_str(const void *restrict src, char *restrict dest)
     int max_size = 0;
 
     for (int i = 0, start = 0; i <= 16; i += 2) {
-        if (i == 16 || bin[i] && bin[i + 1]) {
+        if (i == 16 || (bin[i] && bin[i + 1])) {
             int size = i - start;
             if (size > max_size) {
                 max_start = start;
@@ -385,7 +391,7 @@ int ipv6_bin(const char *restrict src, void *restrict dest)
         int len = 16 - count;
         uint8_t *start = bin + comp;
 
-        memove(start + len, start, len);
+        memmove(start + len, start, len);
         memset(start, 0, len);
     } else if (count < 16) {
         return EINVAL;
@@ -613,7 +619,7 @@ static int normalize_with_cset(const char *src, char *dest,
 
 int uri_normalize_scheme(const char *src, char *dest)
 {
-    if (!isalpha(*src))
+    if (!hlib_isalpha(*src))
         return EINVAL;
 
     *dest++ = tolower(*src++);
@@ -635,7 +641,7 @@ int uri_normalize_userinfo(const char *src, char *dest)
 
 int uri_normalize_host(const char *src, char *dest)
 {
-    enum host_type type;
+    enum uri_host_type type;
 
     if (parse_host(&src, &type))
         return EINVAL;

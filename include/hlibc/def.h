@@ -68,7 +68,7 @@
 #endif
 
 /*
- * Should actually be `0` until C23, but this has slightly bettser error
+ * Should actually be `0` until C23, but this has slightly better error
  * checking most places. Either way, let built in headers define when possible.
  *
  * Reference:
@@ -191,22 +191,19 @@ typedef unsigned __int128 uint128_t;
 #define INT128_MAX (((int128_t)0x7fffffffffffffff << 64) | 0xffffffffffffffff)
 #define INT128_MIN (-INT128_MAX - 1)
 
-#define swap(a, b)                                 \
-    do {                                           \
-        static_assert(types_compatible((a), (b))); \
-        typeof(*a) *__a = (a);                     \
-        typeof(*b) *__b = (b);                     \
-        typeof(*a) __tmp = *__a;                   \
-        *__a = *__b;                               \
-        *__b = __tmp;                              \
-    } while (0)
+#define __PASTE(a, b) a##b
 
 /*
- * Use `it` to iterate through each
+ * Paste identifiers and preserve macro expansion.
  */
-#define for_each(it, arr)                                                     \
-    for (int __for_each_##it = 0;                                             \
-         ((it = (arr) + __for_each_##it), __for_each_##it < array_size(arr)); \
-         __for_each_##it++)
+#define PASTE(a, b) __PASTE(a, b)
+
+/*
+ * Unique identifier with GCC's '__COUNTER__' macro.
+ *
+ * Reference:
+ * https://gcc.gnu.org/onlinedocs/cpp/Common-Predefined-Macros.html
+ */
+#define UNIQUE_ID(prefix) PASTE(PASTE(__UNIQUE_ID_, prefix), __COUNTER__)
 
 #endif

@@ -90,7 +90,7 @@ void md2_init(struct md2_context *ctx)
 void md2_update(struct md2_context *restrict ctx, const void *restrict input,
                 size_t size)
 {
-    const uint8_t *data = src;
+    const uint8_t *data = input;
     const uint8_t *end = data + size;
     int used = ctx->size & 15;
     ctx->size += size;
@@ -107,7 +107,7 @@ void md2_update(struct md2_context *restrict ctx, const void *restrict input,
         data += comp;
     }
 
-    for (; data + 16 <= end, data += 16) {
+    for (; data + 16 <= end; data += 16) {
         md2_update_checksum(ctx, data);
         md2_update_state(ctx, data);
     }
