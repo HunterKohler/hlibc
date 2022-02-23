@@ -48,8 +48,8 @@ struct md5_test_case md5_test_vector[] = {
 void test_md5(struct htest *test)
 {
     struct md5_context ctx;
-    uint8_t result[50];
-    char result_hex[50];
+    uint8_t result[MD5_DIGEST_LEN];
+    char result_hex[MD5_DIGEST_LEN * 2 + 1];
 
     for (int i = 0; i < array_size(md5_test_vector); i++) {
         const char *plain = md5_test_vector[i].plain;
@@ -59,7 +59,7 @@ void test_md5(struct htest *test)
         md5_update(&ctx, plain, strlen(plain));
         md5_finalize(&ctx, result);
 
-        hex_encode(result, 16, result_hex);
+        hex_encode(result, sizeof(result), result_hex);
         HTEST_ASSERT_STR_EQ(test, result_hex, hash);
     }
 }

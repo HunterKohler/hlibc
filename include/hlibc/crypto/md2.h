@@ -11,8 +11,10 @@
 
 #include <hlibc/def.h>
 
+#define MD2_DIGEST_LEN 16
+
 struct md2_context {
-    size_t size;
+    uint64_t size;
     uint8_t state[16];
     uint8_t checksum[16];
     uint8_t tail[16];

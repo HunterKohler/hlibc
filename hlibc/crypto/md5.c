@@ -1,5 +1,6 @@
-#include <hlibc/crypto/md5.h>
 #include <hlibc/bit.h>
+#include <hlibc/string.h>
+#include <hlibc/crypto/md5.h>
 
 #define MD5_F(X, Y, Z) (((X) & (Y)) | (~(X) & (Z)))
 #define MD5_G(X, Y, Z) (((X) & (Z)) | ((Y) & ~(Z)))
@@ -131,18 +132,18 @@ void md5_update(struct md5_context *restrict ctx, const void *restrict src,
 
 void md5_finalize(struct md5_context *restrict ctx, void *restrict dest)
 {
-    int mod = ctx->size & 0x3F;
-    ctx->tail[mod] = 0x80;
+    int mod = ctx->size & 63;
+    ctx->tail[mod] = 128;
 
     if (mod >= 56) {
-        memset(ctx->tail + mod + 1, 0, 63 - mod);
+        memzero(ctx->tail + mod + 1, 63 - mod);
         md5_process_chunk(ctx, ctx->tail);
         mod = -1;
     }
 
+    memzero(ctx->tail + mod + 1, 55 - mod);
     ((uint64_t *)ctx->tail)[7] = cpu_to_le64(ctx->size << 3);
 
-    memset(ctx->tail + mod + 1, 0, 55 - mod);
     md5_process_chunk(ctx, ctx->tail);
 
     ((uint32_t *)dest)[0] = cpu_to_le32(ctx->a);

@@ -11,6 +11,8 @@
 
 #include <hlibc/def.h>
 
+#define MD5_DIGEST_LEN 16
+
 struct md5_context {
     uint32_t a, b, c, d;
     uint64_t size;
