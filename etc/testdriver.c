@@ -1,7 +1,5 @@
 /*
  * Copyright (C) 2021-2022 John Hunter Kohler <jhunterkohler@gmail.com>
- *
- * Thoughts about a test driver. Not great lol.
  */
 #include <stdio.h>
 #include <stdlib.h>
