@@ -142,7 +142,7 @@ static inline bool list_empty(struct list_node *node)
 #define list_for_each_entry_safe(pos, tmp, head, member)       \
     for (pos = list_first_entry(head, typeof(*(pos)), member), \
         tmp = list_next_entry(pos, member);                    \
-         &tmp->member != head; pos = tmp, tmp = list_next_entry(tmp, member))
+         &pos->member != head; pos = tmp, tmp = list_next_entry(tmp, member))
 
 struct hlist_node {
     struct hlist_node *next;

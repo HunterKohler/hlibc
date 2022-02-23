@@ -124,6 +124,22 @@ void *htest_create_resource(struct htest *test, struct htest_resource *res,
                             void *arg);
 
 /*
+ * Opens a file, and adds an associated resource to the test's resource list.
+ */
+FILE *htest_fopen(struct htest *test, const char *restrict pathname,
+                  const char *restrict mode);
+
+/*
+ * Allocates memory, and adds to the test's resource list.
+ */
+void *htest_malloc(struct htest *test, size_t size);
+
+/*
+ * Allocates memory for a string, and adds to the test's resource list.
+ */
+void *htest_stralloc(struct htest *test, size_t size);
+
+/*
  * Runs all tests in the suite, logging appropriatly.
  */
 int htest_run_suite(struct htest_suite *suite, FILE *log);

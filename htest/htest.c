@@ -1,3 +1,4 @@
+#include <hlibc/string.h>
 #include <htest/htest.h>
 
 /*
@@ -207,4 +208,75 @@ void htest_run_global_suites()
     list_for_each_entry (suite, &__htest_global_suite_list, list) {
         htest_run_suite(suite, stdout);
     }
+}
+
+void *htest_memory_resource_create(void *arg)
+{
+    return malloc(*(size_t *)arg);
+}
+
+void htest_memory_resource_destroy(void *arg)
+{
+    free(arg);
+}
+
+struct htest_resource htest_memory_resource = {
+    .create = htest_memory_resource_create,
+    .destroy = htest_memory_resource_destroy,
+};
+
+void *htest_malloc(struct htest *test, size_t size)
+{
+    return htest_create_resource(test, &htest_memory_resource,
+                                 &(size_t){ size });
+}
+
+struct htest_fstream_resource_params {
+    const char *restrict pathname;
+    const char *restrict mode;
+};
+
+void *htest_fstream_resource_create(void *arg)
+{
+    struct htest_fstream_resource_params *params = arg;
+    return fopen(params->pathname, params->mode);
+}
+
+void htest_fstream_resource_destroy(void *arg)
+{
+    fclose((FILE *)arg);
+}
+
+struct htest_resource htest_fstream_resource = {
+    .create = htest_fstream_resource_create,
+    .destroy = htest_fstream_resource_destroy,
+};
+
+FILE *htest_fopen(struct htest *test, const char *restrict pathname,
+                  const char *restrict mode)
+{
+    return htest_create_resource(
+        test, &htest_fstream_resource,
+        &(struct htest_fstream_resource_params){ pathname, mode });
+}
+
+void *htest_string_resource_create(void *arg)
+{
+    return stralloc(*(size_t *)arg);
+}
+
+void htest_string_resource_destroy(void *arg)
+{
+    free(arg);
+}
+
+struct htest_resource htest_string_resource = {
+    .create = htest_string_resource_create,
+    .destroy = htest_string_resource_destroy,
+};
+
+void *htest_stralloc(struct htest *test, size_t size)
+{
+    return htest_create_resource(test, &htest_string_resource,
+                                 &(size_t){ size });
 }

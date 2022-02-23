@@ -12,8 +12,7 @@ CFLAGS = \
 	-Wno-sign-compare \
 	-Wno-unused-function \
 	-Wno-override-init \
-	-Wno-analyzer-malloc-leak \
-	-Wno-analyzer-free-of-non-heap
+	-Wno-analyzer-malloc-leak
 LDFLAGS = -L./build/hlibc -pthread
 LDLIBS =
 
