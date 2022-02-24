@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2021-2022 John Hunter Kohler <jhunterkohler@gmail.com>
  */
-
 #ifndef HLIBC_MATH_H_
 #define HLIBC_MATH_H_
 

@@ -3,7 +3,6 @@
  *
  * Bit manipulation.
  */
-
 #ifndef HLIBC_BIT_H_
 #define HLIBC_BIT_H_
 

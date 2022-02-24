@@ -1,3 +1,6 @@
+/*
+ * Copyright (C) 2021-2022 John Hunter Kohler <jhunterkohler@gmail.com>
+ */
 #include <hlibc/ctype.h>
 
 const bool isalpha_table[256] = {

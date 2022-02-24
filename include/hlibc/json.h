@@ -3,7 +3,6 @@
  *
  * JSON parsing and construction.
  */
-
 #ifndef HLIBC_JSON_H_
 #define HLIBC_JSON_H_
 

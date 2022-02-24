@@ -3,7 +3,6 @@
  *
  * Defines helpers for manipulating a minimum heap.
  */
-
 #ifndef HLIBC_HEAP_H_
 #define HLIBC_HEAP_H_
 

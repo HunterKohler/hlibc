@@ -1,9 +1,8 @@
 /*
  * Copyright (C) 2021-2022 John Hunter Kohler <jhunterkohler@gmail.com>
  *
- * NOT INTENDED TO CONTINUE WORK, INCOMPLETE
+ * Incomplete.
  */
-
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>

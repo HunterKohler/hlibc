@@ -1,4 +1,6 @@
-
+/*
+ * Copyright (C) 2021-2022 John Hunter Kohler <jhunterkohler@gmail.com>
+ */
 #include <hlibc/bit.h>
 #include <hlibc/string.h>
 #include <hlibc/crypto/sha1.h>

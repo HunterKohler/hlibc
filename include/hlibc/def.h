@@ -4,7 +4,6 @@
  * Project wide definition file. Defines many compiler specific macros,
  * and polyfills for certain headers.
  */
-
 #ifndef HLIBC_DEF_H_
 #define HLIBC_DEF_H_
 

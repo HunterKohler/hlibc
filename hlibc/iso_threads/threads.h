@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2021-2022 John Hunter Kohler <jhunterkohler@gmail.com>
  */
-
 #ifndef ISO_THREADS_THREADS_H_
 #define ISO_THREADS_THREADS_H_
 

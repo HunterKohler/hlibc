@@ -4,9 +4,7 @@
  * Begins with individual by hand cases, then uses larger testing vector
  * for integration testing.
  */
-
 #include <stdio.h>
-
 #include <hlibc/string.h>
 #include <hlibc/crypto/des.h>
 #include <htest/htest.h>

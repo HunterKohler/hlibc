@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2021-2022 John Hunter Kohler <jhunterkohler@gmail.com>
  */
-
 #ifndef HLIBC_CRYPTO_DES_H_
 #define HLIBC_CRYPTO_DES_H_
 

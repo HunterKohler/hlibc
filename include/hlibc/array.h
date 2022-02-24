@@ -3,7 +3,6 @@
  *
  * General array for homogeneous elements.
  */
-
 #ifndef HLIBC_ARRAY_H_
 #define HLIBC_ARRAY_H_
 

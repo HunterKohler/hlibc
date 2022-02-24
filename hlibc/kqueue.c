@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2021-2022 John Hunter Kohler <jhunterkohler@gmail.com>
  */
-
 #include <stdlib.h>
 #include <unistd.h>
 #include <hlibc/math.h>

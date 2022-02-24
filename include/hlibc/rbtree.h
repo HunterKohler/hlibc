@@ -3,7 +3,6 @@
  *
  * Embedded Red-Black Tree (working)
  */
-
 #ifndef HLIBC_RBTREE_H_
 #define HLIBC_RBTREE_H_
 

@@ -3,7 +3,6 @@
  *
  * Wrappers around BSD native `kqueue` interface.
  */
-
 #ifndef HLIBC_KQUEUE_H_
 #define HLIBC_KQUEUE_H_
 

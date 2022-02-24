@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2021-2022 John Hunter Kohler <jhunterkohler@gmail.com>
  */
-
 #ifndef SHARED_H_
 #define SHARED_H_
 
@@ -23,7 +22,6 @@ static const double en_letter_freq[256] = {
     ['v'] = 0.01002, ['w'] = 0.01558, ['x'] = 0.00190, ['y'] = 0.01629,
     ['x'] = 0.00102,
 };
-
 
 static inline double single_xor_error(const void *buf, size_t size, uint8_t key)
 {
@@ -50,7 +48,7 @@ static inline size_t hamming_dist(const void *a, const void *b, size_t n)
     const uint8_t *y = b;
 
     size_t dist = 0;
-    for(int i = 0; i < n; i++)
+    for (int i = 0; i < n; i++)
         dist += __builtin_popcount(x[i] ^ y[i]);
     return dist;
 }
