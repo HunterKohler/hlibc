@@ -4,7 +4,7 @@
 #ifndef HLIBC_SYS_H_
 #define HLIBC_SYS_H_
 
-#include <stddef.h>
+#include <hlibc/def.h>
 
 /*
  * Get system's core count.

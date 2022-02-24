@@ -19,16 +19,28 @@ LDLIBS =
 DEBUG ?= 1
 
 ifeq ($(DEBUG), 1)
+	OPTIMIZE ?= 0
+	SANITIZE ?= address
 	CPPFLAGS += -DDEBUG=1
-	CFLAGS += -fno-inline -g3 -O0 -fsanitize=address
-	LDFLAGS += -fsanitize=address
+	CFLAGS += -g3
+	LDFLAGS +=
 	LDLIBS +=
 else
+	OPTIMIZE ?= 3
 	CPPFLAGS += -DDEBUG=0
-	CFLAGS += -O3
-	LDFLAGS += -O3
+	CFLAGS +=
+	LDFLAGS +=
 	LDLIBS +=
 endif
+
+CFLAGS += \
+	$(if $(OPTIMIZE), -O$(OPTIMIZE)) \
+	$(if $(SANITIZE), -fsanitize=$(SANITIZE)) \
+	$(if $(MARCH), -march=$(MARCH))
+LDFLAGS += \
+	$(if $(OPTIMIZE), -O$(OPTIMIZE)) \
+	$(if $(SANITIZE), -fsanitize=$(SANITIZE)) \
+	$(if $(MARCH), -march=$(MARCH))
 
 HLIBC_SRC = $(shell find hlibc -name \*.c)
 HLIBC_OBJ = $(patsubst %.c,build/%.o,$(HLIBC_SRC))

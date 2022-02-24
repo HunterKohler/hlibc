@@ -59,8 +59,6 @@ void test_md4(struct htest *test)
         md4_finalize(&ctx, result);
 
         hex_encode(result, sizeof(result), result_hex);
-        printf("input := %s\nrecieved := %s\nexpected := %s\n", plain,
-               result_hex, hash);
         HTEST_ASSERT_STR_EQ(test, result_hex, hash);
     }
 }
