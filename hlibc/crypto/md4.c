@@ -12,66 +12,66 @@
 #define MD4_ROUND(f, a, b, c, d, x, v, s) \
     (a) = rotl32((a) + f(b, c, d) + (x) + (v), (s))
 
-static inline void md4_process_chunk(struct md4_context *restrict ctx,
-                                     const void *restrict input)
-{
-    const uint32_t *data = input;
+#define MD4_GET(ptr, idx) get_unaligned_le32((uint32_t *)(ptr) + (idx))
 
+static inline void md4_process_chunk(struct md4_context *restrict ctx,
+                                     const void *restrict data)
+{
     uint32_t a = ctx->a;
     uint32_t b = ctx->b;
     uint32_t c = ctx->c;
     uint32_t d = ctx->d;
 
-    MD4_ROUND(MD4_F, a, b, c, d, data[0], 0, 3);
-    MD4_ROUND(MD4_F, d, a, b, c, data[1], 0, 7);
-    MD4_ROUND(MD4_F, c, d, a, b, data[2], 0, 11);
-    MD4_ROUND(MD4_F, b, c, d, a, data[3], 0, 19);
-    MD4_ROUND(MD4_F, a, b, c, d, data[4], 0, 3);
-    MD4_ROUND(MD4_F, d, a, b, c, data[5], 0, 7);
-    MD4_ROUND(MD4_F, c, d, a, b, data[6], 0, 11);
-    MD4_ROUND(MD4_F, b, c, d, a, data[7], 0, 19);
-    MD4_ROUND(MD4_F, a, b, c, d, data[8], 0, 3);
-    MD4_ROUND(MD4_F, d, a, b, c, data[9], 0, 7);
-    MD4_ROUND(MD4_F, c, d, a, b, data[10], 0, 11);
-    MD4_ROUND(MD4_F, b, c, d, a, data[11], 0, 19);
-    MD4_ROUND(MD4_F, a, b, c, d, data[12], 0, 3);
-    MD4_ROUND(MD4_F, d, a, b, c, data[13], 0, 7);
-    MD4_ROUND(MD4_F, c, d, a, b, data[14], 0, 11);
-    MD4_ROUND(MD4_F, b, c, d, a, data[15], 0, 19);
+    MD4_ROUND(MD4_F, a, b, c, d, MD4_GET(data, 0), 0, 3);
+    MD4_ROUND(MD4_F, d, a, b, c, MD4_GET(data, 1), 0, 7);
+    MD4_ROUND(MD4_F, c, d, a, b, MD4_GET(data, 2), 0, 11);
+    MD4_ROUND(MD4_F, b, c, d, a, MD4_GET(data, 3), 0, 19);
+    MD4_ROUND(MD4_F, a, b, c, d, MD4_GET(data, 4), 0, 3);
+    MD4_ROUND(MD4_F, d, a, b, c, MD4_GET(data, 5), 0, 7);
+    MD4_ROUND(MD4_F, c, d, a, b, MD4_GET(data, 6), 0, 11);
+    MD4_ROUND(MD4_F, b, c, d, a, MD4_GET(data, 7), 0, 19);
+    MD4_ROUND(MD4_F, a, b, c, d, MD4_GET(data, 8), 0, 3);
+    MD4_ROUND(MD4_F, d, a, b, c, MD4_GET(data, 9), 0, 7);
+    MD4_ROUND(MD4_F, c, d, a, b, MD4_GET(data, 10), 0, 11);
+    MD4_ROUND(MD4_F, b, c, d, a, MD4_GET(data, 11), 0, 19);
+    MD4_ROUND(MD4_F, a, b, c, d, MD4_GET(data, 12), 0, 3);
+    MD4_ROUND(MD4_F, d, a, b, c, MD4_GET(data, 13), 0, 7);
+    MD4_ROUND(MD4_F, c, d, a, b, MD4_GET(data, 14), 0, 11);
+    MD4_ROUND(MD4_F, b, c, d, a, MD4_GET(data, 15), 0, 19);
 
-    MD4_ROUND(MD4_G, a, b, c, d, data[0], 0x5A827999, 3);
-    MD4_ROUND(MD4_G, d, a, b, c, data[4], 0x5A827999, 5);
-    MD4_ROUND(MD4_G, c, d, a, b, data[8], 0x5A827999, 9);
-    MD4_ROUND(MD4_G, b, c, d, a, data[12], 0x5A827999, 13);
-    MD4_ROUND(MD4_G, a, b, c, d, data[1], 0x5A827999, 3);
-    MD4_ROUND(MD4_G, d, a, b, c, data[5], 0x5A827999, 5);
-    MD4_ROUND(MD4_G, c, d, a, b, data[9], 0x5A827999, 9);
-    MD4_ROUND(MD4_G, b, c, d, a, data[13], 0x5A827999, 13);
-    MD4_ROUND(MD4_G, a, b, c, d, data[2], 0x5A827999, 3);
-    MD4_ROUND(MD4_G, d, a, b, c, data[6], 0x5A827999, 5);
-    MD4_ROUND(MD4_G, c, d, a, b, data[10], 0x5A827999, 9);
-    MD4_ROUND(MD4_G, b, c, d, a, data[14], 0x5A827999, 13);
-    MD4_ROUND(MD4_G, a, b, c, d, data[3], 0x5A827999, 3);
-    MD4_ROUND(MD4_G, d, a, b, c, data[7], 0x5A827999, 5);
-    MD4_ROUND(MD4_G, c, d, a, b, data[11], 0x5A827999, 9);
-    MD4_ROUND(MD4_G, b, c, d, a, data[15], 0x5A827999, 13);
+    MD4_ROUND(MD4_G, a, b, c, d, MD4_GET(data, 0), 0x5A827999, 3);
+    MD4_ROUND(MD4_G, d, a, b, c, MD4_GET(data, 4), 0x5A827999, 5);
+    MD4_ROUND(MD4_G, c, d, a, b, MD4_GET(data, 8), 0x5A827999, 9);
+    MD4_ROUND(MD4_G, b, c, d, a, MD4_GET(data, 12), 0x5A827999, 13);
+    MD4_ROUND(MD4_G, a, b, c, d, MD4_GET(data, 1), 0x5A827999, 3);
+    MD4_ROUND(MD4_G, d, a, b, c, MD4_GET(data, 5), 0x5A827999, 5);
+    MD4_ROUND(MD4_G, c, d, a, b, MD4_GET(data, 9), 0x5A827999, 9);
+    MD4_ROUND(MD4_G, b, c, d, a, MD4_GET(data, 13), 0x5A827999, 13);
+    MD4_ROUND(MD4_G, a, b, c, d, MD4_GET(data, 2), 0x5A827999, 3);
+    MD4_ROUND(MD4_G, d, a, b, c, MD4_GET(data, 6), 0x5A827999, 5);
+    MD4_ROUND(MD4_G, c, d, a, b, MD4_GET(data, 10), 0x5A827999, 9);
+    MD4_ROUND(MD4_G, b, c, d, a, MD4_GET(data, 14), 0x5A827999, 13);
+    MD4_ROUND(MD4_G, a, b, c, d, MD4_GET(data, 3), 0x5A827999, 3);
+    MD4_ROUND(MD4_G, d, a, b, c, MD4_GET(data, 7), 0x5A827999, 5);
+    MD4_ROUND(MD4_G, c, d, a, b, MD4_GET(data, 11), 0x5A827999, 9);
+    MD4_ROUND(MD4_G, b, c, d, a, MD4_GET(data, 15), 0x5A827999, 13);
 
-    MD4_ROUND(MD4_H, a, b, c, d, data[0], 0x6ED9EBA1, 3);
-    MD4_ROUND(MD4_H, d, a, b, c, data[8], 0x6ED9EBA1, 9);
-    MD4_ROUND(MD4_H, c, d, a, b, data[4], 0x6ED9EBA1, 11);
-    MD4_ROUND(MD4_H, b, c, d, a, data[12], 0x6ED9EBA1, 15);
-    MD4_ROUND(MD4_H, a, b, c, d, data[2], 0x6ED9EBA1, 3);
-    MD4_ROUND(MD4_H, d, a, b, c, data[10], 0x6ED9EBA1, 9);
-    MD4_ROUND(MD4_H, c, d, a, b, data[6], 0x6ED9EBA1, 11);
-    MD4_ROUND(MD4_H, b, c, d, a, data[14], 0x6ED9EBA1, 15);
-    MD4_ROUND(MD4_H, a, b, c, d, data[1], 0x6ED9EBA1, 3);
-    MD4_ROUND(MD4_H, d, a, b, c, data[9], 0x6ED9EBA1, 9);
-    MD4_ROUND(MD4_H, c, d, a, b, data[5], 0x6ED9EBA1, 11);
-    MD4_ROUND(MD4_H, b, c, d, a, data[13], 0x6ED9EBA1, 15);
-    MD4_ROUND(MD4_H, a, b, c, d, data[3], 0x6ED9EBA1, 3);
-    MD4_ROUND(MD4_H, d, a, b, c, data[11], 0x6ED9EBA1, 9);
-    MD4_ROUND(MD4_H, c, d, a, b, data[7], 0x6ED9EBA1, 11);
-    MD4_ROUND(MD4_H, b, c, d, a, data[15], 0x6ED9EBA1, 15);
+    MD4_ROUND(MD4_H, a, b, c, d, MD4_GET(data, 0), 0x6ED9EBA1, 3);
+    MD4_ROUND(MD4_H, d, a, b, c, MD4_GET(data, 8), 0x6ED9EBA1, 9);
+    MD4_ROUND(MD4_H, c, d, a, b, MD4_GET(data, 4), 0x6ED9EBA1, 11);
+    MD4_ROUND(MD4_H, b, c, d, a, MD4_GET(data, 12), 0x6ED9EBA1, 15);
+    MD4_ROUND(MD4_H, a, b, c, d, MD4_GET(data, 2), 0x6ED9EBA1, 3);
+    MD4_ROUND(MD4_H, d, a, b, c, MD4_GET(data, 10), 0x6ED9EBA1, 9);
+    MD4_ROUND(MD4_H, c, d, a, b, MD4_GET(data, 6), 0x6ED9EBA1, 11);
+    MD4_ROUND(MD4_H, b, c, d, a, MD4_GET(data, 14), 0x6ED9EBA1, 15);
+    MD4_ROUND(MD4_H, a, b, c, d, MD4_GET(data, 1), 0x6ED9EBA1, 3);
+    MD4_ROUND(MD4_H, d, a, b, c, MD4_GET(data, 9), 0x6ED9EBA1, 9);
+    MD4_ROUND(MD4_H, c, d, a, b, MD4_GET(data, 5), 0x6ED9EBA1, 11);
+    MD4_ROUND(MD4_H, b, c, d, a, MD4_GET(data, 13), 0x6ED9EBA1, 15);
+    MD4_ROUND(MD4_H, a, b, c, d, MD4_GET(data, 3), 0x6ED9EBA1, 3);
+    MD4_ROUND(MD4_H, d, a, b, c, MD4_GET(data, 11), 0x6ED9EBA1, 9);
+    MD4_ROUND(MD4_H, c, d, a, b, MD4_GET(data, 7), 0x6ED9EBA1, 11);
+    MD4_ROUND(MD4_H, b, c, d, a, MD4_GET(data, 15), 0x6ED9EBA1, 15);
 
     ctx->a += a;
     ctx->b += b;
@@ -127,12 +127,11 @@ void md4_finalize(struct md4_context *restrict ctx, void *restrict dest)
     }
 
     memzero(ctx->tail + mod + 1, 55 - mod);
-    ((uint64_t *)ctx->tail)[7] = cpu_to_le64(ctx->size << 3);
-
+    put_unaligned_le64(ctx->size << 3, ctx->tail + 56);
     md4_process_chunk(ctx, ctx->tail);
 
-    ((uint32_t *)dest)[0] = cpu_to_le32(ctx->a);
-    ((uint32_t *)dest)[1] = cpu_to_le32(ctx->b);
-    ((uint32_t *)dest)[2] = cpu_to_le32(ctx->c);
-    ((uint32_t *)dest)[3] = cpu_to_le32(ctx->d);
+    put_unaligned_le32(ctx->a, (uint32_t *)dest + 0);
+    put_unaligned_le32(ctx->b, (uint32_t *)dest + 1);
+    put_unaligned_le32(ctx->c, (uint32_t *)dest + 2);
+    put_unaligned_le32(ctx->d, (uint32_t *)dest + 3);
 }

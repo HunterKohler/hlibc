@@ -227,4 +227,80 @@ static inline size_t hamming_dist(const void *a, const void *b, size_t n)
 
 #endif
 
+#define get_unaligned(ptr)                        \
+    ({                                            \
+        const struct {                            \
+            typeof(*ptr) value;                   \
+        } __packed *__ptr = (typeof(__ptr))(ptr); \
+        __ptr->value;                             \
+    })
+
+#define put_unaligned(val, ptr)                   \
+    do {                                          \
+        struct {                                  \
+            typeof(*ptr) value;                   \
+        } __packed *__ptr = (typeof(__ptr))(ptr); \
+        __ptr->value = (val);                     \
+    } while (0)
+
+static inline uint16_t get_unaligned_le16(const void *ptr)
+{
+    return le16_to_cpu(get_unaligned((const uint16_t *)ptr));
+}
+
+static inline uint32_t get_unaligned_le32(const void *ptr)
+{
+    return le32_to_cpu(get_unaligned((const uint32_t *)ptr));
+}
+
+static inline uint64_t get_unaligned_le64(const void *ptr)
+{
+    return le64_to_cpu(get_unaligned((const uint64_t *)ptr));
+}
+
+static inline uint16_t get_unaligned_be16(const void *ptr)
+{
+    return be16_to_cpu(get_unaligned((const uint16_t *)ptr));
+}
+
+static inline uint32_t get_unaligned_be32(const void *ptr)
+{
+    return be32_to_cpu(get_unaligned((const uint32_t *)ptr));
+}
+
+static inline uint64_t get_unaligned_be64(const void *ptr)
+{
+    return be64_to_cpu(get_unaligned((const uint64_t *)ptr));
+}
+
+static inline void put_unaligned_le16(uint16_t val, void *ptr)
+{
+    put_unaligned(cpu_to_le16(val), (uint16_t *)ptr);
+}
+
+static inline void put_unaligned_le32(uint32_t val, void *ptr)
+{
+    put_unaligned(cpu_to_le32(val), (uint32_t *)ptr);
+}
+
+static inline void put_unaligned_le64(uint64_t val, void *ptr)
+{
+    put_unaligned(cpu_to_le64(val), (uint64_t *)ptr);
+}
+
+static inline void put_unaligned_be16(uint16_t val, void *ptr)
+{
+    put_unaligned(cpu_to_be16(val), (uint16_t *)ptr);
+}
+
+static inline void put_unaligned_be32(uint32_t val, void *ptr)
+{
+    put_unaligned(cpu_to_be32(val), (uint32_t *)ptr);
+}
+
+static inline void put_unaligned_be64(uint64_t val, void *ptr)
+{
+    put_unaligned(cpu_to_be64(val), (uint64_t *)ptr);
+}
+
 #endif

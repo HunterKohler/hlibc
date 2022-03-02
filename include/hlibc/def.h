@@ -205,4 +205,12 @@ typedef unsigned __int128 uint128_t;
  */
 #define UNIQUE_ID(prefix) PASTE(PASTE(__UNIQUE_ID_, prefix), __COUNTER__)
 
+/*
+ * Packed type attribute.
+ *
+ * Reference:
+ * https://gcc.gnu.org/onlinedocs/gcc/Common-Type-Attributes.html
+ */
+#define __packed __attribute__((__packed__))
+
 #endif

@@ -5,40 +5,121 @@
 #include <hlibc/crypto/murmur.h>
 #include <htest/htest.h>
 
+struct test_case {
+    uint8_t input[50];
+    size_t size;
+    uint32_t seed;
+    uint32_t hash;
+};
+
+struct test_case test_vector[] = {
+    {
+        .input = {},
+        .size = 0,
+        .seed = 0,
+        .hash = 0,
+    },
+    {
+        .input = {},
+        .size = 0,
+        .seed = 1,
+        .hash = 0x514E28B7,
+    },
+    {
+        .input = {},
+        .size = 0,
+        .seed = 0xFFFFFFFF,
+        .hash = 0x81F16F39,
+    },
+    {
+        .input = { 0xFF, 0xFF, 0xFF, 0xFF },
+        .size = 4,
+        .seed = 0,
+        .hash = 0x76293B50,
+    },
+    {
+        .input = { 0x21, 0x43, 0x65, 0x87 },
+        .size = 4,
+        .seed = 0,
+        .hash = 0xF55B516B,
+    },
+    {
+        .input = { 0x21, 0x43, 0x65, 0x87 },
+        .size = 4,
+        .seed = 0x5082EDEE,
+        .hash = 0x2362F9DE,
+    },
+    {
+        .input = { 0x21, 0x43, 0x65 },
+        .size = 3,
+        .seed = 0,
+        .hash = 0x7E4A8634,
+    },
+    {
+        .input = { 0x21, 0x43 },
+        .size = 2,
+        .seed = 0,
+        .hash = 0xA0F7B07A,
+    },
+    {
+        .input = { 0x21 },
+        .size = 1,
+        .seed = 0,
+        .hash = 0x72661CF4,
+    },
+    {
+        .input = { 0x00, 0x00, 0x00, 0x00 },
+        .size = 4,
+        .seed = 0,
+        .hash = 0x2362F9DE,
+    },
+    {
+        .input = { 0x00, 0x00, 0x00 },
+        .size = 3,
+        .seed = 0,
+        .hash = 0x85F0B427,
+    },
+    {
+        .input = { 0x00, 0x00 },
+        .size = 2,
+        .seed = 0,
+        .hash = 0x30F4C306,
+    },
+    {
+        .input = { 0x00 },
+        .size = 1,
+        .seed = 0,
+        .hash = 0x514E28B7,
+    },
+    {
+        .input = {
+            0x48, 0x65, 0x6C, 0x6C, 0x6F, 0x2C, 0x20, 0x77, 0x6F, 0x72,  0x6C,
+            0x64, 0x21,
+        },
+        .size = 13,
+        .seed = 1234,
+        .hash = 0xFAF6CDB3,
+    },
+    {
+        .input = {
+            0x48, 0x65, 0x6C, 0x6C, 0x6F, 0x2C, 0x20, 0x77, 0x6F, 0x72, 0x6C,
+            0x64, 0x21,
+        },
+        .size = 13,
+        .seed = 4321,
+        .hash = 0xBF505788,
+    },
+};
+
 void test_murmurhash3_x86_32(struct htest *test)
 {
-    struct test_case {
-        const char *input;
-        size_t len;
-        uint32_t seed;
-        uint32_t expected;
-    };
-
-    struct test_case test_vector[] = {
-        { "", 0, 0, 0 },
-        { "", 0, 1, 0x514E28B7 },
-        { "", 0, 0xFFFFFFFF, 0x81F16F39 },
-        { "\xff\xff\xff\xff", 4, 0, 0x76293B50 },
-        { "\x21\x43\x65\x87", 4, 0, 0xF55B516B },
-        { "\x21\x43\x65\x87", 4, 0x5082EDEE, 0x2362F9DE },
-        { "\x21\x43\x65", 3, 0, 0x7E4A8634 },
-        { "\x21\x43", 2, 0, 0xA0F7B07A },
-        { "\x21", 1, 0, 0x72661CF4 },
-        { "\x00\x00\x00\x00", 4, 0, 0x2362F9DE },
-        { "\x00\x00\x00", 3, 0, 0x85F0B427 },
-        { "\x00\x00", 2, 0, 0x30F4C306 },
-        { "\x00", 1, 0, 0x514E28B7 },
-        { "Hello, world!", 13, 1234, 0xFAF6CDB3 },
-        { "Hello, world!", 13, 4321, 0xBF505788 },
-    };
-
     uint32_t out;
 
     for (int i = 0; i < array_size(test_vector); i++) {
-        murmurhash3_x86_32(test_vector[i].input, test_vector[i].len,
+        murmurhash3_x86_32(test_vector[i].input, test_vector[i].size,
                            test_vector[i].seed, &out);
 
-        HTEST_ASSERT_EQ(test, le32_to_cpu(out), test_vector[i].expected);
+        HTEST_ASSERT_EQ(test, le32_to_cpu(out), test_vector[i].hash);
     }
 }
 

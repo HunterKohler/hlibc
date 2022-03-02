@@ -13,83 +13,83 @@
 #define MD5_ROUND(fn, a, b, c, d, x, t, s) \
     (a) = (b) + rotl32(((a) + fn((b), (c), (d)) + (x) + (t)), (s));
 
-static inline void md5_process_chunk(struct md5_context *restrict ctx,
-                                     const void *restrict input)
-{
-    const uint32_t *data = input;
+#define MD5_GET(ptr, idx) get_unaligned_le32((uint32_t *)(ptr) + (idx))
 
+static inline void md5_process_chunk(struct md5_context *restrict ctx,
+                                     const void *restrict data)
+{
     uint32_t a = ctx->a;
     uint32_t b = ctx->b;
     uint32_t c = ctx->c;
     uint32_t d = ctx->d;
 
-    MD5_ROUND(MD5_F, a, b, c, d, data[0], 0xD76AA478, 7);
-    MD5_ROUND(MD5_F, d, a, b, c, data[1], 0xE8C7B756, 12);
-    MD5_ROUND(MD5_F, c, d, a, b, data[2], 0x242070DB, 17);
-    MD5_ROUND(MD5_F, b, c, d, a, data[3], 0xC1BDCEEE, 22);
-    MD5_ROUND(MD5_F, a, b, c, d, data[4], 0xF57C0FAF, 7);
-    MD5_ROUND(MD5_F, d, a, b, c, data[5], 0x4787C62A, 12);
-    MD5_ROUND(MD5_F, c, d, a, b, data[6], 0xA8304613, 17);
-    MD5_ROUND(MD5_F, b, c, d, a, data[7], 0xFD469501, 22);
-    MD5_ROUND(MD5_F, a, b, c, d, data[8], 0x698098D8, 7);
-    MD5_ROUND(MD5_F, d, a, b, c, data[9], 0x8B44F7AF, 12);
-    MD5_ROUND(MD5_F, c, d, a, b, data[10], 0xFFFF5BB1, 17);
-    MD5_ROUND(MD5_F, b, c, d, a, data[11], 0x895CD7BE, 22);
-    MD5_ROUND(MD5_F, a, b, c, d, data[12], 0x6B901122, 7);
-    MD5_ROUND(MD5_F, d, a, b, c, data[13], 0xFD987193, 12);
-    MD5_ROUND(MD5_F, c, d, a, b, data[14], 0xA679438E, 17);
-    MD5_ROUND(MD5_F, b, c, d, a, data[15], 0x49B40821, 22);
+    MD5_ROUND(MD5_F, a, b, c, d, MD5_GET(data, 0), 0xD76AA478, 7);
+    MD5_ROUND(MD5_F, d, a, b, c, MD5_GET(data, 1), 0xE8C7B756, 12);
+    MD5_ROUND(MD5_F, c, d, a, b, MD5_GET(data, 2), 0x242070DB, 17);
+    MD5_ROUND(MD5_F, b, c, d, a, MD5_GET(data, 3), 0xC1BDCEEE, 22);
+    MD5_ROUND(MD5_F, a, b, c, d, MD5_GET(data, 4), 0xF57C0FAF, 7);
+    MD5_ROUND(MD5_F, d, a, b, c, MD5_GET(data, 5), 0x4787C62A, 12);
+    MD5_ROUND(MD5_F, c, d, a, b, MD5_GET(data, 6), 0xA8304613, 17);
+    MD5_ROUND(MD5_F, b, c, d, a, MD5_GET(data, 7), 0xFD469501, 22);
+    MD5_ROUND(MD5_F, a, b, c, d, MD5_GET(data, 8), 0x698098D8, 7);
+    MD5_ROUND(MD5_F, d, a, b, c, MD5_GET(data, 9), 0x8B44F7AF, 12);
+    MD5_ROUND(MD5_F, c, d, a, b, MD5_GET(data, 10), 0xFFFF5BB1, 17);
+    MD5_ROUND(MD5_F, b, c, d, a, MD5_GET(data, 11), 0x895CD7BE, 22);
+    MD5_ROUND(MD5_F, a, b, c, d, MD5_GET(data, 12), 0x6B901122, 7);
+    MD5_ROUND(MD5_F, d, a, b, c, MD5_GET(data, 13), 0xFD987193, 12);
+    MD5_ROUND(MD5_F, c, d, a, b, MD5_GET(data, 14), 0xA679438E, 17);
+    MD5_ROUND(MD5_F, b, c, d, a, MD5_GET(data, 15), 0x49B40821, 22);
 
-    MD5_ROUND(MD5_G, a, b, c, d, data[1], 0xF61E2562, 5);
-    MD5_ROUND(MD5_G, d, a, b, c, data[6], 0xC040B340, 9);
-    MD5_ROUND(MD5_G, c, d, a, b, data[11], 0x265E5A51, 14);
-    MD5_ROUND(MD5_G, b, c, d, a, data[0], 0xE9B6C7AA, 20);
-    MD5_ROUND(MD5_G, a, b, c, d, data[5], 0xD62F105D, 5);
-    MD5_ROUND(MD5_G, d, a, b, c, data[10], 0x2441453, 9);
-    MD5_ROUND(MD5_G, c, d, a, b, data[15], 0xD8A1E681, 14);
-    MD5_ROUND(MD5_G, b, c, d, a, data[4], 0xE7D3FBC8, 20);
-    MD5_ROUND(MD5_G, a, b, c, d, data[9], 0x21E1CDE6, 5);
-    MD5_ROUND(MD5_G, d, a, b, c, data[14], 0xC33707D6, 9);
-    MD5_ROUND(MD5_G, c, d, a, b, data[3], 0xF4D50D87, 14);
-    MD5_ROUND(MD5_G, b, c, d, a, data[8], 0x455A14ED, 20);
-    MD5_ROUND(MD5_G, a, b, c, d, data[13], 0xA9E3E905, 5);
-    MD5_ROUND(MD5_G, d, a, b, c, data[2], 0xFCEFA3F8, 9);
-    MD5_ROUND(MD5_G, c, d, a, b, data[7], 0x676F02D9, 14);
-    MD5_ROUND(MD5_G, b, c, d, a, data[12], 0x8D2A4C8A, 20);
+    MD5_ROUND(MD5_G, a, b, c, d, MD5_GET(data, 1), 0xF61E2562, 5);
+    MD5_ROUND(MD5_G, d, a, b, c, MD5_GET(data, 6), 0xC040B340, 9);
+    MD5_ROUND(MD5_G, c, d, a, b, MD5_GET(data, 11), 0x265E5A51, 14);
+    MD5_ROUND(MD5_G, b, c, d, a, MD5_GET(data, 0), 0xE9B6C7AA, 20);
+    MD5_ROUND(MD5_G, a, b, c, d, MD5_GET(data, 5), 0xD62F105D, 5);
+    MD5_ROUND(MD5_G, d, a, b, c, MD5_GET(data, 10), 0x2441453, 9);
+    MD5_ROUND(MD5_G, c, d, a, b, MD5_GET(data, 15), 0xD8A1E681, 14);
+    MD5_ROUND(MD5_G, b, c, d, a, MD5_GET(data, 4), 0xE7D3FBC8, 20);
+    MD5_ROUND(MD5_G, a, b, c, d, MD5_GET(data, 9), 0x21E1CDE6, 5);
+    MD5_ROUND(MD5_G, d, a, b, c, MD5_GET(data, 14), 0xC33707D6, 9);
+    MD5_ROUND(MD5_G, c, d, a, b, MD5_GET(data, 3), 0xF4D50D87, 14);
+    MD5_ROUND(MD5_G, b, c, d, a, MD5_GET(data, 8), 0x455A14ED, 20);
+    MD5_ROUND(MD5_G, a, b, c, d, MD5_GET(data, 13), 0xA9E3E905, 5);
+    MD5_ROUND(MD5_G, d, a, b, c, MD5_GET(data, 2), 0xFCEFA3F8, 9);
+    MD5_ROUND(MD5_G, c, d, a, b, MD5_GET(data, 7), 0x676F02D9, 14);
+    MD5_ROUND(MD5_G, b, c, d, a, MD5_GET(data, 12), 0x8D2A4C8A, 20);
 
-    MD5_ROUND(MD5_H, a, b, c, d, data[5], 0xFFFA3942, 4);
-    MD5_ROUND(MD5_H, d, a, b, c, data[8], 0x8771F681, 11);
-    MD5_ROUND(MD5_H, c, d, a, b, data[11], 0x6D9D6122, 16);
-    MD5_ROUND(MD5_H, b, c, d, a, data[14], 0xFDE5380C, 23);
-    MD5_ROUND(MD5_H, a, b, c, d, data[1], 0xA4BEEA44, 4);
-    MD5_ROUND(MD5_H, d, a, b, c, data[4], 0x4BDECFA9, 11);
-    MD5_ROUND(MD5_H, c, d, a, b, data[7], 0xF6BB4B60, 16);
-    MD5_ROUND(MD5_H, b, c, d, a, data[10], 0xBEBFBC70, 23);
-    MD5_ROUND(MD5_H, a, b, c, d, data[13], 0x289B7EC6, 4);
-    MD5_ROUND(MD5_H, d, a, b, c, data[0], 0xEAA127FA, 11);
-    MD5_ROUND(MD5_H, c, d, a, b, data[3], 0xD4EF3085, 16);
-    MD5_ROUND(MD5_H, b, c, d, a, data[6], 0x4881D05, 23);
-    MD5_ROUND(MD5_H, a, b, c, d, data[9], 0xD9D4D039, 4);
-    MD5_ROUND(MD5_H, d, a, b, c, data[12], 0xE6DB99E5, 11);
-    MD5_ROUND(MD5_H, c, d, a, b, data[15], 0x1FA27CF8, 16);
-    MD5_ROUND(MD5_H, b, c, d, a, data[2], 0xC4AC5665, 23);
+    MD5_ROUND(MD5_H, a, b, c, d, MD5_GET(data, 5), 0xFFFA3942, 4);
+    MD5_ROUND(MD5_H, d, a, b, c, MD5_GET(data, 8), 0x8771F681, 11);
+    MD5_ROUND(MD5_H, c, d, a, b, MD5_GET(data, 11), 0x6D9D6122, 16);
+    MD5_ROUND(MD5_H, b, c, d, a, MD5_GET(data, 14), 0xFDE5380C, 23);
+    MD5_ROUND(MD5_H, a, b, c, d, MD5_GET(data, 1), 0xA4BEEA44, 4);
+    MD5_ROUND(MD5_H, d, a, b, c, MD5_GET(data, 4), 0x4BDECFA9, 11);
+    MD5_ROUND(MD5_H, c, d, a, b, MD5_GET(data, 7), 0xF6BB4B60, 16);
+    MD5_ROUND(MD5_H, b, c, d, a, MD5_GET(data, 10), 0xBEBFBC70, 23);
+    MD5_ROUND(MD5_H, a, b, c, d, MD5_GET(data, 13), 0x289B7EC6, 4);
+    MD5_ROUND(MD5_H, d, a, b, c, MD5_GET(data, 0), 0xEAA127FA, 11);
+    MD5_ROUND(MD5_H, c, d, a, b, MD5_GET(data, 3), 0xD4EF3085, 16);
+    MD5_ROUND(MD5_H, b, c, d, a, MD5_GET(data, 6), 0x4881D05, 23);
+    MD5_ROUND(MD5_H, a, b, c, d, MD5_GET(data, 9), 0xD9D4D039, 4);
+    MD5_ROUND(MD5_H, d, a, b, c, MD5_GET(data, 12), 0xE6DB99E5, 11);
+    MD5_ROUND(MD5_H, c, d, a, b, MD5_GET(data, 15), 0x1FA27CF8, 16);
+    MD5_ROUND(MD5_H, b, c, d, a, MD5_GET(data, 2), 0xC4AC5665, 23);
 
-    MD5_ROUND(MD5_I, a, b, c, d, data[0], 0xF4292244, 6);
-    MD5_ROUND(MD5_I, d, a, b, c, data[7], 0x432AFF97, 10);
-    MD5_ROUND(MD5_I, c, d, a, b, data[14], 0xAB9423A7, 15);
-    MD5_ROUND(MD5_I, b, c, d, a, data[5], 0xFC93A039, 21);
-    MD5_ROUND(MD5_I, a, b, c, d, data[12], 0x655B59C3, 6);
-    MD5_ROUND(MD5_I, d, a, b, c, data[3], 0x8F0CCC92, 10);
-    MD5_ROUND(MD5_I, c, d, a, b, data[10], 0xFFEFF47D, 15);
-    MD5_ROUND(MD5_I, b, c, d, a, data[1], 0x85845DD1, 21);
-    MD5_ROUND(MD5_I, a, b, c, d, data[8], 0x6FA87E4F, 6);
-    MD5_ROUND(MD5_I, d, a, b, c, data[15], 0xFE2CE6E0, 10);
-    MD5_ROUND(MD5_I, c, d, a, b, data[6], 0xA3014314, 15);
-    MD5_ROUND(MD5_I, b, c, d, a, data[13], 0x4E0811A1, 21);
-    MD5_ROUND(MD5_I, a, b, c, d, data[4], 0xF7537E82, 6);
-    MD5_ROUND(MD5_I, d, a, b, c, data[11], 0xBD3AF235, 10);
-    MD5_ROUND(MD5_I, c, d, a, b, data[2], 0x2AD7D2BB, 15);
-    MD5_ROUND(MD5_I, b, c, d, a, data[9], 0xEB86D391, 21);
+    MD5_ROUND(MD5_I, a, b, c, d, MD5_GET(data, 0), 0xF4292244, 6);
+    MD5_ROUND(MD5_I, d, a, b, c, MD5_GET(data, 7), 0x432AFF97, 10);
+    MD5_ROUND(MD5_I, c, d, a, b, MD5_GET(data, 14), 0xAB9423A7, 15);
+    MD5_ROUND(MD5_I, b, c, d, a, MD5_GET(data, 5), 0xFC93A039, 21);
+    MD5_ROUND(MD5_I, a, b, c, d, MD5_GET(data, 12), 0x655B59C3, 6);
+    MD5_ROUND(MD5_I, d, a, b, c, MD5_GET(data, 3), 0x8F0CCC92, 10);
+    MD5_ROUND(MD5_I, c, d, a, b, MD5_GET(data, 10), 0xFFEFF47D, 15);
+    MD5_ROUND(MD5_I, b, c, d, a, MD5_GET(data, 1), 0x85845DD1, 21);
+    MD5_ROUND(MD5_I, a, b, c, d, MD5_GET(data, 8), 0x6FA87E4F, 6);
+    MD5_ROUND(MD5_I, d, a, b, c, MD5_GET(data, 15), 0xFE2CE6E0, 10);
+    MD5_ROUND(MD5_I, c, d, a, b, MD5_GET(data, 6), 0xA3014314, 15);
+    MD5_ROUND(MD5_I, b, c, d, a, MD5_GET(data, 13), 0x4E0811A1, 21);
+    MD5_ROUND(MD5_I, a, b, c, d, MD5_GET(data, 4), 0xF7537E82, 6);
+    MD5_ROUND(MD5_I, d, a, b, c, MD5_GET(data, 11), 0xBD3AF235, 10);
+    MD5_ROUND(MD5_I, c, d, a, b, MD5_GET(data, 2), 0x2AD7D2BB, 15);
+    MD5_ROUND(MD5_I, b, c, d, a, MD5_GET(data, 9), 0xEB86D391, 21);
 
     ctx->a += a;
     ctx->b += b;
@@ -145,12 +145,11 @@ void md5_finalize(struct md5_context *restrict ctx, void *restrict dest)
     }
 
     memzero(ctx->tail + mod + 1, 55 - mod);
-    ((uint64_t *)ctx->tail)[7] = cpu_to_le64(ctx->size << 3);
-
+    put_unaligned_le64(ctx->size << 3, ctx->tail + 56);
     md5_process_chunk(ctx, ctx->tail);
 
-    ((uint32_t *)dest)[0] = cpu_to_le32(ctx->a);
-    ((uint32_t *)dest)[1] = cpu_to_le32(ctx->b);
-    ((uint32_t *)dest)[2] = cpu_to_le32(ctx->c);
-    ((uint32_t *)dest)[3] = cpu_to_le32(ctx->d);
+    put_unaligned_le32(ctx->a, (uint32_t *)dest + 0);
+    put_unaligned_le32(ctx->b, (uint32_t *)dest + 1);
+    put_unaligned_le32(ctx->c, (uint32_t *)dest + 2);
+    put_unaligned_le32(ctx->d, (uint32_t *)dest + 3);
 }

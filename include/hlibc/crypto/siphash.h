@@ -19,6 +19,6 @@
  * Reference:
  * https://www.aumasson.jp/siphash/siphash.pdf
  */
-void siphash(const void *input, size_t len, const void *k, void *out);
+void siphash(const void *input, size_t size, const void *key, void *out);
 
 #endif

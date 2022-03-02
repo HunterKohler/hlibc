@@ -14,14 +14,16 @@
 #define SHA1_DIGEST_LEN 20
 
 struct sha1_context {
+    uint64_t size;
     uint32_t state[5];
     uint8_t tail[64];
-    uint64_t size;
 };
 
 void sha1_init(struct sha1_context *ctx);
+
 void sha1_update(struct sha1_context *restrict ctx, const void *restrict src,
                  size_t size);
+
 void sha1_finalize(struct sha1_context *restrict ctx, void *restrict dest);
 
 #endif

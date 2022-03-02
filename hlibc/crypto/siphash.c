@@ -22,21 +22,33 @@
         v2 = rotl64(v2, 32); \
     } while (0)
 
-void siphash(const void *input, size_t len, const void *k, void *out)
+void siphash(const void *input, size_t size, const void *key, void *out)
 {
-    const size_t blocks = len / 8;
-    const uint8_t *tail = (const uint8_t *)input + 8 * blocks;
-    const uint64_t k0 = le64_to_cpu(((uint64_t *)k)[0]);
-    const uint64_t k1 = le64_to_cpu(((uint64_t *)k)[1]);
+    size_t tail_size = size & 7;
+    const uint8_t *pos = input;
+    const uint8_t *tail = pos + size - tail_size;
+
+    const uint64_t k0 = get_unaligned_le64(key);
+    const uint64_t k1 = get_unaligned_le64((const uint8_t *)key + 8);
 
     uint64_t v0 = k0 ^ 0x736F6D6570736575ULL;
     uint64_t v1 = k1 ^ 0x646F72616E646F6DULL;
     uint64_t v2 = k0 ^ 0x6C7967656E657261ULL;
     uint64_t v3 = k1 ^ 0x7465646279746573ULL;
 
-    uint64_t last = (uint64_t)len << 56;
+    uint64_t last = (uint64_t)size << 56;
 
-    switch (len % 8) {
+    while (pos < tail) {
+        uint64_t block = get_unaligned_le64(pos);
+        pos += 8;
+
+        v3 ^= block;
+        SIPROUND;
+        SIPROUND;
+        v0 ^= block;
+    }
+
+    switch (tail_size) {
     case 7:
         last |= (uint64_t)tail[6] << 48;
     case 6:
@@ -54,15 +66,6 @@ void siphash(const void *input, size_t len, const void *k, void *out)
         break;
     }
 
-    for (int i = 0; i < blocks; i++) {
-        uint64_t block = le64_to_cpu(((uint64_t *)input)[i]);
-
-        v3 ^= block;
-        SIPROUND;
-        SIPROUND;
-        v0 ^= block;
-    }
-
     v3 ^= last;
     SIPROUND;
     SIPROUND;
@@ -76,5 +79,5 @@ void siphash(const void *input, size_t len, const void *k, void *out)
     SIPROUND;
 
     uint64_t hash = v0 ^ v1 ^ v2 ^ v3;
-    ((uint64_t *)out)[0] = cpu_to_le64(hash);
+    put_unaligned_le64(hash, out);
 }

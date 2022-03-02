@@ -69,7 +69,7 @@ struct htest_unit md2_unit_tests[] = {
 };
 
 struct htest_suite md2_test_suite = {
-    .name = "md2 test suite",
+    .name = "MD2 test suite",
     .units = md2_unit_tests,
 };
 
