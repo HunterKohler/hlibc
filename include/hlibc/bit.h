@@ -69,7 +69,6 @@
 #define bswap16(x) __builtin_bswap16(x)
 #define bswap32(x) __builtin_bswap32(x)
 #define bswap64(x) __builtin_bswap64(x)
-#define bswap128(x) __builtin_bswap128(x)
 
 /*
  * TODO test for negative indices.
@@ -140,11 +139,6 @@ static inline uint64_t rotl64(uint64_t x, size_t n)
     return (x << n) | (x >> (64 - n));
 }
 
-static inline uint128_t rotl128(uint128_t x, size_t n)
-{
-    return (x << n) | (x >> (128 - n));
-}
-
 static inline uint8_t rotr8(uint8_t x, size_t n)
 {
     return (x >> n) | (x << (8 - n));
@@ -165,65 +159,41 @@ static inline uint64_t rotr64(uint64_t x, size_t n)
     return (x >> n) | (x << (64 - n));
 }
 
-static inline uint128_t rotr128(uint128_t x, size_t n)
-{
-    return (x >> n) | (x << (128 - n));
-}
-
-static inline size_t hamming_dist(const void *a, const void *b, size_t n)
-{
-    const uint8_t *x = a;
-    const uint8_t *y = b;
-
-    size_t dist = 0;
-    for (int i = 0; i < n; i++)
-        dist += __builtin_popcount(x[i] ^ y[i]);
-    return dist;
-}
-
 #ifdef LITTLE_ENDIAN
 
-#define cpu_to_le128(x) ((uint128_t)(x))
-#define cpu_to_le64(x) ((uint64_t)(x))
-#define cpu_to_le32(x) ((uint32_t)(x))
 #define cpu_to_le16(x) ((uint16_t)(x))
+#define cpu_to_le32(x) ((uint32_t)(x))
+#define cpu_to_le64(x) ((uint64_t)(x))
 
-#define cpu_to_be128(x) (bswap128((x)))
-#define cpu_to_be64(x) (bswap64((x)))
-#define cpu_to_be32(x) (bswap32((x)))
 #define cpu_to_be16(x) (bswap16((x)))
+#define cpu_to_be32(x) (bswap32((x)))
+#define cpu_to_be64(x) (bswap64((x)))
 
-#define le128_to_cpu(x) ((uint128_t)(x))
-#define le64_to_cpu(x) ((uint64_t)(x))
-#define le32_to_cpu(x) ((uint32_t)(x))
 #define le16_to_cpu(x) ((uint16_t)(x))
+#define le32_to_cpu(x) ((uint32_t)(x))
+#define le64_to_cpu(x) ((uint64_t)(x))
 
-#define be128_to_cpu(x) (bswap128((x)))
-#define be64_to_cpu(x) (bswap64((x)))
-#define be32_to_cpu(x) (bswap32((x)))
 #define be16_to_cpu(x) (bswap16((x)))
+#define be32_to_cpu(x) (bswap32((x)))
+#define be64_to_cpu(x) (bswap64((x)))
 
 #elif BIG_ENDIAN
 
-#define cpu_to_le128(x) (bswap128((x)))
-#define cpu_to_le64(x) (bswap64((x)))
-#define cpu_to_le32(x) (bswap32((x)))
 #define cpu_to_le16(x) (bswap16((x)))
+#define cpu_to_le32(x) (bswap32((x)))
+#define cpu_to_le64(x) (bswap64((x)))
 
-#define cpu_to_be128(x) ((uint128_t)(x))
-#define cpu_to_be64(x) ((uint64_t)(x))
-#define cpu_to_be32(x) ((uint32_t)(x))
 #define cpu_to_be16(x) ((uint16_t)(x))
+#define cpu_to_be32(x) ((uint32_t)(x))
+#define cpu_to_be64(x) ((uint64_t)(x))
 
-#define le128_to_cpu(x) (bswap128((x)))
-#define le64_to_cpu(x) (bswap64((x)))
-#define le32_to_cpu(x) (bswap32((x)))
 #define le16_to_cpu(x) (bswap16((x)))
+#define le32_to_cpu(x) (bswap32((x)))
+#define le64_to_cpu(x) (bswap64((x)))
 
-#define be128_to_cpu(x) ((uint128_t)(x))
-#define be64_to_cpu(x) ((uint64_t)(x))
-#define be32_to_cpu(x) ((uint32_t)(x))
 #define be16_to_cpu(x) ((uint16_t)(x))
+#define be32_to_cpu(x) ((uint32_t)(x))
+#define be64_to_cpu(x) ((uint64_t)(x))
 
 #endif
 

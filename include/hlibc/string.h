@@ -107,22 +107,6 @@ void b64_encode(const void *restrict src, size_t n, char *restrict dest);
 int b64_decode(const char *restrict src, void *restrict dest, size_t size);
 
 /*
- * Stringifies a `__int128`.
- *
- * Errors:
- *  `ENOMEM` The output buffer is too small to fit the representation of `val`.
- */
-int int128_to_string(int128_t val, char *buf, size_t buf_size);
-
-/*
- * Stringifies an `unsigned __int128`.
- *
- * Errors:
- *  `ENOMEM` The output buffer is too small to fit the representation of `val`.
- */
-int uint128_to_string(uint128_t val, char *buf, size_t buf_size);
-
-/*
  * Retrieve the name of an `errno` value specified by `code`. If the name is
  * not known, this function returns `NULL`. Attempts to conform to POSIX
  * specification.

@@ -169,26 +169,14 @@
 #define debug_printf(fmt, ...)                              \
     do {                                                    \
         if (DEBUG) {                                        \
-            flockfile(stdout);                              \
-            fprintf(stdout, "%s:%d: ", __FILE__, __LINE__); \
-            fprintf(stdout, fmt, __VA_ARGS__);              \
-            fprintf(stdout, "\n");                          \
-            fflush(stdout);                                 \
-            funlockfile(stdout);                            \
+            flockfile(stderr);                              \
+            fprintf(stderr, "%s:%d: ", __FILE__, __LINE__); \
+            fprintf(stderr, fmt, __VA_ARGS__);              \
+            fprintf(stderr, "\n");                          \
+            fflush(stderr);                                 \
+            funlockfile(stderr);                            \
         }                                                   \
     } while (0)
-
-/*
- * Reference:
- * https://en.cppreference.com/w/c/language/type
- * https://gcc.gnu.org/onlinedocs/gcc/_005f_005fint128.html
- */
-typedef __int128 int128_t;
-typedef unsigned __int128 uint128_t;
-
-#define UINT128_MAX ((uint128_t)-1)
-#define INT128_MAX (((int128_t)0x7fffffffffffffff << 64) | 0xffffffffffffffff)
-#define INT128_MIN (-INT128_MAX - 1)
 
 #define __PASTE(a, b) a##b
 
