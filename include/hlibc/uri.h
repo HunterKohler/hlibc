@@ -4,7 +4,7 @@
 #ifndef HLIBC_URI_H_
 #define HLIBC_URI_H_
 
-#include <hlibc/ctype.h>
+#include <hlibc/def.h>
 #include <hlibc/string.h>
 
 enum uri_host_type {
