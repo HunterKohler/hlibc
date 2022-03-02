@@ -61,7 +61,8 @@ BraceWrapping:
     SplitEmptyFunction: true
     SplitEmptyNamespace: true
 BreakStringLiterals: false
-FixNamespaceComments: false
+FixNamespaceComments: true
+EmptyLineAfterAccessModifier: Never
 EmptyLineBeforeAccessModifier: Always
 BreakBeforeBinaryOperators: None
 BreakBeforeConceptDeclarations: true
