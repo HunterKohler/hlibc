@@ -114,7 +114,7 @@ int htest_run_suite(struct htest_suite *suite, FILE *log)
         htest_log(HTEST_WARNING, suite, "# Warning: Test suite empty");
 
     htest_log(HTEST_INFO, suite,
-              "# Results: passed: %zu, failed: %zu, skipped: %zu, total: %zu",
+              "# Results: passed: %zu, failed: %zu, skipped: %zu, total: %zu\n",
               stats.passed, stats.failed, stats.skipped, stats.total);
 
     return 0;

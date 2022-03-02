@@ -82,43 +82,6 @@
 #define types_compatible(a, b) \
     (__builtin_types_compatible_p(typeof(a), typeof(b)))
 
-#define is_char(a) \
-    (types_compatible((a), char) || \
-     types_compatible((a), signed char) || \
-     types_compatible((a), unsigned char))
-
-#define is_signed(a)                       \
-    (types_compatible((a), signed char) || \
-     types_compatible((a), short) ||       \
-     types_compatible((a), int) ||         \
-     types_compatible((a), long) ||        \
-     types_compatible((a), long long) ||   \
-     types_compatible((a), int128_t))
-
-#define is_unsigned(a)                            \
-    (types_compatible((a), unsigned char) ||      \
-     types_compatible((a), unsigned short) ||     \
-     types_compatible((a), unsigned int) ||       \
-     types_compatible((a), unsigned long) ||      \
-     types_compatible((a), unsigned long long) || \
-     types_compatible((a), bool) ||               \
-     types_compatible((a), uint128_t))
-
-#define is_integral(a)                            \
-    (is_char(a) || is_signed(a) || is_unsigned(a))
-
-#define is_complex(a)                            \
-    (types_compatible((a), complex float) ||     \
-     types_compatible((a), complex double) ||    \
-     types_compatible((a), complex long double))
-
-#define is_floating_point(a)               \
-    (types_compatible((a), float) ||       \
-     types_compatible((a), double) ||      \
-     types_compatible((a), long double) || \
-     is_complex(a))
-
-#define is_void_ptr(a) types_compatible((a), void *)
 #define is_array(a) (!types_compatible((a), &(a)[0]))
 
 /* clang-format on */
@@ -131,6 +94,9 @@
         (type *)(__ptr - offsetof(type, member));                      \
     })
 
+/*
+ * Get compile-time type-checked array length.
+ */
 #define array_size(a)               \
     ({                              \
         static_assert(is_array(a)); \
