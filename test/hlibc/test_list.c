@@ -3,6 +3,7 @@
  */
 #include <string.h>
 #include <hlibc/list.h>
+#include <hlibc/string.h>
 #include <htest/htest.h>
 
 struct container {
@@ -28,7 +29,7 @@ void test_list_node_init(struct htest *test)
     HTEST_ASSERT_PTR_EQ(test, &node, node.next);
     HTEST_ASSERT_PTR_EQ(test, &node, node.prev);
 
-    memset(&node, 0, sizeof(node));
+    memzero(&node, sizeof(node));
 
     list_node_init(&node);
 

@@ -70,7 +70,7 @@ static inline int array_insert(struct array *arr, size_t pos, const void *vals,
  */
 static inline int array_init(struct array *arr, size_t elem_size)
 {
-    memset(arr, 0, sizeof(*arr));
+    memzero(arr, sizeof(*arr));
     arr->elem_size = elem_size;
     return 0;
 }

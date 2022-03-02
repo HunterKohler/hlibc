@@ -12,7 +12,7 @@ struct htest_resource_handle {
 
 int htest_init(struct htest *test, const char *name, FILE *log)
 {
-    memset(test, 0, sizeof(*test));
+    memzero(test, sizeof(*test));
 
     test->data = NULL;
     test->status = HTEST_PASSED;
