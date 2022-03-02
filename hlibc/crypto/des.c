@@ -1,41 +1,13 @@
 /*
  * Copyright (C) 2021-2022 John Hunter Kohler <jhunterkohler@gmail.com>
  */
+#include <hlibc/bit.h>
 #include <hlibc/string.h>
 #include <hlibc/crypto/des.h>
 
-const uint8_t IP[] = {
-    0x39, 0x31, 0x29, 0x21, 0x19, 0x11, 0x09, 0x01, 0x3B, 0x33, 0x2B,
-    0x23, 0x1B, 0x13, 0x0B, 0x03, 0x3D, 0x35, 0x2D, 0x25, 0x1D, 0x15,
-    0x0D, 0x05, 0x3F, 0x37, 0x2F, 0x27, 0x1F, 0x17, 0x0F, 0x07, 0x38,
-    0x30, 0x28, 0x20, 0x18, 0x10, 0x08, 0x00, 0x3A, 0x32, 0x2A, 0x22,
-    0x1A, 0x12, 0x0A, 0x02, 0x3C, 0x34, 0x2C, 0x24, 0x1C, 0x14, 0x0C,
-    0x04, 0x3E, 0x36, 0x2E, 0x26, 0x1E, 0x16, 0x0E, 0x06,
-};
+#define MOVE_BIT(x, start, end) ((((x) >> (start)) & 1) << (end))
 
-const uint8_t IP_inv[] = {
-    0x27, 0x07, 0x2F, 0x0F, 0x37, 0x17, 0x3F, 0x1F, 0x26, 0x06, 0x2E,
-    0x0E, 0x36, 0x16, 0x3E, 0x1E, 0x25, 0x05, 0x2D, 0x0D, 0x35, 0x15,
-    0x3D, 0x1D, 0x24, 0x04, 0x2C, 0x0C, 0x34, 0x14, 0x3C, 0x1C, 0x23,
-    0x03, 0x2B, 0x0B, 0x33, 0x13, 0x3B, 0x1B, 0x22, 0x02, 0x2A, 0x0A,
-    0x32, 0x12, 0x3A, 0x1A, 0x21, 0x01, 0x29, 0x09, 0x31, 0x11, 0x39,
-    0x19, 0x20, 0x00, 0x28, 0x08, 0x30, 0x10, 0x38, 0x18,
-};
-
-const uint8_t E[] = {
-    0x1F, 0x00, 0x01, 0x02, 0x03, 0x04, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
-    0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10,
-    0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
-    0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x00,
-};
-
-const uint8_t P[] = {
-    0x07, 0x1C, 0x15, 0x0A, 0x1A, 0x02, 0x13, 0x0D, 0x17, 0x1D, 0x05,
-    0x00, 0x12, 0x08, 0x18, 0x1E, 0x16, 0x01, 0x0E, 0x1B, 0x06, 0x09,
-    0x11, 0x1F, 0x0F, 0x04, 0x14, 0x03, 0x0B, 0x0C, 0x19, 0x10,
-};
-
-const uint8_t S[][64] = {
+const uint8_t S_table[8][64] = {
     {
         0xE, 0x0, 0x4, 0xF, 0xD, 0x7, 0x1, 0x4, 0x2, 0xE, 0xF, 0x2, 0xB,
         0xD, 0x8, 0x1, 0x3, 0xA, 0xA, 0x6, 0x6, 0xC, 0xC, 0xB, 0x5, 0x9,
@@ -94,177 +66,760 @@ const uint8_t S[][64] = {
     },
 };
 
-const uint8_t shifts[] = {
-    1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1,
-};
-
-const uint8_t PC_1[] = {
-    0x3C, 0x34, 0x2C, 0x24, 0x3B, 0x33, 0x2B, 0x23, 0x1B, 0x13, 0x0B, 0x03,
-    0x3A, 0x32, 0x2A, 0x22, 0x1A, 0x12, 0x0A, 0x02, 0x39, 0x31, 0x29, 0x21,
-    0x19, 0x11, 0x09, 0x01, 0x1C, 0x14, 0x0C, 0x04, 0x3D, 0x35, 0x2D, 0x25,
-    0x1D, 0x15, 0x0D, 0x05, 0x3E, 0x36, 0x2E, 0x26, 0x1E, 0x16, 0x0E, 0x06,
-    0x3F, 0x37, 0x2F, 0x27, 0x1F, 0x17, 0x0F, 0x07,
-};
-
-const uint8_t PC_2[] = {
-    0x18, 0x1B, 0x14, 0x06, 0x0E, 0x0A, 0x03, 0x16, 0x00, 0x11, 0x07, 0x0C,
-    0x08, 0x17, 0x0B, 0x05, 0x10, 0x1A, 0x01, 0x09, 0x13, 0x19, 0x04, 0x0F,
-    0x36, 0x2B, 0x24, 0x1D, 0x31, 0x28, 0x30, 0x1E, 0x34, 0x2C, 0x25, 0x21,
-    0x2E, 0x23, 0x32, 0x29, 0x1C, 0x35, 0x33, 0x37, 0x20, 0x2D, 0x27, 0x2A,
-};
-
-uint64_t des_IP(uint64_t input)
+static inline uint64_t S(uint64_t input)
 {
-    uint64_t res = 0;
-    for (int i = 0; i < 64; i++)
-        res |= ((input >> IP[i]) & 1) << i;
-    return res;
+    return S_table[0][(input >> 42) & 0x3F] << 28 |
+           S_table[1][(input >> 36) & 0x3F] << 24 |
+           S_table[2][(input >> 30) & 0x3F] << 20 |
+           S_table[3][(input >> 24) & 0x3F] << 16 |
+           S_table[4][(input >> 18) & 0x3F] << 12 |
+           S_table[5][(input >> 12) & 0x3F] << 8 |
+           S_table[6][(input >> 6) & 0x3F] << 4 | S_table[7][input & 0x3F];
 }
 
-uint64_t des_IP_inv(uint64_t input)
+static inline uint64_t IP(uint64_t input)
 {
-    uint64_t res = 0;
-    for (int i = 0; i < 64; i++)
-        res |= ((input >> IP_inv[i]) & 1) << i;
-    return res;
+    return MOVE_BIT(input, 0x06, 0x3F) | MOVE_BIT(input, 0x0E, 0x3E) |
+           MOVE_BIT(input, 0x16, 0x3D) | MOVE_BIT(input, 0x1E, 0x3C) |
+           MOVE_BIT(input, 0x26, 0x3B) | MOVE_BIT(input, 0x2E, 0x3A) |
+           MOVE_BIT(input, 0x36, 0x39) | MOVE_BIT(input, 0x3E, 0x38) |
+           MOVE_BIT(input, 0x04, 0x37) | MOVE_BIT(input, 0x0C, 0x36) |
+           MOVE_BIT(input, 0x14, 0x35) | MOVE_BIT(input, 0x1C, 0x34) |
+           MOVE_BIT(input, 0x24, 0x33) | MOVE_BIT(input, 0x2C, 0x32) |
+           MOVE_BIT(input, 0x34, 0x31) | MOVE_BIT(input, 0x3C, 0x30) |
+           MOVE_BIT(input, 0x02, 0x2F) | MOVE_BIT(input, 0x0A, 0x2E) |
+           MOVE_BIT(input, 0x12, 0x2D) | MOVE_BIT(input, 0x1A, 0x2C) |
+           MOVE_BIT(input, 0x22, 0x2B) | MOVE_BIT(input, 0x2A, 0x2A) |
+           MOVE_BIT(input, 0x32, 0x29) | MOVE_BIT(input, 0x3A, 0x28) |
+           MOVE_BIT(input, 0x00, 0x27) | MOVE_BIT(input, 0x08, 0x26) |
+           MOVE_BIT(input, 0x10, 0x25) | MOVE_BIT(input, 0x18, 0x24) |
+           MOVE_BIT(input, 0x20, 0x23) | MOVE_BIT(input, 0x28, 0x22) |
+           MOVE_BIT(input, 0x30, 0x21) | MOVE_BIT(input, 0x38, 0x20) |
+           MOVE_BIT(input, 0x07, 0x1F) | MOVE_BIT(input, 0x0F, 0x1E) |
+           MOVE_BIT(input, 0x17, 0x1D) | MOVE_BIT(input, 0x1F, 0x1C) |
+           MOVE_BIT(input, 0x27, 0x1B) | MOVE_BIT(input, 0x2F, 0x1A) |
+           MOVE_BIT(input, 0x37, 0x19) | MOVE_BIT(input, 0x3F, 0x18) |
+           MOVE_BIT(input, 0x05, 0x17) | MOVE_BIT(input, 0x0D, 0x16) |
+           MOVE_BIT(input, 0x15, 0x15) | MOVE_BIT(input, 0x1D, 0x14) |
+           MOVE_BIT(input, 0x25, 0x13) | MOVE_BIT(input, 0x2D, 0x12) |
+           MOVE_BIT(input, 0x35, 0x11) | MOVE_BIT(input, 0x3D, 0x10) |
+           MOVE_BIT(input, 0x03, 0x0F) | MOVE_BIT(input, 0x0B, 0x0E) |
+           MOVE_BIT(input, 0x13, 0x0D) | MOVE_BIT(input, 0x1B, 0x0C) |
+           MOVE_BIT(input, 0x23, 0x0B) | MOVE_BIT(input, 0x2B, 0x0A) |
+           MOVE_BIT(input, 0x33, 0x09) | MOVE_BIT(input, 0x3B, 0x08) |
+           MOVE_BIT(input, 0x01, 0x07) | MOVE_BIT(input, 0x09, 0x06) |
+           MOVE_BIT(input, 0x11, 0x05) | MOVE_BIT(input, 0x19, 0x04) |
+           MOVE_BIT(input, 0x21, 0x03) | MOVE_BIT(input, 0x29, 0x02) |
+           MOVE_BIT(input, 0x31, 0x01) | MOVE_BIT(input, 0x39, 0x00);
 }
 
-uint64_t des_E(uint32_t input)
+static inline uint64_t IP_inv(uint64_t input)
 {
-    uint64_t ret = 0;
-    for (int i = 0; i < 48; i++)
-        ret |= ((((uint64_t)input) >> E[i]) & 1) << i;
-    return ret;
+    return MOVE_BIT(input, 0x18, 0x3F) | MOVE_BIT(input, 0x38, 0x3E) |
+           MOVE_BIT(input, 0x10, 0x3D) | MOVE_BIT(input, 0x30, 0x3C) |
+           MOVE_BIT(input, 0x08, 0x3B) | MOVE_BIT(input, 0x28, 0x3A) |
+           MOVE_BIT(input, 0x00, 0x39) | MOVE_BIT(input, 0x20, 0x38) |
+           MOVE_BIT(input, 0x19, 0x37) | MOVE_BIT(input, 0x39, 0x36) |
+           MOVE_BIT(input, 0x11, 0x35) | MOVE_BIT(input, 0x31, 0x34) |
+           MOVE_BIT(input, 0x09, 0x33) | MOVE_BIT(input, 0x29, 0x32) |
+           MOVE_BIT(input, 0x01, 0x31) | MOVE_BIT(input, 0x21, 0x30) |
+           MOVE_BIT(input, 0x1A, 0x2F) | MOVE_BIT(input, 0x3A, 0x2E) |
+           MOVE_BIT(input, 0x12, 0x2D) | MOVE_BIT(input, 0x32, 0x2C) |
+           MOVE_BIT(input, 0x0A, 0x2B) | MOVE_BIT(input, 0x2A, 0x2A) |
+           MOVE_BIT(input, 0x02, 0x29) | MOVE_BIT(input, 0x22, 0x28) |
+           MOVE_BIT(input, 0x1B, 0x27) | MOVE_BIT(input, 0x3B, 0x26) |
+           MOVE_BIT(input, 0x13, 0x25) | MOVE_BIT(input, 0x33, 0x24) |
+           MOVE_BIT(input, 0x0B, 0x23) | MOVE_BIT(input, 0x2B, 0x22) |
+           MOVE_BIT(input, 0x03, 0x21) | MOVE_BIT(input, 0x23, 0x20) |
+           MOVE_BIT(input, 0x1C, 0x1F) | MOVE_BIT(input, 0x3C, 0x1E) |
+           MOVE_BIT(input, 0x14, 0x1D) | MOVE_BIT(input, 0x34, 0x1C) |
+           MOVE_BIT(input, 0x0C, 0x1B) | MOVE_BIT(input, 0x2C, 0x1A) |
+           MOVE_BIT(input, 0x04, 0x19) | MOVE_BIT(input, 0x24, 0x18) |
+           MOVE_BIT(input, 0x1D, 0x17) | MOVE_BIT(input, 0x3D, 0x16) |
+           MOVE_BIT(input, 0x15, 0x15) | MOVE_BIT(input, 0x35, 0x14) |
+           MOVE_BIT(input, 0x0D, 0x13) | MOVE_BIT(input, 0x2D, 0x12) |
+           MOVE_BIT(input, 0x05, 0x11) | MOVE_BIT(input, 0x25, 0x10) |
+           MOVE_BIT(input, 0x1E, 0x0F) | MOVE_BIT(input, 0x3E, 0x0E) |
+           MOVE_BIT(input, 0x16, 0x0D) | MOVE_BIT(input, 0x36, 0x0C) |
+           MOVE_BIT(input, 0x0E, 0x0B) | MOVE_BIT(input, 0x2E, 0x0A) |
+           MOVE_BIT(input, 0x06, 0x09) | MOVE_BIT(input, 0x26, 0x08) |
+           MOVE_BIT(input, 0x1F, 0x07) | MOVE_BIT(input, 0x3F, 0x06) |
+           MOVE_BIT(input, 0x17, 0x05) | MOVE_BIT(input, 0x37, 0x04) |
+           MOVE_BIT(input, 0x0F, 0x03) | MOVE_BIT(input, 0x2F, 0x02) |
+           MOVE_BIT(input, 0x07, 0x01) | MOVE_BIT(input, 0x27, 0x00);
 }
 
-uint32_t des_P(uint32_t input)
+static inline uint64_t P(uint64_t input)
 {
-    uint32_t res = 0;
-    for (int i = 0; i < 32; i++)
-        res |= ((input >> P[i]) & 1) << i;
-    return res;
+    return MOVE_BIT(input, 0x10, 0x1F) | MOVE_BIT(input, 0x19, 0x1E) |
+           MOVE_BIT(input, 0x0C, 0x1D) | MOVE_BIT(input, 0x0B, 0x1C) |
+           MOVE_BIT(input, 0x03, 0x1B) | MOVE_BIT(input, 0x14, 0x1A) |
+           MOVE_BIT(input, 0x04, 0x19) | MOVE_BIT(input, 0x0F, 0x18) |
+           MOVE_BIT(input, 0x1F, 0x17) | MOVE_BIT(input, 0x11, 0x16) |
+           MOVE_BIT(input, 0x09, 0x15) | MOVE_BIT(input, 0x06, 0x14) |
+           MOVE_BIT(input, 0x1B, 0x13) | MOVE_BIT(input, 0x0E, 0x12) |
+           MOVE_BIT(input, 0x01, 0x11) | MOVE_BIT(input, 0x16, 0x10) |
+           MOVE_BIT(input, 0x1E, 0x0F) | MOVE_BIT(input, 0x18, 0x0E) |
+           MOVE_BIT(input, 0x08, 0x0D) | MOVE_BIT(input, 0x12, 0x0C) |
+           MOVE_BIT(input, 0x00, 0x0B) | MOVE_BIT(input, 0x05, 0x0A) |
+           MOVE_BIT(input, 0x1D, 0x09) | MOVE_BIT(input, 0x17, 0x08) |
+           MOVE_BIT(input, 0x0D, 0x07) | MOVE_BIT(input, 0x13, 0x06) |
+           MOVE_BIT(input, 0x02, 0x05) | MOVE_BIT(input, 0x1A, 0x04) |
+           MOVE_BIT(input, 0x0A, 0x03) | MOVE_BIT(input, 0x15, 0x02) |
+           MOVE_BIT(input, 0x1C, 0x01) | MOVE_BIT(input, 0x07, 0x00);
 }
 
-uint32_t des_S(uint64_t input)
+static inline uint64_t E(uint64_t input)
 {
-    uint32_t res = 0;
-    for (int i = 0; i < 8; i++)
-        res |= S[i][(input >> (42 - 6 * i)) & 0x3F] << (28 - 4 * i);
-    return res;
+    return MOVE_BIT(input, 0x00, 0x2F) | MOVE_BIT(input, 0x1F, 0x2E) |
+           MOVE_BIT(input, 0x1E, 0x2D) | MOVE_BIT(input, 0x1D, 0x2C) |
+           MOVE_BIT(input, 0x1C, 0x2B) | MOVE_BIT(input, 0x1B, 0x2A) |
+           MOVE_BIT(input, 0x1C, 0x29) | MOVE_BIT(input, 0x1B, 0x28) |
+           MOVE_BIT(input, 0x1A, 0x27) | MOVE_BIT(input, 0x19, 0x26) |
+           MOVE_BIT(input, 0x18, 0x25) | MOVE_BIT(input, 0x17, 0x24) |
+           MOVE_BIT(input, 0x18, 0x23) | MOVE_BIT(input, 0x17, 0x22) |
+           MOVE_BIT(input, 0x16, 0x21) | MOVE_BIT(input, 0x15, 0x20) |
+           MOVE_BIT(input, 0x14, 0x1F) | MOVE_BIT(input, 0x13, 0x1E) |
+           MOVE_BIT(input, 0x14, 0x1D) | MOVE_BIT(input, 0x13, 0x1C) |
+           MOVE_BIT(input, 0x12, 0x1B) | MOVE_BIT(input, 0x11, 0x1A) |
+           MOVE_BIT(input, 0x10, 0x19) | MOVE_BIT(input, 0x0F, 0x18) |
+           MOVE_BIT(input, 0x10, 0x17) | MOVE_BIT(input, 0x0F, 0x16) |
+           MOVE_BIT(input, 0x0E, 0x15) | MOVE_BIT(input, 0x0D, 0x14) |
+           MOVE_BIT(input, 0x0C, 0x13) | MOVE_BIT(input, 0x0B, 0x12) |
+           MOVE_BIT(input, 0x0C, 0x11) | MOVE_BIT(input, 0x0B, 0x10) |
+           MOVE_BIT(input, 0x0A, 0x0F) | MOVE_BIT(input, 0x09, 0x0E) |
+           MOVE_BIT(input, 0x08, 0x0D) | MOVE_BIT(input, 0x07, 0x0C) |
+           MOVE_BIT(input, 0x08, 0x0B) | MOVE_BIT(input, 0x07, 0x0A) |
+           MOVE_BIT(input, 0x06, 0x09) | MOVE_BIT(input, 0x05, 0x08) |
+           MOVE_BIT(input, 0x04, 0x07) | MOVE_BIT(input, 0x03, 0x06) |
+           MOVE_BIT(input, 0x04, 0x05) | MOVE_BIT(input, 0x03, 0x04) |
+           MOVE_BIT(input, 0x02, 0x03) | MOVE_BIT(input, 0x01, 0x02) |
+           MOVE_BIT(input, 0x00, 0x01) | MOVE_BIT(input, 0x1F, 0x00);
 }
 
-uint32_t des_f(uint32_t block, uint64_t key)
+static inline uint64_t KS_0(uint64_t key)
 {
-    return des_P(des_S(des_E(block) ^ key));
+    return MOVE_BIT(key, 0x36, 0x2F) | MOVE_BIT(key, 0x0D, 0x2E) |
+           MOVE_BIT(key, 0x1E, 0x2D) | MOVE_BIT(key, 0x04, 0x2C) |
+           MOVE_BIT(key, 0x0F, 0x2B) | MOVE_BIT(key, 0x2F, 0x2A) |
+           MOVE_BIT(key, 0x1F, 0x29) | MOVE_BIT(key, 0x07, 0x28) |
+           MOVE_BIT(key, 0x3E, 0x27) | MOVE_BIT(key, 0x37, 0x26) |
+           MOVE_BIT(key, 0x2D, 0x25) | MOVE_BIT(key, 0x16, 0x24) |
+           MOVE_BIT(key, 0x3D, 0x23) | MOVE_BIT(key, 0x1D, 0x22) |
+           MOVE_BIT(key, 0x26, 0x21) | MOVE_BIT(key, 0x27, 0x20) |
+           MOVE_BIT(key, 0x14, 0x1F) | MOVE_BIT(key, 0x06, 0x1E) |
+           MOVE_BIT(key, 0x05, 0x1D) | MOVE_BIT(key, 0x3F, 0x1C) |
+           MOVE_BIT(key, 0x1C, 0x1B) | MOVE_BIT(key, 0x25, 0x1A) |
+           MOVE_BIT(key, 0x2E, 0x19) | MOVE_BIT(key, 0x17, 0x18) |
+           MOVE_BIT(key, 0x2A, 0x17) | MOVE_BIT(key, 0x24, 0x16) |
+           MOVE_BIT(key, 0x19, 0x15) | MOVE_BIT(key, 0x0A, 0x14) |
+           MOVE_BIT(key, 0x1B, 0x13) | MOVE_BIT(key, 0x3C, 0x12) |
+           MOVE_BIT(key, 0x11, 0x11) | MOVE_BIT(key, 0x22, 0x10) |
+           MOVE_BIT(key, 0x3B, 0x0F) | MOVE_BIT(key, 0x0B, 0x0E) |
+           MOVE_BIT(key, 0x29, 0x0D) | MOVE_BIT(key, 0x23, 0x0C) |
+           MOVE_BIT(key, 0x03, 0x0B) | MOVE_BIT(key, 0x2B, 0x0A) |
+           MOVE_BIT(key, 0x1A, 0x09) | MOVE_BIT(key, 0x01, 0x08) |
+           MOVE_BIT(key, 0x31, 0x07) | MOVE_BIT(key, 0x2C, 0x06) |
+           MOVE_BIT(key, 0x13, 0x05) | MOVE_BIT(key, 0x32, 0x04) |
+           MOVE_BIT(key, 0x33, 0x03) | MOVE_BIT(key, 0x02, 0x02) |
+           MOVE_BIT(key, 0x09, 0x01) | MOVE_BIT(key, 0x21, 0x00);
 }
 
-uint64_t des_left_shift(uint64_t key, size_t n)
+static inline uint64_t KS_1(uint64_t key)
 {
-    uint8_t shift = shifts[n];
-    uint32_t upper = key >> 28;
-    uint32_t lower = key & ((1ULL << 28) - 1);
-
-    upper = ((upper << shift) | (upper >> (28 - shift))) & ((1ULL << 28) - 1);
-    lower = ((lower << shift) | (lower >> (28 - shift))) & ((1ULL << 28) - 1);
-
-    return (((uint64_t)upper) << 28) | ((uint64_t)lower);
+    return MOVE_BIT(key, 0x3E, 0x2F) | MOVE_BIT(key, 0x15, 0x2E) |
+           MOVE_BIT(key, 0x26, 0x2D) | MOVE_BIT(key, 0x0C, 0x2C) |
+           MOVE_BIT(key, 0x17, 0x2B) | MOVE_BIT(key, 0x37, 0x2A) |
+           MOVE_BIT(key, 0x27, 0x29) | MOVE_BIT(key, 0x0F, 0x28) |
+           MOVE_BIT(key, 0x05, 0x27) | MOVE_BIT(key, 0x3F, 0x26) |
+           MOVE_BIT(key, 0x35, 0x25) | MOVE_BIT(key, 0x1E, 0x24) |
+           MOVE_BIT(key, 0x04, 0x23) | MOVE_BIT(key, 0x25, 0x22) |
+           MOVE_BIT(key, 0x2E, 0x21) | MOVE_BIT(key, 0x2F, 0x20) |
+           MOVE_BIT(key, 0x1C, 0x1F) | MOVE_BIT(key, 0x0E, 0x1E) |
+           MOVE_BIT(key, 0x0D, 0x1D) | MOVE_BIT(key, 0x06, 0x1C) |
+           MOVE_BIT(key, 0x07, 0x1B) | MOVE_BIT(key, 0x2D, 0x1A) |
+           MOVE_BIT(key, 0x36, 0x19) | MOVE_BIT(key, 0x1F, 0x18) |
+           MOVE_BIT(key, 0x32, 0x17) | MOVE_BIT(key, 0x2C, 0x16) |
+           MOVE_BIT(key, 0x21, 0x15) | MOVE_BIT(key, 0x12, 0x14) |
+           MOVE_BIT(key, 0x23, 0x13) | MOVE_BIT(key, 0x01, 0x12) |
+           MOVE_BIT(key, 0x19, 0x11) | MOVE_BIT(key, 0x2A, 0x10) |
+           MOVE_BIT(key, 0x24, 0x0F) | MOVE_BIT(key, 0x13, 0x0E) |
+           MOVE_BIT(key, 0x31, 0x0D) | MOVE_BIT(key, 0x2B, 0x0C) |
+           MOVE_BIT(key, 0x0B, 0x0B) | MOVE_BIT(key, 0x33, 0x0A) |
+           MOVE_BIT(key, 0x22, 0x09) | MOVE_BIT(key, 0x09, 0x08) |
+           MOVE_BIT(key, 0x39, 0x07) | MOVE_BIT(key, 0x34, 0x06) |
+           MOVE_BIT(key, 0x1B, 0x05) | MOVE_BIT(key, 0x3A, 0x04) |
+           MOVE_BIT(key, 0x3B, 0x03) | MOVE_BIT(key, 0x0A, 0x02) |
+           MOVE_BIT(key, 0x11, 0x01) | MOVE_BIT(key, 0x29, 0x00);
 }
 
-void des_schedule(uint64_t key, uint64_t *schedule)
+static inline uint64_t KS_2(uint64_t key)
 {
-    key = des_PC_1(key);
-    for (int i = 0; i < 16; i++) {
-        key = des_left_shift(key, i);
-        schedule[i] = des_PC_2(key);
+    return MOVE_BIT(key, 0x0D, 0x2F) | MOVE_BIT(key, 0x25, 0x2E) |
+           MOVE_BIT(key, 0x36, 0x2D) | MOVE_BIT(key, 0x1C, 0x2C) |
+           MOVE_BIT(key, 0x27, 0x2B) | MOVE_BIT(key, 0x06, 0x2A) |
+           MOVE_BIT(key, 0x37, 0x29) | MOVE_BIT(key, 0x1F, 0x28) |
+           MOVE_BIT(key, 0x15, 0x27) | MOVE_BIT(key, 0x0E, 0x26) |
+           MOVE_BIT(key, 0x04, 0x25) | MOVE_BIT(key, 0x2E, 0x24) |
+           MOVE_BIT(key, 0x14, 0x23) | MOVE_BIT(key, 0x35, 0x22) |
+           MOVE_BIT(key, 0x3E, 0x21) | MOVE_BIT(key, 0x3F, 0x20) |
+           MOVE_BIT(key, 0x0F, 0x1F) | MOVE_BIT(key, 0x1E, 0x1E) |
+           MOVE_BIT(key, 0x1D, 0x1D) | MOVE_BIT(key, 0x16, 0x1C) |
+           MOVE_BIT(key, 0x17, 0x1B) | MOVE_BIT(key, 0x3D, 0x1A) |
+           MOVE_BIT(key, 0x05, 0x19) | MOVE_BIT(key, 0x2F, 0x18) |
+           MOVE_BIT(key, 0x03, 0x17) | MOVE_BIT(key, 0x3C, 0x16) |
+           MOVE_BIT(key, 0x31, 0x15) | MOVE_BIT(key, 0x22, 0x14) |
+           MOVE_BIT(key, 0x33, 0x13) | MOVE_BIT(key, 0x11, 0x12) |
+           MOVE_BIT(key, 0x29, 0x11) | MOVE_BIT(key, 0x3A, 0x10) |
+           MOVE_BIT(key, 0x34, 0x0F) | MOVE_BIT(key, 0x23, 0x0E) |
+           MOVE_BIT(key, 0x02, 0x0D) | MOVE_BIT(key, 0x3B, 0x0C) |
+           MOVE_BIT(key, 0x1B, 0x0B) | MOVE_BIT(key, 0x24, 0x0A) |
+           MOVE_BIT(key, 0x32, 0x09) | MOVE_BIT(key, 0x19, 0x08) |
+           MOVE_BIT(key, 0x0A, 0x07) | MOVE_BIT(key, 0x01, 0x06) |
+           MOVE_BIT(key, 0x2B, 0x05) | MOVE_BIT(key, 0x0B, 0x04) |
+           MOVE_BIT(key, 0x2C, 0x03) | MOVE_BIT(key, 0x1A, 0x02) |
+           MOVE_BIT(key, 0x21, 0x01) | MOVE_BIT(key, 0x39, 0x00);
+}
+
+static inline uint64_t KS_3(uint64_t key)
+{
+    return MOVE_BIT(key, 0x1D, 0x2F) | MOVE_BIT(key, 0x35, 0x2E) |
+           MOVE_BIT(key, 0x05, 0x2D) | MOVE_BIT(key, 0x0F, 0x2C) |
+           MOVE_BIT(key, 0x37, 0x2B) | MOVE_BIT(key, 0x16, 0x2A) |
+           MOVE_BIT(key, 0x06, 0x29) | MOVE_BIT(key, 0x2F, 0x28) |
+           MOVE_BIT(key, 0x25, 0x27) | MOVE_BIT(key, 0x1E, 0x26) |
+           MOVE_BIT(key, 0x14, 0x25) | MOVE_BIT(key, 0x3E, 0x24) |
+           MOVE_BIT(key, 0x07, 0x23) | MOVE_BIT(key, 0x04, 0x22) |
+           MOVE_BIT(key, 0x0D, 0x21) | MOVE_BIT(key, 0x0E, 0x20) |
+           MOVE_BIT(key, 0x1F, 0x1F) | MOVE_BIT(key, 0x2E, 0x1E) |
+           MOVE_BIT(key, 0x2D, 0x1D) | MOVE_BIT(key, 0x26, 0x1C) |
+           MOVE_BIT(key, 0x27, 0x1B) | MOVE_BIT(key, 0x0C, 0x1A) |
+           MOVE_BIT(key, 0x15, 0x19) | MOVE_BIT(key, 0x3F, 0x18) |
+           MOVE_BIT(key, 0x13, 0x17) | MOVE_BIT(key, 0x09, 0x16) |
+           MOVE_BIT(key, 0x02, 0x15) | MOVE_BIT(key, 0x32, 0x14) |
+           MOVE_BIT(key, 0x24, 0x13) | MOVE_BIT(key, 0x21, 0x12) |
+           MOVE_BIT(key, 0x39, 0x11) | MOVE_BIT(key, 0x0B, 0x10) |
+           MOVE_BIT(key, 0x01, 0x0F) | MOVE_BIT(key, 0x33, 0x0E) |
+           MOVE_BIT(key, 0x12, 0x0D) | MOVE_BIT(key, 0x2C, 0x0C) |
+           MOVE_BIT(key, 0x2B, 0x0B) | MOVE_BIT(key, 0x34, 0x0A) |
+           MOVE_BIT(key, 0x03, 0x09) | MOVE_BIT(key, 0x29, 0x08) |
+           MOVE_BIT(key, 0x1A, 0x07) | MOVE_BIT(key, 0x11, 0x06) |
+           MOVE_BIT(key, 0x3B, 0x05) | MOVE_BIT(key, 0x1B, 0x04) |
+           MOVE_BIT(key, 0x3C, 0x03) | MOVE_BIT(key, 0x2A, 0x02) |
+           MOVE_BIT(key, 0x31, 0x01) | MOVE_BIT(key, 0x0A, 0x00);
+}
+
+static inline uint64_t KS_4(uint64_t key)
+{
+    return MOVE_BIT(key, 0x2D, 0x2F) | MOVE_BIT(key, 0x04, 0x2E) |
+           MOVE_BIT(key, 0x15, 0x2D) | MOVE_BIT(key, 0x1F, 0x2C) |
+           MOVE_BIT(key, 0x06, 0x2B) | MOVE_BIT(key, 0x26, 0x2A) |
+           MOVE_BIT(key, 0x16, 0x29) | MOVE_BIT(key, 0x3F, 0x28) |
+           MOVE_BIT(key, 0x35, 0x27) | MOVE_BIT(key, 0x2E, 0x26) |
+           MOVE_BIT(key, 0x07, 0x25) | MOVE_BIT(key, 0x0D, 0x24) |
+           MOVE_BIT(key, 0x17, 0x23) | MOVE_BIT(key, 0x14, 0x22) |
+           MOVE_BIT(key, 0x1D, 0x21) | MOVE_BIT(key, 0x1E, 0x20) |
+           MOVE_BIT(key, 0x2F, 0x1F) | MOVE_BIT(key, 0x3E, 0x1E) |
+           MOVE_BIT(key, 0x3D, 0x1D) | MOVE_BIT(key, 0x36, 0x1C) |
+           MOVE_BIT(key, 0x37, 0x1B) | MOVE_BIT(key, 0x1C, 0x1A) |
+           MOVE_BIT(key, 0x25, 0x19) | MOVE_BIT(key, 0x0E, 0x18) |
+           MOVE_BIT(key, 0x23, 0x17) | MOVE_BIT(key, 0x19, 0x16) |
+           MOVE_BIT(key, 0x12, 0x15) | MOVE_BIT(key, 0x03, 0x14) |
+           MOVE_BIT(key, 0x34, 0x13) | MOVE_BIT(key, 0x31, 0x12) |
+           MOVE_BIT(key, 0x0A, 0x11) | MOVE_BIT(key, 0x1B, 0x10) |
+           MOVE_BIT(key, 0x11, 0x0F) | MOVE_BIT(key, 0x24, 0x0E) |
+           MOVE_BIT(key, 0x22, 0x0D) | MOVE_BIT(key, 0x3C, 0x0C) |
+           MOVE_BIT(key, 0x3B, 0x0B) | MOVE_BIT(key, 0x01, 0x0A) |
+           MOVE_BIT(key, 0x13, 0x09) | MOVE_BIT(key, 0x39, 0x08) |
+           MOVE_BIT(key, 0x2A, 0x07) | MOVE_BIT(key, 0x21, 0x06) |
+           MOVE_BIT(key, 0x2C, 0x05) | MOVE_BIT(key, 0x2B, 0x04) |
+           MOVE_BIT(key, 0x09, 0x03) | MOVE_BIT(key, 0x3A, 0x02) |
+           MOVE_BIT(key, 0x02, 0x01) | MOVE_BIT(key, 0x1A, 0x00);
+}
+
+static inline uint64_t KS_5(uint64_t key)
+{
+    return MOVE_BIT(key, 0x3D, 0x2F) | MOVE_BIT(key, 0x14, 0x2E) |
+           MOVE_BIT(key, 0x25, 0x2D) | MOVE_BIT(key, 0x2F, 0x2C) |
+           MOVE_BIT(key, 0x16, 0x2B) | MOVE_BIT(key, 0x36, 0x2A) |
+           MOVE_BIT(key, 0x26, 0x29) | MOVE_BIT(key, 0x0E, 0x28) |
+           MOVE_BIT(key, 0x04, 0x27) | MOVE_BIT(key, 0x3E, 0x26) |
+           MOVE_BIT(key, 0x17, 0x25) | MOVE_BIT(key, 0x1D, 0x24) |
+           MOVE_BIT(key, 0x27, 0x23) | MOVE_BIT(key, 0x07, 0x22) |
+           MOVE_BIT(key, 0x2D, 0x21) | MOVE_BIT(key, 0x2E, 0x20) |
+           MOVE_BIT(key, 0x3F, 0x1F) | MOVE_BIT(key, 0x0D, 0x1E) |
+           MOVE_BIT(key, 0x0C, 0x1D) | MOVE_BIT(key, 0x05, 0x1C) |
+           MOVE_BIT(key, 0x06, 0x1B) | MOVE_BIT(key, 0x0F, 0x1A) |
+           MOVE_BIT(key, 0x35, 0x19) | MOVE_BIT(key, 0x1E, 0x18) |
+           MOVE_BIT(key, 0x33, 0x17) | MOVE_BIT(key, 0x29, 0x16) |
+           MOVE_BIT(key, 0x22, 0x15) | MOVE_BIT(key, 0x13, 0x14) |
+           MOVE_BIT(key, 0x01, 0x13) | MOVE_BIT(key, 0x02, 0x12) |
+           MOVE_BIT(key, 0x1A, 0x11) | MOVE_BIT(key, 0x2B, 0x10) |
+           MOVE_BIT(key, 0x21, 0x0F) | MOVE_BIT(key, 0x34, 0x0E) |
+           MOVE_BIT(key, 0x32, 0x0D) | MOVE_BIT(key, 0x09, 0x0C) |
+           MOVE_BIT(key, 0x2C, 0x0B) | MOVE_BIT(key, 0x11, 0x0A) |
+           MOVE_BIT(key, 0x23, 0x09) | MOVE_BIT(key, 0x0A, 0x08) |
+           MOVE_BIT(key, 0x3A, 0x07) | MOVE_BIT(key, 0x31, 0x06) |
+           MOVE_BIT(key, 0x3C, 0x05) | MOVE_BIT(key, 0x3B, 0x04) |
+           MOVE_BIT(key, 0x19, 0x03) | MOVE_BIT(key, 0x0B, 0x02) |
+           MOVE_BIT(key, 0x12, 0x01) | MOVE_BIT(key, 0x2A, 0x00);
+}
+
+static inline uint64_t KS_6(uint64_t key)
+{
+    return MOVE_BIT(key, 0x0C, 0x2F) | MOVE_BIT(key, 0x07, 0x2E) |
+           MOVE_BIT(key, 0x35, 0x2D) | MOVE_BIT(key, 0x3F, 0x2C) |
+           MOVE_BIT(key, 0x26, 0x2B) | MOVE_BIT(key, 0x05, 0x2A) |
+           MOVE_BIT(key, 0x36, 0x29) | MOVE_BIT(key, 0x1E, 0x28) |
+           MOVE_BIT(key, 0x14, 0x27) | MOVE_BIT(key, 0x0D, 0x26) |
+           MOVE_BIT(key, 0x27, 0x25) | MOVE_BIT(key, 0x2D, 0x24) |
+           MOVE_BIT(key, 0x37, 0x23) | MOVE_BIT(key, 0x17, 0x22) |
+           MOVE_BIT(key, 0x3D, 0x21) | MOVE_BIT(key, 0x3E, 0x20) |
+           MOVE_BIT(key, 0x0E, 0x1F) | MOVE_BIT(key, 0x1D, 0x1E) |
+           MOVE_BIT(key, 0x1C, 0x1D) | MOVE_BIT(key, 0x15, 0x1C) |
+           MOVE_BIT(key, 0x16, 0x1B) | MOVE_BIT(key, 0x1F, 0x1A) |
+           MOVE_BIT(key, 0x04, 0x19) | MOVE_BIT(key, 0x2E, 0x18) |
+           MOVE_BIT(key, 0x24, 0x17) | MOVE_BIT(key, 0x39, 0x16) |
+           MOVE_BIT(key, 0x32, 0x15) | MOVE_BIT(key, 0x23, 0x14) |
+           MOVE_BIT(key, 0x11, 0x13) | MOVE_BIT(key, 0x12, 0x12) |
+           MOVE_BIT(key, 0x2A, 0x11) | MOVE_BIT(key, 0x3B, 0x10) |
+           MOVE_BIT(key, 0x31, 0x0F) | MOVE_BIT(key, 0x01, 0x0E) |
+           MOVE_BIT(key, 0x03, 0x0D) | MOVE_BIT(key, 0x19, 0x0C) |
+           MOVE_BIT(key, 0x3C, 0x0B) | MOVE_BIT(key, 0x21, 0x0A) |
+           MOVE_BIT(key, 0x33, 0x09) | MOVE_BIT(key, 0x1A, 0x08) |
+           MOVE_BIT(key, 0x0B, 0x07) | MOVE_BIT(key, 0x02, 0x06) |
+           MOVE_BIT(key, 0x09, 0x05) | MOVE_BIT(key, 0x2C, 0x04) |
+           MOVE_BIT(key, 0x29, 0x03) | MOVE_BIT(key, 0x1B, 0x02) |
+           MOVE_BIT(key, 0x22, 0x01) | MOVE_BIT(key, 0x3A, 0x00);
+}
+
+static inline uint64_t KS_7(uint64_t key)
+{
+    return MOVE_BIT(key, 0x1C, 0x2F) | MOVE_BIT(key, 0x17, 0x2E) |
+           MOVE_BIT(key, 0x04, 0x2D) | MOVE_BIT(key, 0x0E, 0x2C) |
+           MOVE_BIT(key, 0x36, 0x2B) | MOVE_BIT(key, 0x15, 0x2A) |
+           MOVE_BIT(key, 0x05, 0x29) | MOVE_BIT(key, 0x2E, 0x28) |
+           MOVE_BIT(key, 0x07, 0x27) | MOVE_BIT(key, 0x1D, 0x26) |
+           MOVE_BIT(key, 0x37, 0x25) | MOVE_BIT(key, 0x3D, 0x24) |
+           MOVE_BIT(key, 0x06, 0x23) | MOVE_BIT(key, 0x27, 0x22) |
+           MOVE_BIT(key, 0x0C, 0x21) | MOVE_BIT(key, 0x0D, 0x20) |
+           MOVE_BIT(key, 0x1E, 0x1F) | MOVE_BIT(key, 0x2D, 0x1E) |
+           MOVE_BIT(key, 0x0F, 0x1D) | MOVE_BIT(key, 0x25, 0x1C) |
+           MOVE_BIT(key, 0x26, 0x1B) | MOVE_BIT(key, 0x2F, 0x1A) |
+           MOVE_BIT(key, 0x14, 0x19) | MOVE_BIT(key, 0x3E, 0x18) |
+           MOVE_BIT(key, 0x34, 0x17) | MOVE_BIT(key, 0x0A, 0x16) |
+           MOVE_BIT(key, 0x03, 0x15) | MOVE_BIT(key, 0x33, 0x14) |
+           MOVE_BIT(key, 0x21, 0x13) | MOVE_BIT(key, 0x22, 0x12) |
+           MOVE_BIT(key, 0x3A, 0x11) | MOVE_BIT(key, 0x2C, 0x10) |
+           MOVE_BIT(key, 0x02, 0x0F) | MOVE_BIT(key, 0x11, 0x0E) |
+           MOVE_BIT(key, 0x13, 0x0D) | MOVE_BIT(key, 0x29, 0x0C) |
+           MOVE_BIT(key, 0x09, 0x0B) | MOVE_BIT(key, 0x31, 0x0A) |
+           MOVE_BIT(key, 0x24, 0x09) | MOVE_BIT(key, 0x2A, 0x08) |
+           MOVE_BIT(key, 0x1B, 0x07) | MOVE_BIT(key, 0x12, 0x06) |
+           MOVE_BIT(key, 0x19, 0x05) | MOVE_BIT(key, 0x3C, 0x04) |
+           MOVE_BIT(key, 0x39, 0x03) | MOVE_BIT(key, 0x2B, 0x02) |
+           MOVE_BIT(key, 0x32, 0x01) | MOVE_BIT(key, 0x0B, 0x00);
+}
+
+static inline uint64_t KS_8(uint64_t key)
+{
+    return MOVE_BIT(key, 0x07, 0x2F) | MOVE_BIT(key, 0x1F, 0x2E) |
+           MOVE_BIT(key, 0x0C, 0x2D) | MOVE_BIT(key, 0x16, 0x2C) |
+           MOVE_BIT(key, 0x3E, 0x2B) | MOVE_BIT(key, 0x1D, 0x2A) |
+           MOVE_BIT(key, 0x0D, 0x29) | MOVE_BIT(key, 0x36, 0x28) |
+           MOVE_BIT(key, 0x0F, 0x27) | MOVE_BIT(key, 0x25, 0x26) |
+           MOVE_BIT(key, 0x3F, 0x25) | MOVE_BIT(key, 0x04, 0x24) |
+           MOVE_BIT(key, 0x0E, 0x23) | MOVE_BIT(key, 0x2F, 0x22) |
+           MOVE_BIT(key, 0x14, 0x21) | MOVE_BIT(key, 0x15, 0x20) |
+           MOVE_BIT(key, 0x26, 0x1F) | MOVE_BIT(key, 0x35, 0x1E) |
+           MOVE_BIT(key, 0x17, 0x1D) | MOVE_BIT(key, 0x2D, 0x1C) |
+           MOVE_BIT(key, 0x2E, 0x1B) | MOVE_BIT(key, 0x37, 0x1A) |
+           MOVE_BIT(key, 0x1C, 0x19) | MOVE_BIT(key, 0x05, 0x18) |
+           MOVE_BIT(key, 0x3C, 0x17) | MOVE_BIT(key, 0x12, 0x16) |
+           MOVE_BIT(key, 0x0B, 0x15) | MOVE_BIT(key, 0x3B, 0x14) |
+           MOVE_BIT(key, 0x29, 0x13) | MOVE_BIT(key, 0x2A, 0x12) |
+           MOVE_BIT(key, 0x03, 0x11) | MOVE_BIT(key, 0x34, 0x10) |
+           MOVE_BIT(key, 0x0A, 0x0F) | MOVE_BIT(key, 0x19, 0x0E) |
+           MOVE_BIT(key, 0x1B, 0x0D) | MOVE_BIT(key, 0x31, 0x0C) |
+           MOVE_BIT(key, 0x11, 0x0B) | MOVE_BIT(key, 0x39, 0x0A) |
+           MOVE_BIT(key, 0x2C, 0x09) | MOVE_BIT(key, 0x32, 0x08) |
+           MOVE_BIT(key, 0x23, 0x07) | MOVE_BIT(key, 0x1A, 0x06) |
+           MOVE_BIT(key, 0x21, 0x05) | MOVE_BIT(key, 0x01, 0x04) |
+           MOVE_BIT(key, 0x02, 0x03) | MOVE_BIT(key, 0x33, 0x02) |
+           MOVE_BIT(key, 0x3A, 0x01) | MOVE_BIT(key, 0x13, 0x00);
+}
+
+static inline uint64_t KS_9(uint64_t key)
+{
+    return MOVE_BIT(key, 0x17, 0x2F) | MOVE_BIT(key, 0x2F, 0x2E) |
+           MOVE_BIT(key, 0x1C, 0x2D) | MOVE_BIT(key, 0x26, 0x2C) |
+           MOVE_BIT(key, 0x0D, 0x2B) | MOVE_BIT(key, 0x2D, 0x2A) |
+           MOVE_BIT(key, 0x1D, 0x29) | MOVE_BIT(key, 0x05, 0x28) |
+           MOVE_BIT(key, 0x1F, 0x27) | MOVE_BIT(key, 0x35, 0x26) |
+           MOVE_BIT(key, 0x0E, 0x25) | MOVE_BIT(key, 0x14, 0x24) |
+           MOVE_BIT(key, 0x1E, 0x23) | MOVE_BIT(key, 0x3F, 0x22) |
+           MOVE_BIT(key, 0x07, 0x21) | MOVE_BIT(key, 0x25, 0x20) |
+           MOVE_BIT(key, 0x36, 0x1F) | MOVE_BIT(key, 0x04, 0x1E) |
+           MOVE_BIT(key, 0x27, 0x1D) | MOVE_BIT(key, 0x3D, 0x1C) |
+           MOVE_BIT(key, 0x3E, 0x1B) | MOVE_BIT(key, 0x06, 0x1A) |
+           MOVE_BIT(key, 0x0F, 0x19) | MOVE_BIT(key, 0x15, 0x18) |
+           MOVE_BIT(key, 0x09, 0x17) | MOVE_BIT(key, 0x22, 0x16) |
+           MOVE_BIT(key, 0x1B, 0x15) | MOVE_BIT(key, 0x2C, 0x14) |
+           MOVE_BIT(key, 0x39, 0x13) | MOVE_BIT(key, 0x3A, 0x12) |
+           MOVE_BIT(key, 0x13, 0x11) | MOVE_BIT(key, 0x01, 0x10) |
+           MOVE_BIT(key, 0x1A, 0x0F) | MOVE_BIT(key, 0x29, 0x0E) |
+           MOVE_BIT(key, 0x2B, 0x0D) | MOVE_BIT(key, 0x02, 0x0C) |
+           MOVE_BIT(key, 0x21, 0x0B) | MOVE_BIT(key, 0x0A, 0x0A) |
+           MOVE_BIT(key, 0x3C, 0x09) | MOVE_BIT(key, 0x03, 0x08) |
+           MOVE_BIT(key, 0x33, 0x07) | MOVE_BIT(key, 0x2A, 0x06) |
+           MOVE_BIT(key, 0x31, 0x05) | MOVE_BIT(key, 0x11, 0x04) |
+           MOVE_BIT(key, 0x12, 0x03) | MOVE_BIT(key, 0x24, 0x02) |
+           MOVE_BIT(key, 0x0B, 0x01) | MOVE_BIT(key, 0x23, 0x00);
+}
+
+static inline uint64_t KS_10(uint64_t key)
+{
+    return MOVE_BIT(key, 0x27, 0x2F) | MOVE_BIT(key, 0x3F, 0x2E) |
+           MOVE_BIT(key, 0x0F, 0x2D) | MOVE_BIT(key, 0x36, 0x2C) |
+           MOVE_BIT(key, 0x1D, 0x2B) | MOVE_BIT(key, 0x3D, 0x2A) |
+           MOVE_BIT(key, 0x2D, 0x29) | MOVE_BIT(key, 0x15, 0x28) |
+           MOVE_BIT(key, 0x2F, 0x27) | MOVE_BIT(key, 0x04, 0x26) |
+           MOVE_BIT(key, 0x1E, 0x25) | MOVE_BIT(key, 0x07, 0x24) |
+           MOVE_BIT(key, 0x2E, 0x23) | MOVE_BIT(key, 0x0E, 0x22) |
+           MOVE_BIT(key, 0x17, 0x21) | MOVE_BIT(key, 0x35, 0x20) |
+           MOVE_BIT(key, 0x05, 0x1F) | MOVE_BIT(key, 0x14, 0x1E) |
+           MOVE_BIT(key, 0x37, 0x1D) | MOVE_BIT(key, 0x0C, 0x1C) |
+           MOVE_BIT(key, 0x0D, 0x1B) | MOVE_BIT(key, 0x16, 0x1A) |
+           MOVE_BIT(key, 0x1F, 0x19) | MOVE_BIT(key, 0x25, 0x18) |
+           MOVE_BIT(key, 0x19, 0x17) | MOVE_BIT(key, 0x32, 0x16) |
+           MOVE_BIT(key, 0x2B, 0x15) | MOVE_BIT(key, 0x3C, 0x14) |
+           MOVE_BIT(key, 0x0A, 0x13) | MOVE_BIT(key, 0x0B, 0x12) |
+           MOVE_BIT(key, 0x23, 0x11) | MOVE_BIT(key, 0x11, 0x10) |
+           MOVE_BIT(key, 0x2A, 0x0F) | MOVE_BIT(key, 0x39, 0x0E) |
+           MOVE_BIT(key, 0x3B, 0x0D) | MOVE_BIT(key, 0x12, 0x0C) |
+           MOVE_BIT(key, 0x31, 0x0B) | MOVE_BIT(key, 0x1A, 0x0A) |
+           MOVE_BIT(key, 0x09, 0x09) | MOVE_BIT(key, 0x13, 0x08) |
+           MOVE_BIT(key, 0x24, 0x07) | MOVE_BIT(key, 0x3A, 0x06) |
+           MOVE_BIT(key, 0x02, 0x05) | MOVE_BIT(key, 0x21, 0x04) |
+           MOVE_BIT(key, 0x22, 0x03) | MOVE_BIT(key, 0x34, 0x02) |
+           MOVE_BIT(key, 0x1B, 0x01) | MOVE_BIT(key, 0x33, 0x00);
+}
+
+static inline uint64_t KS_11(uint64_t key)
+{
+    return MOVE_BIT(key, 0x37, 0x2F) | MOVE_BIT(key, 0x0E, 0x2E) |
+           MOVE_BIT(key, 0x1F, 0x2D) | MOVE_BIT(key, 0x05, 0x2C) |
+           MOVE_BIT(key, 0x2D, 0x2B) | MOVE_BIT(key, 0x0C, 0x2A) |
+           MOVE_BIT(key, 0x3D, 0x29) | MOVE_BIT(key, 0x25, 0x28) |
+           MOVE_BIT(key, 0x3F, 0x27) | MOVE_BIT(key, 0x14, 0x26) |
+           MOVE_BIT(key, 0x2E, 0x25) | MOVE_BIT(key, 0x17, 0x24) |
+           MOVE_BIT(key, 0x3E, 0x23) | MOVE_BIT(key, 0x1E, 0x22) |
+           MOVE_BIT(key, 0x27, 0x21) | MOVE_BIT(key, 0x04, 0x20) |
+           MOVE_BIT(key, 0x15, 0x1F) | MOVE_BIT(key, 0x07, 0x1E) |
+           MOVE_BIT(key, 0x06, 0x1D) | MOVE_BIT(key, 0x1C, 0x1C) |
+           MOVE_BIT(key, 0x1D, 0x1B) | MOVE_BIT(key, 0x26, 0x1A) |
+           MOVE_BIT(key, 0x2F, 0x19) | MOVE_BIT(key, 0x35, 0x18) |
+           MOVE_BIT(key, 0x29, 0x17) | MOVE_BIT(key, 0x03, 0x16) |
+           MOVE_BIT(key, 0x3B, 0x15) | MOVE_BIT(key, 0x09, 0x14) |
+           MOVE_BIT(key, 0x1A, 0x13) | MOVE_BIT(key, 0x1B, 0x12) |
+           MOVE_BIT(key, 0x33, 0x11) | MOVE_BIT(key, 0x21, 0x10) |
+           MOVE_BIT(key, 0x3A, 0x0F) | MOVE_BIT(key, 0x0A, 0x0E) |
+           MOVE_BIT(key, 0x2C, 0x0D) | MOVE_BIT(key, 0x22, 0x0C) |
+           MOVE_BIT(key, 0x02, 0x0B) | MOVE_BIT(key, 0x2A, 0x0A) |
+           MOVE_BIT(key, 0x19, 0x09) | MOVE_BIT(key, 0x23, 0x08) |
+           MOVE_BIT(key, 0x34, 0x07) | MOVE_BIT(key, 0x0B, 0x06) |
+           MOVE_BIT(key, 0x12, 0x05) | MOVE_BIT(key, 0x31, 0x04) |
+           MOVE_BIT(key, 0x32, 0x03) | MOVE_BIT(key, 0x01, 0x02) |
+           MOVE_BIT(key, 0x2B, 0x01) | MOVE_BIT(key, 0x24, 0x00);
+}
+
+static inline uint64_t KS_12(uint64_t key)
+{
+    return MOVE_BIT(key, 0x06, 0x2F) | MOVE_BIT(key, 0x1E, 0x2E) |
+           MOVE_BIT(key, 0x2F, 0x2D) | MOVE_BIT(key, 0x15, 0x2C) |
+           MOVE_BIT(key, 0x3D, 0x2B) | MOVE_BIT(key, 0x1C, 0x2A) |
+           MOVE_BIT(key, 0x0C, 0x29) | MOVE_BIT(key, 0x35, 0x28) |
+           MOVE_BIT(key, 0x0E, 0x27) | MOVE_BIT(key, 0x07, 0x26) |
+           MOVE_BIT(key, 0x3E, 0x25) | MOVE_BIT(key, 0x27, 0x24) |
+           MOVE_BIT(key, 0x0D, 0x23) | MOVE_BIT(key, 0x2E, 0x22) |
+           MOVE_BIT(key, 0x37, 0x21) | MOVE_BIT(key, 0x14, 0x20) |
+           MOVE_BIT(key, 0x25, 0x1F) | MOVE_BIT(key, 0x17, 0x1E) |
+           MOVE_BIT(key, 0x16, 0x1D) | MOVE_BIT(key, 0x0F, 0x1C) |
+           MOVE_BIT(key, 0x2D, 0x1B) | MOVE_BIT(key, 0x36, 0x1A) |
+           MOVE_BIT(key, 0x3F, 0x19) | MOVE_BIT(key, 0x04, 0x18) |
+           MOVE_BIT(key, 0x39, 0x17) | MOVE_BIT(key, 0x13, 0x16) |
+           MOVE_BIT(key, 0x2C, 0x15) | MOVE_BIT(key, 0x19, 0x14) |
+           MOVE_BIT(key, 0x2A, 0x13) | MOVE_BIT(key, 0x2B, 0x12) |
+           MOVE_BIT(key, 0x24, 0x11) | MOVE_BIT(key, 0x31, 0x10) |
+           MOVE_BIT(key, 0x0B, 0x0F) | MOVE_BIT(key, 0x1A, 0x0E) |
+           MOVE_BIT(key, 0x3C, 0x0D) | MOVE_BIT(key, 0x32, 0x0C) |
+           MOVE_BIT(key, 0x12, 0x0B) | MOVE_BIT(key, 0x3A, 0x0A) |
+           MOVE_BIT(key, 0x29, 0x09) | MOVE_BIT(key, 0x33, 0x08) |
+           MOVE_BIT(key, 0x01, 0x07) | MOVE_BIT(key, 0x1B, 0x06) |
+           MOVE_BIT(key, 0x22, 0x05) | MOVE_BIT(key, 0x02, 0x04) |
+           MOVE_BIT(key, 0x03, 0x03) | MOVE_BIT(key, 0x11, 0x02) |
+           MOVE_BIT(key, 0x3B, 0x01) | MOVE_BIT(key, 0x34, 0x00);
+}
+
+static inline uint64_t KS_13(uint64_t key)
+{
+    return MOVE_BIT(key, 0x16, 0x2F) | MOVE_BIT(key, 0x2E, 0x2E) |
+           MOVE_BIT(key, 0x3F, 0x2D) | MOVE_BIT(key, 0x25, 0x2C) |
+           MOVE_BIT(key, 0x0C, 0x2B) | MOVE_BIT(key, 0x0F, 0x2A) |
+           MOVE_BIT(key, 0x1C, 0x29) | MOVE_BIT(key, 0x04, 0x28) |
+           MOVE_BIT(key, 0x1E, 0x27) | MOVE_BIT(key, 0x17, 0x26) |
+           MOVE_BIT(key, 0x0D, 0x25) | MOVE_BIT(key, 0x37, 0x24) |
+           MOVE_BIT(key, 0x1D, 0x23) | MOVE_BIT(key, 0x3E, 0x22) |
+           MOVE_BIT(key, 0x06, 0x21) | MOVE_BIT(key, 0x07, 0x20) |
+           MOVE_BIT(key, 0x35, 0x1F) | MOVE_BIT(key, 0x27, 0x1E) |
+           MOVE_BIT(key, 0x26, 0x1D) | MOVE_BIT(key, 0x1F, 0x1C) |
+           MOVE_BIT(key, 0x3D, 0x1B) | MOVE_BIT(key, 0x05, 0x1A) |
+           MOVE_BIT(key, 0x0E, 0x19) | MOVE_BIT(key, 0x14, 0x18) |
+           MOVE_BIT(key, 0x0A, 0x17) | MOVE_BIT(key, 0x23, 0x16) |
+           MOVE_BIT(key, 0x3C, 0x15) | MOVE_BIT(key, 0x29, 0x14) |
+           MOVE_BIT(key, 0x3A, 0x13) | MOVE_BIT(key, 0x3B, 0x12) |
+           MOVE_BIT(key, 0x34, 0x11) | MOVE_BIT(key, 0x02, 0x10) |
+           MOVE_BIT(key, 0x1B, 0x0F) | MOVE_BIT(key, 0x2A, 0x0E) |
+           MOVE_BIT(key, 0x09, 0x0D) | MOVE_BIT(key, 0x03, 0x0C) |
+           MOVE_BIT(key, 0x22, 0x0B) | MOVE_BIT(key, 0x0B, 0x0A) |
+           MOVE_BIT(key, 0x39, 0x09) | MOVE_BIT(key, 0x24, 0x08) |
+           MOVE_BIT(key, 0x11, 0x07) | MOVE_BIT(key, 0x2B, 0x06) |
+           MOVE_BIT(key, 0x32, 0x05) | MOVE_BIT(key, 0x12, 0x04) |
+           MOVE_BIT(key, 0x13, 0x03) | MOVE_BIT(key, 0x21, 0x02) |
+           MOVE_BIT(key, 0x2C, 0x01) | MOVE_BIT(key, 0x01, 0x00);
+}
+
+static inline uint64_t KS_14(uint64_t key)
+{
+    return MOVE_BIT(key, 0x26, 0x2F) | MOVE_BIT(key, 0x3E, 0x2E) |
+           MOVE_BIT(key, 0x0E, 0x2D) | MOVE_BIT(key, 0x35, 0x2C) |
+           MOVE_BIT(key, 0x1C, 0x2B) | MOVE_BIT(key, 0x1F, 0x2A) |
+           MOVE_BIT(key, 0x0F, 0x29) | MOVE_BIT(key, 0x14, 0x28) |
+           MOVE_BIT(key, 0x2E, 0x27) | MOVE_BIT(key, 0x27, 0x26) |
+           MOVE_BIT(key, 0x1D, 0x25) | MOVE_BIT(key, 0x06, 0x24) |
+           MOVE_BIT(key, 0x2D, 0x23) | MOVE_BIT(key, 0x0D, 0x22) |
+           MOVE_BIT(key, 0x16, 0x21) | MOVE_BIT(key, 0x17, 0x20) |
+           MOVE_BIT(key, 0x04, 0x1F) | MOVE_BIT(key, 0x37, 0x1E) |
+           MOVE_BIT(key, 0x36, 0x1D) | MOVE_BIT(key, 0x2F, 0x1C) |
+           MOVE_BIT(key, 0x0C, 0x1B) | MOVE_BIT(key, 0x15, 0x1A) |
+           MOVE_BIT(key, 0x1E, 0x19) | MOVE_BIT(key, 0x07, 0x18) |
+           MOVE_BIT(key, 0x1A, 0x17) | MOVE_BIT(key, 0x33, 0x16) |
+           MOVE_BIT(key, 0x09, 0x15) | MOVE_BIT(key, 0x39, 0x14) |
+           MOVE_BIT(key, 0x0B, 0x13) | MOVE_BIT(key, 0x2C, 0x12) |
+           MOVE_BIT(key, 0x01, 0x11) | MOVE_BIT(key, 0x12, 0x10) |
+           MOVE_BIT(key, 0x2B, 0x0F) | MOVE_BIT(key, 0x3A, 0x0E) |
+           MOVE_BIT(key, 0x19, 0x0D) | MOVE_BIT(key, 0x13, 0x0C) |
+           MOVE_BIT(key, 0x32, 0x0B) | MOVE_BIT(key, 0x1B, 0x0A) |
+           MOVE_BIT(key, 0x0A, 0x09) | MOVE_BIT(key, 0x34, 0x08) |
+           MOVE_BIT(key, 0x21, 0x07) | MOVE_BIT(key, 0x3B, 0x06) |
+           MOVE_BIT(key, 0x03, 0x05) | MOVE_BIT(key, 0x22, 0x04) |
+           MOVE_BIT(key, 0x23, 0x03) | MOVE_BIT(key, 0x31, 0x02) |
+           MOVE_BIT(key, 0x3C, 0x01) | MOVE_BIT(key, 0x11, 0x00);
+}
+
+static inline uint64_t KS_15(uint64_t key)
+{
+    return MOVE_BIT(key, 0x2E, 0x2F) | MOVE_BIT(key, 0x05, 0x2E) |
+           MOVE_BIT(key, 0x16, 0x2D) | MOVE_BIT(key, 0x3D, 0x2C) |
+           MOVE_BIT(key, 0x07, 0x2B) | MOVE_BIT(key, 0x27, 0x2A) |
+           MOVE_BIT(key, 0x17, 0x29) | MOVE_BIT(key, 0x1C, 0x28) |
+           MOVE_BIT(key, 0x36, 0x27) | MOVE_BIT(key, 0x2F, 0x26) |
+           MOVE_BIT(key, 0x25, 0x25) | MOVE_BIT(key, 0x0E, 0x24) |
+           MOVE_BIT(key, 0x35, 0x23) | MOVE_BIT(key, 0x15, 0x22) |
+           MOVE_BIT(key, 0x1E, 0x21) | MOVE_BIT(key, 0x1F, 0x20) |
+           MOVE_BIT(key, 0x0C, 0x1F) | MOVE_BIT(key, 0x3F, 0x1E) |
+           MOVE_BIT(key, 0x3E, 0x1D) | MOVE_BIT(key, 0x37, 0x1C) |
+           MOVE_BIT(key, 0x14, 0x1B) | MOVE_BIT(key, 0x1D, 0x1A) |
+           MOVE_BIT(key, 0x26, 0x19) | MOVE_BIT(key, 0x0F, 0x18) |
+           MOVE_BIT(key, 0x22, 0x17) | MOVE_BIT(key, 0x3B, 0x16) |
+           MOVE_BIT(key, 0x11, 0x15) | MOVE_BIT(key, 0x02, 0x14) |
+           MOVE_BIT(key, 0x13, 0x13) | MOVE_BIT(key, 0x34, 0x12) |
+           MOVE_BIT(key, 0x09, 0x11) | MOVE_BIT(key, 0x1A, 0x10) |
+           MOVE_BIT(key, 0x33, 0x0F) | MOVE_BIT(key, 0x03, 0x0E) |
+           MOVE_BIT(key, 0x21, 0x0D) | MOVE_BIT(key, 0x1B, 0x0C) |
+           MOVE_BIT(key, 0x3A, 0x0B) | MOVE_BIT(key, 0x23, 0x0A) |
+           MOVE_BIT(key, 0x12, 0x09) | MOVE_BIT(key, 0x3C, 0x08) |
+           MOVE_BIT(key, 0x29, 0x07) | MOVE_BIT(key, 0x24, 0x06) |
+           MOVE_BIT(key, 0x0B, 0x05) | MOVE_BIT(key, 0x2A, 0x04) |
+           MOVE_BIT(key, 0x2B, 0x03) | MOVE_BIT(key, 0x39, 0x02) |
+           MOVE_BIT(key, 0x01, 0x01) | MOVE_BIT(key, 0x19, 0x00);
+}
+
+static inline uint64_t f(uint64_t block, uint64_t key)
+{
+    return P(S(E(block) ^ key));
+}
+
+static inline void key_schedule(uint64_t key, uint64_t ks[static 16])
+{
+    ks[0] = KS_0(key);
+    ks[1] = KS_1(key);
+    ks[2] = KS_2(key);
+    ks[3] = KS_3(key);
+    ks[4] = KS_4(key);
+    ks[5] = KS_5(key);
+    ks[6] = KS_6(key);
+    ks[7] = KS_7(key);
+    ks[8] = KS_8(key);
+    ks[9] = KS_9(key);
+    ks[10] = KS_10(key);
+    ks[11] = KS_11(key);
+    ks[12] = KS_12(key);
+    ks[13] = KS_13(key);
+    ks[14] = KS_14(key);
+    ks[15] = KS_15(key);
+}
+
+int des_init(struct des_context *ctx, uint64_t key)
+{
+    key_schedule(key, ctx->ks);
+    return 0;
+}
+
+uint64_t des_encrypt(const struct des_context *ctx, uint64_t block)
+{
+    block = IP(block);
+
+    uint64_t L = block >> 32;
+    uint64_t R = block & 0xFFFFFFFF;
+
+    L ^= f(R, ctx->ks[0]);
+    R ^= f(L, ctx->ks[1]);
+    L ^= f(R, ctx->ks[2]);
+    R ^= f(L, ctx->ks[3]);
+    L ^= f(R, ctx->ks[4]);
+    R ^= f(L, ctx->ks[5]);
+    L ^= f(R, ctx->ks[6]);
+    R ^= f(L, ctx->ks[7]);
+    L ^= f(R, ctx->ks[8]);
+    R ^= f(L, ctx->ks[9]);
+    L ^= f(R, ctx->ks[10]);
+    R ^= f(L, ctx->ks[11]);
+    L ^= f(R, ctx->ks[12]);
+    R ^= f(L, ctx->ks[13]);
+    L ^= f(R, ctx->ks[14]);
+    R ^= f(L, ctx->ks[15]);
+
+    return IP_inv((R << 32) | L);
+}
+
+uint64_t des_decrypt(const struct des_context *ctx, uint64_t block)
+{
+    block = IP(block);
+
+    uint64_t L = block >> 32;
+    uint64_t R = block & 0xFFFFFFFF;
+
+    L ^= f(R, ctx->ks[15]);
+    R ^= f(L, ctx->ks[14]);
+    L ^= f(R, ctx->ks[13]);
+    R ^= f(L, ctx->ks[12]);
+    L ^= f(R, ctx->ks[11]);
+    R ^= f(L, ctx->ks[10]);
+    L ^= f(R, ctx->ks[9]);
+    R ^= f(L, ctx->ks[8]);
+    L ^= f(R, ctx->ks[7]);
+    R ^= f(L, ctx->ks[6]);
+    L ^= f(R, ctx->ks[5]);
+    R ^= f(L, ctx->ks[4]);
+    L ^= f(R, ctx->ks[3]);
+    R ^= f(L, ctx->ks[2]);
+    L ^= f(R, ctx->ks[1]);
+    R ^= f(L, ctx->ks[0]);
+
+    return IP_inv((R << 32) | L);
+}
+
+static inline void put_padded(uint64_t value, size_t size, void *dest)
+{
+    uint8_t *out = dest;
+    switch (size & 7) {
+    case 7:
+        out[6] = (value >> 56) & 0xFF;
+    case 6:
+        out[5] = (value >> 48) & 0xFF;
+    case 5:
+        out[4] = (value >> 40) & 0xFF;
+    case 4:
+        out[3] = (value >> 32) & 0xFF;
+    case 3:
+        out[2] = (value >> 24) & 0xFF;
+    case 2:
+        out[1] = (value >> 16) & 0xFF;
+    case 1:
+        out[0] = (value >> 8) & 0xFF;
+        break;
     }
 }
 
-uint64_t des_PC_1(uint64_t key)
+static inline uint64_t get_padded(const void *src, size_t size)
 {
-    uint64_t res = 0;
-    for (int i = 0; i < 56; i++)
-        res |= ((key >> PC_1[i]) & 1) << i;
-    return res;
-}
-
-uint64_t des_PC_2(uint64_t key)
-{
-    uint64_t res = 0;
-    for (int i = 0; i < 48; i++)
-        res |= ((key >> PC_2[i]) & 1) << i;
-    return res;
-}
-
-uint64_t __des(uint64_t block, uint64_t *schedule, int flags)
-{
-    bool decrypt = flags & DES_DECRYPT;
-    block = des_IP(block);
-
-    for (int i = 0; i < 16; i++)
-        block = block << 32 |
-                ((block >> 32) ^ des_f(block, schedule[decrypt ? 15 - i : i]));
-
-    block = des_IP_inv(block >> 32 | block << 32);
-    return block;
-}
-
-uint64_t des(uint64_t block, uint64_t key, int flags)
-{
-    uint64_t schedule[16];
-    des_schedule(key, schedule);
-    return __des(block, schedule, flags);
+    const uint8_t *pos = src;
+    switch (size & 7) {
+    case 0:
+        return 0x0808080808080808;
+    case 1:
+        return ((uint64_t)pos[0]) << 56 | 0x07070707070707;
+    case 2:
+        return ((uint64_t)pos[0]) << 56 | ((uint64_t)pos[1]) << 48 |
+               0x060606060606;
+    case 3:
+        return ((uint64_t)pos[0]) << 56 | ((uint64_t)pos[1]) << 48 |
+               ((uint64_t)pos[2]) << 40 | 0x0505050505;
+    case 4:
+        return ((uint64_t)pos[0]) << 56 | ((uint64_t)pos[1]) << 48 |
+               ((uint64_t)pos[2]) << 40 | ((uint64_t)pos[3]) << 32 | 0x04040404;
+    case 5:
+        return ((uint64_t)pos[0]) << 56 | ((uint64_t)pos[1]) << 48 |
+               ((uint64_t)pos[2]) << 40 | ((uint64_t)pos[3]) << 32 |
+               ((uint64_t)pos[4]) << 24 | 0x030303;
+    case 6:
+        return ((uint64_t)pos[0]) << 56 | ((uint64_t)pos[1]) << 48 |
+               ((uint64_t)pos[2]) << 40 | ((uint64_t)pos[3]) << 32 |
+               ((uint64_t)pos[4]) << 24 | ((uint64_t)pos[5]) << 16 | 0x0202;
+    case 7:
+        return ((uint64_t)pos[0]) << 56 | ((uint64_t)pos[1]) << 48 |
+               ((uint64_t)pos[2]) << 40 | ((uint64_t)pos[3]) << 32 |
+               ((uint64_t)pos[4]) << 24 | ((uint64_t)pos[5]) << 16 |
+               ((uint64_t)pos[6]) << 8 | 0x01;
+    default:
+        return 0;
+    }
 }
 
 /*
- * DES Encryption/Decryption in ECB mode on `src` for `size` bytes, written
- * onto `dest`.
+ * Pads with PKCS#7
  */
-void des_ecb(void *src, size_t size, void *dest, uint64_t key, int flags)
+void des_ecb_encrypt(const struct des_context *restrict ctx, const void *src,
+                     size_t size, void *dest)
 {
-    uint64_t *in = src;
+    uint64_t cipher;
     uint64_t *out = dest;
-    size_t blocks = size / sizeof(*in);
-    size_t rem = size % sizeof(*in);
-    uint64_t schedule[16];
-    des_schedule(key, schedule);
+    const uint64_t *pos = src;
+    const uint64_t *end = pos + (size >> 3);
 
-    for (int i = 0; i < blocks; i++)
-        __des(in[i], schedule, flags);
-
-    uint64_t rem_block = 0;
-    memcpy(&rem_block, in + blocks, rem);
-
-    rem_block = __des(rem_block, schedule, flags);
-    memcpy(out + blocks, &rem_block, rem);
-}
-
-uint64_t __triple_des(uint64_t block, uint64_t **schedule, int *flags)
-{
-    uint64_t res = block;
-    res = __des(res, schedule[0], flags[0]);
-    res = __des(res, schedule[1], flags[1]);
-    res = __des(res, schedule[2], flags[2]);
-    return res;
-}
-
-uint64_t triple_des(uint64_t block, uint64_t *keys, int flags)
-{
-    int des_flags[3] = { 0 };
-    uint64_t schedule[3][16] = { 0 };
-
-    des_schedule(keys[0], schedule[0]);
-    des_schedule(keys[1], schedule[1]);
-    des_schedule(keys[2], schedule[2]);
-
-    if (flags | TRIPLE_DES_DECRYPT) {
-        des_flags[0] |= DES_DECRYPT;
-        des_flags[1] |= DES_ENCRYPT;
-        des_flags[2] |= DES_DECRYPT;
-    } else {
-        des_flags[0] |= DES_ENCRYPT;
-        des_flags[1] |= DES_DECRYPT;
-        des_flags[3] |= DES_ENCRYPT;
+    while (pos < end) {
+        cipher = des_encrypt(ctx, get_unaligned_le64(pos++));
+        put_unaligned_le64(cipher, out++);
     }
 
-    return __triple_des(block, (uint64_t **)schedule, des_flags);
+    cipher = des_encrypt(ctx, get_padded(pos, size));
+    put_unaligned_le64(cipher, out++);
+}
+
+void des_ecb_decrypt(const struct des_context *restrict ctx, const void *src,
+                     size_t size, void *dest)
+{
+    uint64_t cipher;
+    uint64_t *out = dest;
+    const uint64_t *pos = src;
+    const uint64_t *end = pos + (size >> 3);
+
+    while (pos < end) {
+        cipher = des_decrypt(ctx, get_unaligned_le64(pos++));
+        put_unaligned_le64(cipher, out++);
+    }
+
+    cipher = des_decrypt(ctx, get_unaligned_le64(pos));
+    put_padded(cipher, size, out);
 }

@@ -9,91 +9,10 @@
 #include <hlibc/crypto/des.h>
 #include <htest/htest.h>
 
-void test_des_left_shift(struct htest *test)
-{
-    uint64_t key = 0xBD87A20E3BDAA0;
-    uint64_t expected[] = {
-        0x7B0F441C77B541, 0xF61E8828EF6A83, 0xD87A20B3BDAA0E, 0x61E882FEF6A838,
-        0x87A20BDBDAA0E3, 0x1E882F6F6A838E, 0x7A20BD8DAA0E3B, 0xE882F616A838EF,
-        0xD105EC3D5071DE, 0x4417B0F541C77B, 0x105EC3D5071DED, 0x417B0F441C77B5,
-        0x05EC3D1071DED5, 0x17B0F441C77B54, 0x5EC3D1071DED50, 0xBD87A20E3BDAA0,
-    };
-
-    uint64_t k = key;
-
-    for (int i = 0; i < 16; i++) {
-        k = des_left_shift(k, i);
-        HTEST_ASSERT_EQ(test, k, expected[i]);
-    }
-}
-
-void test_des_PC_1(struct htest *test)
-{
-    uint64_t input = 0xBD87A20E3BDAA065;
-    uint64_t expected = 0x67A0D533E8B391;
-    uint64_t res = des_PC_1(input);
-
-    HTEST_ASSERT_EQ(test, res, expected);
-}
-
-void test_des_PC_2(struct htest *test)
-{
-    uint64_t input = 0xBD87A20E3BDAA0;
-    uint64_t expected = 0xCECD60BBCE16;
-    uint64_t res = des_PC_2(input);
-
-    HTEST_ASSERT_EQ(test, res, expected);
-}
-
-void test_des_P(struct htest *test)
-{
-    uint64_t input = 0xBD87A20E;
-    uint64_t expected = 0x89EA53B2;
-    uint64_t res = des_P(input);
-
-    HTEST_ASSERT_EQ(test, res, expected);
-}
-
-void test_des_E(struct htest *test)
-{
-    uint64_t input = 0xBD87A20E;
-    uint64_t expected = 0x5FBC0FD0405D;
-    uint64_t res = des_E(input);
-
-    HTEST_ASSERT_EQ(test, res, expected);
-}
-
-void test_des_IP(struct htest *test)
-{
-    uint64_t input = 0xBD87A20E3BDAA065;
-    uint64_t expected = 0xA0318B9367D5393E;
-    uint64_t res = des_IP(input);
-
-    HTEST_ASSERT_EQ(test, res, expected);
-}
-
-void test_des_IP_inv(struct htest *test)
-{
-    uint64_t input = 0xBD87A20E3BDAA065;
-    uint64_t expected = 0xD2B553E1E0CE227C;
-    uint64_t res = des_IP_inv(input);
-
-    HTEST_ASSERT_EQ(test, res, expected);
-}
-
-void test_des_S(struct htest *test)
-{
-    uint64_t input = 0xEE4B7E1DD004;
-    uint32_t expected = 0x784C348;
-    uint32_t res = des_S(input);
-
-    HTEST_ASSERT_EQ(test, res, expected);
-}
-
 struct des_test_case {
     uint64_t key;
-    uint64_t plaintext;
-    uint64_t ciphertext;
+    uint64_t plain;
+    uint64_t cipher;
 };
 
 struct des_test_set {
@@ -108,11 +27,6 @@ struct des_test_set {
  * Encryption Standard" NBS Special Publication 500-20, 1980.
  *
  * Reference: https://archive.org/details/validatingcorrec00gait/
- *
- * Arrays are terminated with empty test cases.
- * Because the testing function above runs encryption and decryption on all
- * cases, no need to follow direct guidance in paper for the IP inverse and
- * 'right-shift' tests, as they are equivalent.
  */
 struct des_test_set des_test_vector[] = {
     {
@@ -312,26 +226,49 @@ struct des_test_set des_test_vector[] = {
     }
 };
 
-void test_des_test_vector(struct htest *test)
+static void test_des_init(struct htest *test)
+{
+    struct des_context ctx;
+    uint64_t key = 0xC805C0F6E49D349C;
+    uint64_t ks[16] = {
+        0x778797518A35, 0xBA5F29B0C20C, 0xC93B69903686, 0x81FEDDBC22A1,
+        0x557FC2326A43, 0x72FDE136A112, 0xD9E547A52542, 0x61C79F6CA242,
+        0xEE76A8528169, 0xDA9F68429D0C, 0xC8FA5B4835B8, 0x25FF4E695829,
+        0x627DC342583A, 0x79ED7185193C, 0xC5E59B811AF0, 0x8E63EED96240,
+    };
+
+    des_init(&ctx, key);
+
+    for (int i = 0; i < 16; i++) {
+        HTEST_ASSERT_EQ(test, ks[i], ctx.ks[i]);
+    }
+}
+
+static void run_des_test_case(struct htest *test, struct des_test_case *tc)
+{
+    struct des_context ctx;
+    des_init(&ctx, tc->key);
+
+    uint64_t cipher = des_encrypt(&ctx, tc->plain);
+    uint64_t plain = des_decrypt(&ctx, cipher);
+
+    HTEST_ASSERT_EQ(test, cipher, tc->cipher);
+    HTEST_ASSERT_EQ(test, plain, tc->plain);
+}
+
+static void test_des_test_vector(struct htest *test)
 {
     for (int i = 0; i < array_size(des_test_vector); i++) {
         for (int j = 0; j < des_test_vector[i].size; j++) {
-            struct des_test_case *tc = des_test_vector[i].cases + j;
-            uint64_t cipher = des(tc->plaintext, tc->key, DES_ENCRYPT);
-            uint64_t plain = des(tc->ciphertext, tc->key, DES_DECRYPT);
-
-            HTEST_ASSERT_EQ(test, cipher, tc->ciphertext);
-            HTEST_ASSERT_EQ(test, plain, tc->plaintext);
+            run_des_test_case(test, des_test_vector[i].cases + j);
         }
     }
 }
 
 struct htest_unit des_test_units[] = {
-    HTEST_UNIT(test_des_left_shift),  HTEST_UNIT(test_des_PC_1),
-    HTEST_UNIT(test_des_PC_2),        HTEST_UNIT(test_des_P),
-    HTEST_UNIT(test_des_E),           HTEST_UNIT(test_des_IP),
-    HTEST_UNIT(test_des_IP_inv),      HTEST_UNIT(test_des_S),
-    HTEST_UNIT(test_des_test_vector), {}
+    HTEST_UNIT(test_des_init),
+    HTEST_UNIT(test_des_test_vector),
+    {},
 };
 
 struct htest_suite des_test_suite = {
