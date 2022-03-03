@@ -1,17 +1,7 @@
 /*
  * Copyright (C) 2021-2022 John Hunter Kohler <jhunterkohler@gmail.com>
  */
-#include <hlibc/threads.h>
-
-int nanosleep_full(long nsec, time_t sec)
-{
-    int ret = 0;
-    struct timespec spec = { .tv_nsec = nsec, .tv_sec = sec };
-    do {
-        ret = nanosleep(&spec, &spec);
-    } while (ret && errno == EINTR);
-    return ret;
-}
+#include <hlibc/spinlock.h>
 
 int spinlock_lock(struct spinlock *lock)
 {

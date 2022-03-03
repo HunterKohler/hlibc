@@ -11,12 +11,6 @@
 #include <hlibc/def.h>
 
 /*
- * Sleeps the full amount of time specified as a summed duration, while
- * ignoring any signal interupts.
- */
-int nanosleep_full(long nsec, time_t sec);
-
-/*
  * Requires C11 atomics.
  *
  * "I repeat: do not use spinlocks in user space, unless you actually know what
