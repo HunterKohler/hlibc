@@ -135,16 +135,16 @@ void md5_update(struct md5_context *restrict ctx, const void *restrict src,
 
 void md5_finalize(struct md5_context *restrict ctx, void *restrict dest)
 {
-    int mod = ctx->size & 63;
-    ctx->tail[mod] = 128;
+    int used = ctx->size & 63;
+    ctx->tail[used++] = 128;
 
-    if (mod >= 56) {
-        memzero(ctx->tail + mod + 1, 63 - mod);
+    if (used > 56) {
+        memzero(ctx->tail + used, 64 - used);
         md5_process_chunk(ctx, ctx->tail);
-        mod = -1;
+        used = 0;
     }
 
-    memzero(ctx->tail + mod + 1, 55 - mod);
+    memzero(ctx->tail + used, 56 - used);
     put_unaligned_le64(ctx->size << 3, ctx->tail + 56);
     md5_process_chunk(ctx, ctx->tail);
 
