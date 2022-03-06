@@ -137,7 +137,7 @@
         if (DEBUG) {                                        \
             flockfile(stderr);                              \
             fprintf(stderr, "%s:%d: ", __FILE__, __LINE__); \
-            fprintf(stderr, fmt, __VA_ARGS__);              \
+            fprintf(stderr, fmt, ##__VA_ARGS__);            \
             fprintf(stderr, "\n");                          \
             fflush(stderr);                                 \
             funlockfile(stderr);                            \
@@ -166,5 +166,25 @@
  * https://gcc.gnu.org/onlinedocs/gcc/Common-Type-Attributes.html
  */
 #define __packed __attribute__((__packed__))
+
+/*
+ * Get the result of unscaled pointer arithmetic while retaining type.
+ */
+#define movptr(ptr, diff)                      \
+    ({                                         \
+        void *__ptr = (ptr);                   \
+        ptrdiff_t __diff = (diff);             \
+        (typeof(ptr))((char *)__ptr + __diff); \
+    })
+
+/*
+ * Get literal distance of pointer addresses regardless of type.
+ */
+#define ptrdiff(a, b)              \
+    ({                             \
+        void *__a = (a);           \
+        void *__b = (b);           \
+        (char *)__a - (char *)__b; \
+    })
 
 #endif

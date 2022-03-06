@@ -9,7 +9,7 @@
 #include <string.h>
 #include <hlibc/def.h>
 
-#define BIT(pos) (1UL << (pos))
+#define BIT(pos) (1ULL << (pos))
 #define BITS_PER(type) (CHAR_BIT * sizeof(type))
 #define BITS_TO(bits, type) (((bits) + BITS_PER(type) - 1) / BITS_PER(type))
 
@@ -113,11 +113,6 @@ static inline bool bit_test_and_flip(void *base, int i)
     bit_flip(base, i);
     return old;
 }
-
-/*
- * Take hamming distance on arbitrary `n` bytes.
- */
-size_t hamming_distance(const void *a, const void *b, size_t n);
 
 static inline uint8_t rotl8(uint8_t x, size_t n)
 {

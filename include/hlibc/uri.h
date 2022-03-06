@@ -26,6 +26,8 @@ struct uri_segments {
 };
 
 int uri_parse_segments(const char *src, struct uri_segments *dest);
+// int uri_resolve(const char *src, const char *base, char *dest);
+// int uri_build(struct uri_segments *src, char *dest);
 
 int uri_normalize_scheme(const char *src, char *dest);
 int uri_normalize_userinfo(const char *src, char *dest);
