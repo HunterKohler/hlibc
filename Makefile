@@ -2,6 +2,8 @@
 SHELL = bash
 
 CPPFLAGS = -MD -MP -I./include
+
+# -Wpointer-arith -Warray-bounds
 CFLAGS = \
 	-fanalyzer \
 	-fpic \
@@ -13,8 +15,10 @@ CFLAGS = \
 	-Wno-unused-function \
 	-Wno-override-init \
 	-Wno-analyzer-malloc-leak \
-	-Wcast-align=strict
+	-Wcast-align=strict \
+
 LDFLAGS = -L./build/hlibc -pthread
+
 LDLIBS =
 
 DEBUG ?= 1

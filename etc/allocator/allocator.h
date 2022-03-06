@@ -8,40 +8,27 @@
 
 #include <hlibc/def.h>
 
-struct allocator_methods {
-    void *(*allocate)(void *, size_t);
-    void (*deallocate)(void *, void *);
-    void *(*allocate_aligned)(void *, size_t, size_t);
-};
+struct allocator_ops;
 
 struct allocator {
-    const struct allocator_methods *methods;
-    void *state;
+    const struct allocator_ops *ops;
 };
 
-extern const struct allocator libc_allocator;
+struct allocator_ops {
+    void *(*alloc)(struct allocator *, size_t);
+    void (*free)(struct allocator *, void *);
+};
 
-#ifndef DEFAULT_ALLOCATOR
-#define DEFAULT_ALLOCATOR (&libc_allocator)
-#endif
+extern const struct allocator *default_allocator;
 
-static inline void *allocator_allocate(struct allocator *alloc, size_t size)
+static inline void *allocator_alloc(struct allocator *a, size_t size)
 {
-    return alloc->methods->allocate(alloc->state, size);
+    return a->ops->allocate(a, size);
 }
 
-static inline void allocator_deallocate(struct allocator *alloc, void *ptr)
+static inline void allocator_free(struct allocator *a, void *ptr)
 {
-    alloc->methods->deallocate(alloc->state, ptr);
+    a->ops->deallocate(a, ptr);
 }
-
-static inline void *allocator_allocate_aligned(struct allocator *alloc,
-                                               size_t alignment, size_t size)
-{
-    return alloc->methods->allocate_aligned(alloc->state, alignment, size);
-}
-
-int stack_allocator_init(struct allocator *alloc, void *buf, size_t size);
-void *stack_allocator_destroy(struct allocator *alloc);
 
 #endif

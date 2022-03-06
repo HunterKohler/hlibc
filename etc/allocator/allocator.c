@@ -5,122 +5,97 @@
 #include <hlibc/allocator.h>
 #include <hlibc/memory.h>
 
-static void *libc_allocate(void *, size_t size)
+static void *default_alloc(void *, size_t size)
 {
     return malloc(size);
 }
 
-static void libc_deallocate(void *, void *ptr)
+static void *default_free(void *, void *ptr)
 {
     return free(ptr);
 }
 
-static void libc_allocate_aligned(void *, size_t alignment, size_t size)
-{
-    return aligned_alloc(alignment, size);
-}
+const struct allocator_ops *default_allocator_ops =
+    &(struct allocator_ops){ .alloc = default_alloc, .free = default_free };
 
-const struct allocator_methods libc_allocator_methods = {
-    .allocate = libc_allocator_allocate,
-    .deallocate = libc_allocator_deallocate,
-    .allocate_aligned = libc_allocator_allocate_aligned,
-};
+const struct allocator *default_allocator =
+    &(struct allocator){ .vtable = default_allocator_ops };
 
-const struct allocator libc_allocator = {
-    .state = NULL,
-    .methods = &libc_allocator_methods,
-};
+// struct stack_allocator {
+//     size_t used;
+//     size_t size;
+//     uint8_t data[];
+// };
 
-const struct allocator_methods stack_allocator_methods = {
-    .allocate = stack_allocate_aligned,
-    .deallocate = stack_deallocate,
-    .allocate_aligned = stack_allocate_aligned,
-};
+// int stack_allocator_init(struct allocator *alloc, void *buf, size_t size)
+// {
+// }
 
-struct stack_state {
-    void *buf;
-    size_t size;
-    size_t used;
-};
+// static void *stack_allocate(void *state_arg, size_t size)
+// {
+//     struct stack_state *state = state_arg;
 
-int stack_allocator_init(struct allocator *alloc, void *buf, size_t size)
-{
-    struct stack_state *state = buf;
+//     if (state->used + size > state->size)
+//         return NULL;
 
-    if (size < sizeof(*state))
-        return ENOMEM;
+//     void *ret = state->buf + state->used;
+//     state->used += size;
+//     return ret;
+// }
 
-    state->buf = buf;
-    state->size = size;
-    state->used = sizeof(*state);
-    alloc->state = state;
-}
+// /*
+//  * Intentionally empty.
+//  */
+// static void stack_deallocate(void *, void *)
+// {
+// }
 
-static void *stack_allocate(void *state_arg, size_t size)
-{
-    struct stack_state *state = state_arg;
+// static void *stack_allocate_aligned(void *state_arg, size_t alignment,
+//                                     size_t size)
+// {
+//     struct stack_state *state = state_arg;
 
-    if (state->used + size > state->size)
-        return NULL;
+//     void *cur = state->buf + state->used;
+//     void *ret = align(cur, alignment);
 
-    void *ret = state->buf + state->used;
-    state->used += size;
-    return ret;
-}
+//     size += ret - cur;
 
-/*
- * Intentionally empty.
- */
-static void stack_deallocate(void *, void *)
-{
-}
+//     if (state->used + size > state->size)
+//         return NULL;
 
-static void *stack_allocate_aligned(void *state_arg, size_t alignment,
-                                    size_t size)
-{
-    struct stack_state *state = state_arg;
+//     return ret;
+// }
 
-    void *cur = state->buf + state->used;
-    void *ret = align(cur, alignment);
+// const struct allocator_methods stack_allocator_methods = {
+//     .allocate = stack_allocate,
+//     .deallocate = stack_deallocate,
+//     .allocate_aligned = stack_allocate_aligned,
+// };
 
-    size += ret - cur;
+// const struct allocator_methods bounded_allocator_methods = {
+//     .allocate = bounded_allocate,
+//     .deallocate = bounded_deallocate,
+//     .allocate_aligned = bounded_allocate_aligned,
+// };
 
-    if (state->used + size > state->size)
-        return NULL;
+// int bounded_allocator_init(struct allocator *alloc, struct allocator *wrapped,
+//                            size_t high)
+// {
+//     struct bounded_state *state;
 
-    return ret;
-}
+//     if (sizeof(*state) > high)
+//         return ENOMEM;
 
-const struct allocator_methods stack_allocator_methods = {
-    .allocate = stack_allocate,
-    .deallocate = stack_deallocate,
-    .allocate_aligned = stack_allocate_aligned,
-};
+//     state = allocator_allocate(wrapped, high);
+//     if (!state)
+//         return ENOMEM;
 
-const struct allocator_methods bounded_allocator_methods = {
-    .allocate = bounded_allocate,
-    .deallocate = bounded_deallocate,
-    .allocate_aligned = bounded_allocate_aligned,
-};
+//     alloc->state = state;
+//     state->high = high;
+//     state->used = sizeof(*state);
+// }
 
-int bounded_allocator_init(struct allocator *alloc, struct allocator *wrapped,
-                           size_t high)
-{
-    struct bounded_state *state;
-
-    if (sizeof(*state) > high)
-        return ENOMEM;
-
-    state = allocator_allocate(wrapped, high);
-    if (!state)
-        return ENOMEM;
-
-    alloc->state = state;
-    state->high = high;
-    state->used = sizeof(*state);
-}
-
-void *bounded_allocate(void *size, size_t size)
-{
-    struc
-}
+// void *bounded_allocate(void *size, size_t size)
+// {
+//     struc
+// }
