@@ -6,20 +6,33 @@
 
 #include <hlibc/def.h>
 
+#define DES_BLOCK_SIZE 8
+#define DES_KEY_SIZE 8
+
 struct des_context {
     uint64_t ks[16];
 };
 
-int des_init(struct des_context *ctx, uint64_t key);
+struct des3_context {
+    struct des_context base[3];
+};
 
-uint64_t des_encrypt(const struct des_context *ctx, uint64_t block);
+int des_init(struct des_context *ctx, const uint8_t *key);
 
-uint64_t des_decrypt(const struct des_context *ctx, uint64_t block);
+void des_encrypt(const struct des_context *ctx, const void *src, void *dest);
 
-void des_ecb_encrypt(const struct des_context *restrict ctx, const void *src,
-                     size_t size, void *dest);
+void des_decrypt(const struct des_context *ctx, const void *src, void *dest);
 
-void des_ecb_decrypt(const struct des_context *restrict ctx, const void *src,
-                     size_t size, void *dest);
+size_t des_ecb_encrypt(const struct des_context *ctx, const void *src,
+                       size_t size, void *dest);
+
+size_t des_ecb_decrypt(const struct des_context *ctx, const void *src,
+                       size_t size, void *dest);
+
+size_t des_cbc_encrypt(const struct des_context *ctx, const void *iv,
+                       const void *src, size_t size, void *dest);
+
+size_t des_cbc_decrypt(const struct des_context *ctx, const void *iv,
+                       const void *src, size_t size, void *dest);
 
 #endif

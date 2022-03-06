@@ -68,13 +68,14 @@ const uint8_t S_table[8][64] = {
 
 static inline uint64_t S(uint64_t input)
 {
-    return S_table[0][(input >> 42) & 0x3F] << 28 |
-           S_table[1][(input >> 36) & 0x3F] << 24 |
-           S_table[2][(input >> 30) & 0x3F] << 20 |
-           S_table[3][(input >> 24) & 0x3F] << 16 |
-           S_table[4][(input >> 18) & 0x3F] << 12 |
-           S_table[5][(input >> 12) & 0x3F] << 8 |
-           S_table[6][(input >> 6) & 0x3F] << 4 | S_table[7][input & 0x3F];
+    return (uint64_t)S_table[0][(input >> 42) & 0x3F] << 28 |
+           (uint64_t)S_table[1][(input >> 36) & 0x3F] << 24 |
+           (uint64_t)S_table[2][(input >> 30) & 0x3F] << 20 |
+           (uint64_t)S_table[3][(input >> 24) & 0x3F] << 16 |
+           (uint64_t)S_table[4][(input >> 18) & 0x3F] << 12 |
+           (uint64_t)S_table[5][(input >> 12) & 0x3F] << 8 |
+           (uint64_t)S_table[6][(input >> 6) & 0x3F] << 4 |
+           (uint64_t)S_table[7][input & 0x3F];
 }
 
 static inline uint64_t IP(uint64_t input)
@@ -645,12 +646,12 @@ static inline uint64_t KS_15(uint64_t key)
            MOVE_BIT(key, 0x01, 0x01) | MOVE_BIT(key, 0x19, 0x00);
 }
 
-static inline uint64_t f(uint64_t block, uint64_t key)
+static uint64_t f(uint64_t block, uint64_t key)
 {
     return P(S(E(block) ^ key));
 }
 
-static inline void key_schedule(uint64_t key, uint64_t ks[static 16])
+static void key_schedule(uint64_t key, uint64_t ks[static 16])
 {
     ks[0] = KS_0(key);
     ks[1] = KS_1(key);
@@ -670,156 +671,321 @@ static inline void key_schedule(uint64_t key, uint64_t ks[static 16])
     ks[15] = KS_15(key);
 }
 
+static uint64_t des_encrypt_value(const struct des_context *ctx, uint64_t block)
+{
+    block = IP(block);
+
+    uint64_t L = block >> 32;
+    uint64_t R = block & 0xFFFFFFFF;
+
+    L ^= f(R, ks[0]);
+    R ^= f(L, ks[1]);
+    L ^= f(R, ks[2]);
+    R ^= f(L, ks[3]);
+    L ^= f(R, ks[4]);
+    R ^= f(L, ks[5]);
+    L ^= f(R, ks[6]);
+    R ^= f(L, ks[7]);
+    L ^= f(R, ks[8]);
+    R ^= f(L, ks[9]);
+    L ^= f(R, ks[10]);
+    R ^= f(L, ks[11]);
+    L ^= f(R, ks[12]);
+    R ^= f(L, ks[13]);
+    L ^= f(R, ks[14]);
+    R ^= f(L, ks[15]);
+
+    return IP_inv(R << 32 | L);
+}
+
+static uint64_t des_decrypt_value(const struct des_context *ctx, uint64_t block)
+{
+    block = IP(block);
+
+    uint64_t L = block >> 32;
+    uint64_t R = block & 0xFFFFFFFF;
+
+    L ^= f(R, ks[15]);
+    R ^= f(L, ks[14]);
+    L ^= f(R, ks[13]);
+    R ^= f(L, ks[12]);
+    L ^= f(R, ks[11]);
+    R ^= f(L, ks[10]);
+    L ^= f(R, ks[9]);
+    R ^= f(L, ks[8]);
+    L ^= f(R, ks[7]);
+    R ^= f(L, ks[6]);
+    L ^= f(R, ks[5]);
+    R ^= f(L, ks[4]);
+    L ^= f(R, ks[3]);
+    R ^= f(L, ks[2]);
+    L ^= f(R, ks[1]);
+    R ^= f(L, ks[0]);
+
+    return IP_inv(R << 32 | L);
+}
+
+static size_t pkcs5_unpad_and_put(uint64_t value, void *dest)
+{
+    uint8_t *ptr = dest;
+
+    switch (value & 0xFF) {
+    case 1:
+        ptr[0] = value & 0xFF;
+        ptr[1] = (value >> 8) & 0xFF;
+        ptr[2] = (value >> 16) & 0xFF;
+        ptr[3] = (value >> 24) & 0xFF;
+        ptr[4] = (value >> 32) & 0xFF;
+        ptr[5] = (value >> 40) & 0xFF;
+        ptr[6] = (value >> 48) & 0xFF;
+        return 1;
+
+    case 2:
+        if ((value & 0xFFFF) != 0x0202)
+            return 0;
+
+        ptr[0] = value & 0xFF;
+        ptr[1] = (value >> 8) & 0xFF;
+        ptr[2] = (value >> 16) & 0xFF;
+        ptr[3] = (value >> 24) & 0xFF;
+        ptr[4] = (value >> 32) & 0xFF;
+        ptr[5] = (value >> 40) & 0xFF;
+        return 2;
+
+    case 3:
+        if ((value & 0xFFFFFF) != 0x030303)
+            return 0;
+
+        ptr[0] = value & 0xFF;
+        ptr[1] = (value >> 8) & 0xFF;
+        ptr[2] = (value >> 16) & 0xFF;
+        ptr[3] = (value >> 24) & 0xFF;
+        ptr[4] = (value >> 32) & 0xFF;
+        return 3;
+
+    case 4:
+        if ((value & 0xFFFFFFFF) != 0x04040404)
+            return 0;
+
+        ptr[0] = value & 0xFF;
+        ptr[1] = (value >> 8) & 0xFF;
+        ptr[2] = (value >> 16) & 0xFF;
+        ptr[3] = (value >> 24) & 0xFF;
+        return 4;
+
+    case 5:
+        if ((value & 0xFFFFFFFFFF) != 0x0505050505)
+            return 0;
+
+        ptr[0] = value & 0xFF;
+        ptr[1] = (value >> 8) & 0xFF;
+        ptr[2] = (value >> 16) & 0xFF;
+        return 5;
+
+    case 6:
+        if ((value & 0xFFFFFFFFFFFF) != 0x060606060606)
+            return 0;
+
+        ptr[0] = value & 0xFF;
+        ptr[1] = (value >> 8) & 0xFF;
+        return 6;
+
+    case 7:
+        if ((value & 0xFFFFFFFFFFFFFF) != 0x07070707070707)
+            return 0;
+
+        ptr[0] = value & 0xFF;
+        return 7;
+
+    case 8:
+        return 8 * (value == 0x0808080808080808);
+
+    default:
+        return 0;
+    }
+}
+
+static uint64_t pkcs5_get_and_pad(const void *src, size_t size)
+{
+    size_t tail = size & 7;
+    const uint8_t *ptr = movptr(src, size - tail);
+
+    switch (tail) {
+    case 0:
+        return 0x0808080808080808;
+    case 1:
+        return (uint64_t)ptr[0] << 56 | 0x0007070707070707;
+    case 2:
+        return (uint64_t)ptr[0] << 56 | (uint64_t)ptr[1] << 48 | 0x060606060606;
+    case 3:
+        return (uint64_t)ptr[0] << 56 | (uint64_t)ptr[1] << 48 |
+               (uint64_t)ptr[2] << 40 | 0x0505050505;
+    case 4:
+        return (uint64_t)ptr[0] << 56 | (uint64_t)ptr[1] << 48 |
+               (uint64_t)ptr[2] << 40 | (uint64_t)ptr[3] << 32 | 0x04040404;
+    case 5:
+        return (uint64_t)ptr[0] << 56 | (uint64_t)ptr[1] << 48 |
+               (uint64_t)ptr[2] << 40 | (uint64_t)ptr[3] << 32 |
+               (uint64_t)ptr[4] << 24 | 0x030303;
+    case 6:
+        return (uint64_t)ptr[0] << 56 | (uint64_t)ptr[1] << 48 |
+               (uint64_t)ptr[2] << 40 | (uint64_t)ptr[3] << 32 |
+               (uint64_t)ptr[4] << 24 | (uint64_t)ptr[5] << 16 | 0x0202;
+    case 7:
+        return (uint64_t)ptr[0] << 56 | (uint64_t)ptr[1] << 48 |
+               (uint64_t)ptr[2] << 40 | (uint64_t)ptr[3] << 32 |
+               (uint64_t)ptr[4] << 24 | (uint64_t)ptr[5] << 16 |
+               (uint64_t)ptr[6] << 8 | 0x01;
+    }
+}
+
 int des_init(struct des_context *ctx, uint64_t key)
 {
     key_schedule(key, ctx->ks);
     return 0;
 }
 
-uint64_t des_encrypt(const struct des_context *ctx, uint64_t block)
+void des_encrypt(const struct des_context *ctx, const void *src, void *dest)
 {
-    block = IP(block);
+    uint64_t plain = get_unaligned_be64(src);
+    uint64_t cipher = des_decrypt_value(ctx, plain);
 
-    uint64_t L = block >> 32;
-    uint64_t R = block & 0xFFFFFFFF;
-
-    L ^= f(R, ctx->ks[0]);
-    R ^= f(L, ctx->ks[1]);
-    L ^= f(R, ctx->ks[2]);
-    R ^= f(L, ctx->ks[3]);
-    L ^= f(R, ctx->ks[4]);
-    R ^= f(L, ctx->ks[5]);
-    L ^= f(R, ctx->ks[6]);
-    R ^= f(L, ctx->ks[7]);
-    L ^= f(R, ctx->ks[8]);
-    R ^= f(L, ctx->ks[9]);
-    L ^= f(R, ctx->ks[10]);
-    R ^= f(L, ctx->ks[11]);
-    L ^= f(R, ctx->ks[12]);
-    R ^= f(L, ctx->ks[13]);
-    L ^= f(R, ctx->ks[14]);
-    R ^= f(L, ctx->ks[15]);
-
-    return IP_inv((R << 32) | L);
+    put_unaligned_be64(cipher, dest);
 }
 
-uint64_t des_decrypt(const struct des_context *ctx, uint64_t block)
+void des_decrypt(const struct des_context *ctx, const void *src, void *dest)
 {
-    block = IP(block);
+    uint64_t cipher = get_unaligned_be64(src);
+    uint64_t plain = des_decrypt_value(ctx, cipher);
 
-    uint64_t L = block >> 32;
-    uint64_t R = block & 0xFFFFFFFF;
-
-    L ^= f(R, ctx->ks[15]);
-    R ^= f(L, ctx->ks[14]);
-    L ^= f(R, ctx->ks[13]);
-    R ^= f(L, ctx->ks[12]);
-    L ^= f(R, ctx->ks[11]);
-    R ^= f(L, ctx->ks[10]);
-    L ^= f(R, ctx->ks[9]);
-    R ^= f(L, ctx->ks[8]);
-    L ^= f(R, ctx->ks[7]);
-    R ^= f(L, ctx->ks[6]);
-    L ^= f(R, ctx->ks[5]);
-    R ^= f(L, ctx->ks[4]);
-    L ^= f(R, ctx->ks[3]);
-    R ^= f(L, ctx->ks[2]);
-    L ^= f(R, ctx->ks[1]);
-    R ^= f(L, ctx->ks[0]);
-
-    return IP_inv((R << 32) | L);
+    put_unaligned_be64(plain, dest);
 }
 
-static inline void put_padded(uint64_t value, size_t size, void *dest)
+size_t des_ecb_encrypt(const struct des_context *ctx, const void *src,
+                       size_t size, void *dest)
 {
-    uint8_t *out = dest;
-    switch (size & 7) {
-    case 7:
-        out[6] = (value >> 56) & 0xFF;
-    case 6:
-        out[5] = (value >> 48) & 0xFF;
-    case 5:
-        out[4] = (value >> 40) & 0xFF;
-    case 4:
-        out[3] = (value >> 32) & 0xFF;
-    case 3:
-        out[2] = (value >> 24) & 0xFF;
-    case 2:
-        out[1] = (value >> 16) & 0xFF;
-    case 1:
-        out[0] = (value >> 8) & 0xFF;
-        break;
+    size_t tail = size & 7;
+
+    const uint64_t *pos = src;
+    const uint64_t *end = movptr(src, size - tail);
+
+    uint64_t *out = dest;
+
+    while (pos < end) {
+        des_encrypt(ctx, pos++, out++);
     }
+
+    uint64_t plain = pkcs5_get_and_pad(end, tail);
+    uint64_t cipher = des_encrypt_value(ctx, plain);
+
+    put_unaligned_be64(cipher, out);
+
+    return size + 8 - tail;
 }
 
-static inline uint64_t get_padded(const void *src, size_t size)
+size_t des_ecb_decrypt(const struct des_context *ctx, const void *src,
+                       size_t size, void *dest)
 {
-    const uint8_t *pos = src;
-    switch (size & 7) {
-    case 0:
-        return 0x0808080808080808;
-    case 1:
-        return ((uint64_t)pos[0]) << 56 | 0x07070707070707;
-    case 2:
-        return ((uint64_t)pos[0]) << 56 | ((uint64_t)pos[1]) << 48 |
-               0x060606060606;
-    case 3:
-        return ((uint64_t)pos[0]) << 56 | ((uint64_t)pos[1]) << 48 |
-               ((uint64_t)pos[2]) << 40 | 0x0505050505;
-    case 4:
-        return ((uint64_t)pos[0]) << 56 | ((uint64_t)pos[1]) << 48 |
-               ((uint64_t)pos[2]) << 40 | ((uint64_t)pos[3]) << 32 | 0x04040404;
-    case 5:
-        return ((uint64_t)pos[0]) << 56 | ((uint64_t)pos[1]) << 48 |
-               ((uint64_t)pos[2]) << 40 | ((uint64_t)pos[3]) << 32 |
-               ((uint64_t)pos[4]) << 24 | 0x030303;
-    case 6:
-        return ((uint64_t)pos[0]) << 56 | ((uint64_t)pos[1]) << 48 |
-               ((uint64_t)pos[2]) << 40 | ((uint64_t)pos[3]) << 32 |
-               ((uint64_t)pos[4]) << 24 | ((uint64_t)pos[5]) << 16 | 0x0202;
-    case 7:
-        return ((uint64_t)pos[0]) << 56 | ((uint64_t)pos[1]) << 48 |
-               ((uint64_t)pos[2]) << 40 | ((uint64_t)pos[3]) << 32 |
-               ((uint64_t)pos[4]) << 24 | ((uint64_t)pos[5]) << 16 |
-               ((uint64_t)pos[6]) << 8 | 0x01;
-    default:
+    /*
+     * The input length must be a multiple of the block size, and padding takes
+     * exactly one block.
+     */
+    if ((size & 7) || !size)
         return 0;
-    }
-}
 
-/*
- * Pads with PKCS#7
- */
-void des_ecb_encrypt(const struct des_context *restrict ctx, const void *src,
-                     size_t size, void *dest)
-{
-    uint64_t cipher;
-    uint64_t *out = dest;
+    size_t end_dist = size - 8;
+
     const uint64_t *pos = src;
-    const uint64_t *end = pos + (size >> 3);
+    const uint64_t *end = movptr(src, end_dist);
+
+    uint64_t *out = dest;
+    uint64_t *out_end = movptr(dest, end_dist);
+
+    /*
+     * Do padding calculation first to fail fast and not touch output buffer
+     * in the event of an error.
+     */
+    uint64_t cipher = get_unaligned_be64(end);
+    uint64_t plain = des_decrypt_value(ctx, cipher);
+
+    size_t pad = pkcs5_unpad_and_put(plain, out_end);
+    if (!pad)
+        return 0;
 
     while (pos < end) {
-        cipher = des_encrypt(ctx, get_unaligned_le64(pos++));
-        put_unaligned_le64(cipher, out++);
+        des_decrypt(ctx, pos++, out++);
     }
 
-    cipher = des_encrypt(ctx, get_padded(pos, size));
-    put_unaligned_le64(cipher, out++);
+    return size - pad;
 }
 
-void des_ecb_decrypt(const struct des_context *restrict ctx, const void *src,
-                     size_t size, void *dest)
+size_t des_cbc_encrypt(const struct des_context *ctx, const void *iv,
+                       const void *src, size_t size, void *dest)
 {
-    uint64_t cipher;
-    uint64_t *out = dest;
+    uint64_t plain;
+    uint64_t cipher = get_unaligned_be64(iv);
+
+    size_t tail = size & 7;
+
     const uint64_t *pos = src;
-    const uint64_t *end = pos + (size >> 3);
+    const uint64_t *end = movptr(src, size - tail);
+
+    uint64_t *out = dest;
 
     while (pos < end) {
-        cipher = des_decrypt(ctx, get_unaligned_le64(pos++));
-        put_unaligned_le64(cipher, out++);
+        plain = get_unaligned_be64(pos++);
+        cipher = des_encrypt_value(plain ^ cipher);
+
+        put_unaligned_be64(cipher, out++);
     }
 
-    cipher = des_decrypt(ctx, get_unaligned_le64(pos));
-    put_padded(cipher, size, out);
+    plain = pkcs5_get_and_pad(end, tail);
+    cipher = des_encrypt_value(ctx, plain ^ cipher);
+
+    put_unaligned_be64(cipher, out);
+
+    return size + 8 - tail;
+}
+
+size_t des_cbc_decrypt(const struct des_context *ctx, const void *iv,
+                       const void *src, size_t size, void *dest)
+{
+    /*
+     * The input length must be a multiple of the block size, and padding takes
+     * exactly one block.
+     */
+    if ((size & 7) || !size)
+        return 0;
+
+    size_t end_dist = size - 8;
+
+    const uint64_t *pos = src;
+    const uint64_t *end = movptr(src, end_dist);
+
+    uint64_t *out = dest;
+    uint64_t *out_end = movptr(dest, end_dist);
+
+    uint64_t vec = get_unaligned_be64(iv);
+    uint64_t last_vec = get_unaligned_be64(end - 1);
+
+    /*
+     * Do padding calculation first to fail fast and not touch output buffer
+     * in the event of an error.
+     */
+    uint64_t cipher = get_unaligned_be64(end);
+    uint64_t plain = des_decrypt_value(ctx, cipher) ^ last_vec;
+
+    size_t pad = pkcs5_unpad_and_put(plain, out_end);
+    if (!pad)
+        return 0;
+
+    while (pos < end) {
+        cipher = get_unaligned_be64(pos++);
+        plain = des_decrypt_value(ctx, cipher) ^ vec;
+        vec = cipher;
+
+        put_unaligned_be64(plain, out++);
+    }
+
+    return size - pad;
 }
