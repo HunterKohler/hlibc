@@ -886,10 +886,6 @@ size_t des_ecb_encrypt(const struct des_context *ctx, const void *src,
 size_t des_ecb_decrypt(const struct des_context *ctx, const void *src,
                        size_t size, void *dest)
 {
-    /*
-     * The input length must be a multiple of the block size, and padding takes
-     * exactly one block.
-     */
     if ((size & 7) || !size)
         return 0;
 
@@ -901,10 +897,6 @@ size_t des_ecb_decrypt(const struct des_context *ctx, const void *src,
     uint64_t *out = dest;
     uint64_t *out_end = movptr(dest, end_dist);
 
-    /*
-     * Do padding calculation first to fail fast and not touch output buffer
-     * in the event of an error.
-     */
     uint64_t cipher = get_unaligned_be64(end);
     uint64_t plain = des_decrypt_value(ctx, cipher);
 
@@ -950,10 +942,6 @@ size_t des_cbc_encrypt(const struct des_context *ctx, const void *iv,
 size_t des_cbc_decrypt(const struct des_context *ctx, const void *iv,
                        const void *src, size_t size, void *dest)
 {
-    /*
-     * The input length must be a multiple of the block size, and padding takes
-     * exactly one block.
-     */
     if ((size & 7) || !size)
         return 0;
 
@@ -968,10 +956,6 @@ size_t des_cbc_decrypt(const struct des_context *ctx, const void *iv,
     uint64_t vec = get_unaligned_be64(iv);
     uint64_t last_vec = get_unaligned_be64(end - 1);
 
-    /*
-     * Do padding calculation first to fail fast and not touch output buffer
-     * in the event of an error.
-     */
     uint64_t cipher = get_unaligned_be64(end);
     uint64_t plain = des_decrypt_value(ctx, cipher) ^ last_vec;
 

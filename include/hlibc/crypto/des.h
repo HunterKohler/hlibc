@@ -13,10 +13,6 @@ struct des_context {
     uint64_t ks[16];
 };
 
-struct des3_context {
-    struct des_context base[3];
-};
-
 int des_init(struct des_context *ctx, const uint8_t *key);
 
 void des_encrypt(const struct des_context *ctx, const void *src, void *dest);
