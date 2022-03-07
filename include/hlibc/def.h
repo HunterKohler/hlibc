@@ -103,6 +103,11 @@
         sizeof(a) / sizeof((a)[0]); \
     })
 
+#define array_end(a) ((a) + array_size((a)))
+
+// #define for_each(it, arr) \
+//     for ((it) = (arr); (it) != (arr) + array_size((arr)); (it)++)
+
 #undef LITTLE_ENDIAN
 #undef BIG_ENDIAN
 
@@ -187,4 +192,12 @@
         (char *)__a - (char *)__b; \
     })
 
+/*
+ * Function format attribute.
+ *
+ * Reference:
+ * https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html
+ */
+#define __printf(...) __attribute__((format((printf, ##__VA_ARGS__))))
+#define __scanf(...) __attribute__((format((scanf, ##__VA_ARGS__))))
 #endif

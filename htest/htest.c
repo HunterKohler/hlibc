@@ -6,20 +6,25 @@
  */
 struct htest_resource_handle {
     struct list_node list;
+
     void *data;
     void (*destroy)(void *);
 };
 
-int htest_init(struct htest *test, const char *name, FILE *log)
+int htest_init(struct htest *test, FILE *log, const char *desc, void *param)
 {
-    memzero(test, sizeof(*test));
-
     test->data = NULL;
-    test->status = HTEST_PASSED;
-    test->name = name;
+    test->desc = desc;
     test->log = log;
+    test->param = param;
+    test->status = HTEST_PASSED;
 
     list_node_init(&test->resources);
+
+    int error = pthread_mutex_init(&test->lock, NULL);
+    if (error)
+        return error;
+
     return 0;
 }
 
@@ -29,20 +34,41 @@ void htest_destroy(struct htest *test)
     struct htest_resource_handle *tmp;
 
     list_for_each_entry_safe (res, tmp, &test->resources, list) {
-        res->destroy(res->data);
+        if (res->destroy) {
+            res->destroy(res->data);
+        }
+
         list_rm(&res->list);
         free(res);
+    }
+}
+
+void htest_lock(struct htest *test)
+{
+    int error = pthread_mutex_lock(&test->lock);
+    if (error) {
+        htest_fail(test, "Internal Error: Failed to lock test mutex: %s",
+                   strerror(error));
+    }
+}
+
+void htest_unlock(struct htest *test)
+{
+    int error = pthread_mutex_unlock(&test->lock);
+    if (error) {
+        htest_fail(test, "Internal Error: Failed to unlock test mutex: %s",
+                   strerror(error));
     }
 }
 
 void *htest_create_resource(struct htest *test, struct htest_resource *res,
                             void *arg)
 {
-    struct htest_resource_handle *handle = malloc(sizeof(*handle));
+    htest_lock(test);
 
+    struct htest_resource_handle *handle = malloc(sizeof(*handle));
     if (!handle) {
-        htest_fail(test, "Internal error: "
-                         "Could not allocate memory to track resource.");
+        htest_fail(test, "Internal Error: Failed to allocate memory");
     }
 
     handle->destroy = res->destroy;
@@ -50,143 +76,154 @@ void *htest_create_resource(struct htest *test, struct htest_resource *res,
     list_node_init(&handle->list);
     list_add(&handle->list, &test->resources);
 
+    htest_unlock(test);
     return handle->data;
 }
 
-int htest_run_suite(struct htest_suite *suite, FILE *log)
+int htest_run_suite(struct htest_suite *suite, struct htest_log *log)
 {
+    struct htest test;
     struct htest_stats stats = {};
-    struct htest test = {};
 
-    suite->log = log;
+    fprintf(log->info, "Suite: %s\n", suite->name);
 
-    htest_log(HTEST_INFO, suite, "# Suite: %s", suite->name);
+    for (struct htest_unit *unit = suite->units; unit->run_test; unit++) {
+        if (unit->gen_params) {
+            fprintf("Test: %s\n", unit->name);
 
-    for (struct htest_unit *unit = suite->units; unit->run; unit++) {
-        size_t test_num = unit - suite->units + 1;
-        stats.total++;
+            char desc[256];
+            void *param = NULL;
+            int index = 0;
 
-        if (htest_init(&test, unit->name, log)) {
-            htest_log(HTEST_ERROR, suite, "Failed to initialize test case: %s",
-                      unit->name);
-            continue;
-        }
+            desc[0] = 0;
 
-        if (suite->skip) {
-            test.status = HTEST_SKIPPED;
+            while ((param = unit->gen_params(param, desc))) {
+                if (!desc[0]) {
+                    snprintf(desc, array_size(desc), "%d", index);
+                }
+
+                htest_init(&test, log, desc, param);
+
+                if (!setjmp(test.return_jmp))
+                    unit->run_test(&test);
+
+                switch (test.status) {
+                case HTEST_PASSED:
+                    break;
+                case HTEST_SKIPPED:
+                    break;
+                case HTEST_FAILED:
+                    break;
+                }
+
+                htest_destroy(&test);
+
+                desc[0] = 0;
+                index++;
+            }
         } else {
-            if (suite->init)
-                suite->init(&test);
+            htest_init(&test, log, unit->name, NULL);
+            htest_run(unit->run_test, &test);
 
-            if (!setjmp(test.return_jmp))
-                unit->run(&test);
+            switch (test.status) {
+            case HTEST_PASSED:
+                break;
+            case HTEST_SKIPPED:
+                break;
+            case HTEST_FAILED:
+                break;
+            }
 
-            if (suite->destroy)
-                suite->destroy(&test);
+            htest_destroy(&test);
         }
-
-        switch (test.status) {
-        case HTEST_SKIPPED:
-            stats.skipped++;
-            htest_log(HTEST_INFO, &test, "ok %zu - %s # SKIP%s%s", test_num,
-                      test.name, *test.status_msg ? " " : "",
-                      *test.status_msg ? test.status_msg : "");
-            break;
-        case HTEST_PASSED:
-            stats.passed++;
-
-            htest_log(HTEST_INFO, &test, "ok %zu - %s%s%s", test_num, test.name,
-                      *test.status_msg ? " # " : "",
-                      *test.status_msg ? test.status_msg : "");
-            break;
-        case HTEST_FAILED:
-            stats.failed++;
-            htest_log(HTEST_INFO, &test, "not ok %zu - %s%s%s", test_num,
-                      test.name, *test.status_msg ? " # " : "",
-                      *test.status_msg ? test.status_msg : "");
-            break;
-        }
-
-        htest_destroy(&test);
     }
-
-    if (!stats.total)
-        htest_log(HTEST_WARNING, suite, "# Warning: Test suite empty");
-
-    htest_log(HTEST_INFO, suite,
-              "# Results: passed: %zu, failed: %zu, skipped: %zu, total: %zu\n",
-              stats.passed, stats.failed, stats.skipped, stats.total);
-
-    return 0;
 }
 
-void htest_set_status(struct htest *test, enum htest_status status,
-                      const char *msg)
+static noreturn void htest_return(struct htest *test, enum htest_status status)
 {
     test->status = status;
-    if (msg) {
-        size_t len = strlen(msg);
-        size_t max_len = HTEST_STATUS_MSG_SIZE - 1;
-
-        if (len > max_len) {
-            len = max_len;
-            htest_warn(test,
-                       "Status message too long: wrote %zu of %zu characters.",
-                       max_len, len);
-        }
-
-        memcpy(test->status_msg, msg, len);
-        test->status_msg[len] = 0;
-    }
-}
-
-noreturn void htest_return(struct htest *test)
-{
     longjmp(test->return_jmp, 1);
 }
 
-noreturn void htest_pass(struct htest *test, const char *msg)
+noreturn void htest_pass(struct htest *test, const char *fmt, ...)
 {
-    htest_set_status(test, HTEST_PASSED, msg);
-    htest_return(test);
+    if (test->log.info && fmt) {
+        va_list ap;
+        va_start(ap, fmt);
+        vfprintf(test->log.info, fmt, ap);
+        va_end(ap);
+    }
+
+    htest_return(test, HTEST_PASSED);
 }
 
-noreturn void htest_skip(struct htest *test, const char *msg)
+noreturn void htest_skip(struct htest *test, const char *fmt, ...)
 {
-    htest_set_status(test, HTEST_SKIPPED, msg);
-    htest_return(test);
+    if (test->log.info && fmt) {
+        va_list ap;
+        va_start(ap, fmt);
+        vfprintf(test->log.info, fmt, ap);
+        va_end(ap);
+    }
+
+    htest_return(test, HTEST_SKIPPED);
 }
 
-noreturn void htest_fail(struct htest *test, const char *msg)
+noreturn void htest_fail(struct htest *test, const char *fmt, ...)
 {
-    htest_set_status(test, HTEST_FAILED, msg);
-    htest_return(test);
+    if (test->log.info && fmt) {
+        va_list ap;
+        va_start(ap, fmt);
+        vfprintf(test->log.info, fmt, ap);
+        va_end(ap);
+    }
+
+    htest_return(test, HTEST_FAILED);
 }
 
 void __htest_assert(const struct htest_assertion *assertion)
 {
-    if (unlikely(!assertion->result)) {
-        htest_log(
-            HTEST_INFO, assertion->test,
-            "# Assertion Failed: test %s at %s:%d:%s:", assertion->test->name,
-            assertion->file, assertion->line, assertion->func);
-        htest_log(HTEST_INFO, assertion->test, "# %s", assertion->test,
-                  assertion->message);
+    if (unlikely(!assertion->passed)) {
+        htest_info(assertion->test, "# Assertion Failed: test %s at %s:%d:%s:",
+                   assertion->test->name, assertion->file, assertion->line,
+                   assertion->func);
+
+        htest_info(assertion->test, "# %s", assertion->test,
+                   assertion->message);
+
         htest_fail(assertion->test, NULL);
     }
 }
 
-/*
- * Log level is an unused param (haven't figured out logging levels yet). And
- * currently unnamed only because GCC f****** ***** **** ** *** ***.
- */
-void __htest_log(enum htest_log_level, FILE *log, const char *fmt, ...)
+void htest_info(struct htest *test, const char *fmt, ...)
 {
     va_list ap;
 
-    if (log) {
+    if (test->log.info) {
         va_start(ap, fmt);
-        vfprintf(log, fmt, ap);
+        vfprintf(test->log.info, fmt, ap);
+        va_end(ap);
+    }
+}
+
+void htest_warn(struct htest *test, const char *fmt, ...)
+{
+    va_list ap;
+
+    if (test->log.warn) {
+        va_start(ap, fmt);
+        vfprintf(test->log.warn, fmt, ap);
+        va_end(ap);
+    }
+}
+
+void htest_error(struct htest *test, const char *fmt, ...)
+{
+    va_list ap;
+
+    if (test->log.error) {
+        va_start(ap, fmt);
+        vfprintf(test->log.error, fmt, ap);
         va_end(ap);
     }
 }

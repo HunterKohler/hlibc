@@ -839,9 +839,30 @@ static uint64_t pkcs5_get_and_pad(const void *src, size_t size)
     }
 }
 
-int des_init(struct des_context *ctx, uint64_t key)
+void des_set_parity(void *key)
 {
-    key_schedule(key, ctx->ks);
+    uint8_t *ptr;
+
+    for (int i = 0; i < 8; i++) {
+        ptr[i] ^= (popcount(ptr[i]) & 1) ^ 1;
+    }
+}
+
+int des_check_parity(void *key)
+{
+    uint8_t *ptr = key;
+    int total = 1;
+
+    for (int i = 0; i < 8; i++) {
+        total &= popcount(ptr[i]);
+    }
+
+    return total & 1;
+}
+
+int des_init(struct des_context *ctx, const void *key)
+{
+    key_schedule(get_unaligned_be64(key), ctx->ks);
     return 0;
 }
 

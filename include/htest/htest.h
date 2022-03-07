@@ -13,18 +13,31 @@
 #include <hlibc/def.h>
 #include <hlibc/list.h>
 
-#define HTEST_UNIT(func) ((struct htest_unit){ .name = #func, .run = (func) })
+// #define HTEST_ARRAY_PARAM(name, arr, gen_desc)                            \
+//     static void *name(void *__prev, char *__desc)                         \
+//     {                                                                     \
+//         typeof(*(arr)) *__it = __prev ? (typeof(__it))__prev + 1 : (arr); \
+//         void (*__gen_desc)(typeof(__it), char *) = (gen_desc);            \
+//                                                                           \
+//         if (__it == array_end((arr)))                                     \
+//             return NULL;                                                  \
+//                                                                           \
+//         __gen_desc(__it, __desc);                                         \
+//         return __it;                                                      \
+//     }
 
-/*
- * Max length of test status message buffer.
- */
-#define HTEST_STATUS_MSG_SIZE 256
+#define HTEST_UNIT(run_test_fn)    \
+    ((struct htest_unit){          \
+        .name = #run_test_fn,      \
+        .run_test = (run_test_fn), \
+    })
 
-enum htest_log_level {
-    HTEST_INFO,
-    HTEST_WARNING,
-    HTEST_ERROR,
-};
+#define HTEST_UNIT_PARAM(run_test_fn, gen_param_fn) \
+    ((struct htest_unit){                           \
+        .name = #run_test_fn,                       \
+        .run_test = (run_test_fn),                  \
+        .gen_param = (gen_param_fn),                \
+    })
 
 enum htest_status {
     HTEST_PASSED,
@@ -32,60 +45,40 @@ enum htest_status {
     HTEST_FAILED,
 };
 
-/*
- * Represents an instance of a `htest_unit`.
- */
 struct htest {
-    /*
-     * Generic field to pass data into tests.
-     */
-    void *data;
+    const char *desc;
 
-    /*
-     * Inherited name from test unit.
-     */
-    const char *name;
+    void *data;
+    void *param;
+
+    enum htest_status status;
+    struct list_node resources;
 
     FILE *log;
-
-    char status_msg[HTEST_STATUS_MSG_SIZE];
-    enum htest_status status;
-
-    struct list_node resources;
     jmp_buf return_jmp;
+    pthread_mutex_t lock;
 };
 
 struct htest_suite {
+    const char *name;
+
     struct htest_unit *units;
-    char *name;
 
-    /*
-     * Skip all tests in this suite.
-     */
-    bool skip;
+    // hooks
+    // int (*before_each)(struct htest *);
+    // int (*after_each)(struct htest *s;
+    // int (*before_all)(struct htest_suite *);
+    // int (*after_all)(struct htest_suite *);
 
-    /*
-     * Runs before each test case. Return non-zero to indicate error in the
-     * hook; errors will cancel the test case.
-     */
-    int (*init)(struct htest *);
+    struct list_node list; // member node
 
-    /*
-     * Runs after each test case.
-     */
-    void (*destroy)(struct htest *);
-
-    FILE *log;
-
-    /*
-     * Member node of global or other suite list.
-     */
-    struct list_node list;
+    // bool skip;
 };
 
 struct htest_unit {
     const char *name;
-    void (*run)(struct htest *);
+    void (*run_test)(struct htest *);
+    void *(*gen_params)(void *data, char *desc);
 };
 
 struct htest_stats {
@@ -97,7 +90,7 @@ struct htest_stats {
 
 struct htest_assertion {
     struct htest *test;
-    bool result;
+    bool passed;
     int line;
     const char *message;
     const char *file;
@@ -105,19 +98,9 @@ struct htest_assertion {
 };
 
 struct htest_resource {
-    void (*destroy)(void *);
     void *(*create)(void *);
+    void (*destroy)(void *);
 };
-
-/*
- * Initialize `struct htest` instance.
- */
-int htest_init(struct htest *test, const char *name, FILE *log);
-
-/*
- * Destroy `struct htest` and associated resources.
- */
-void htest_destroy(struct htest *test);
 
 /*
  * Creates, returns, and attaches resource to test. This will be cleaned up
@@ -127,12 +110,6 @@ void *htest_create_resource(struct htest *test, struct htest_resource *res,
                             void *arg);
 
 /*
- * Opens a file, and adds an associated resource to the test's resource list.
- */
-FILE *htest_fopen(struct htest *test, const char *restrict pathname,
-                  const char *restrict mode);
-
-/*
  * Allocates memory, and adds to the test's resource list.
  */
 void *htest_malloc(struct htest *test, size_t size);
@@ -140,7 +117,18 @@ void *htest_malloc(struct htest *test, size_t size);
 /*
  * Allocates memory for a string, and adds to the test's resource list.
  */
-void *htest_stralloc(struct htest *test, size_t size);
+char *htest_stralloc(struct htest *test, size_t size);
+
+/*
+ * Duplicate a null-terminated string, and add it to the test's resource list.
+ */
+char *htest_strdup(struct htest *test, const char *src);
+
+/*
+ * Opens a file, and adds an associated resource to the test's resource list.
+ */
+FILE *htest_fopen(struct htest *test, const char *restrict pathname,
+                  const char *restrict mode);
 
 /*
  * Runs all tests in the suite, logging appropriatly.
@@ -151,57 +139,33 @@ int htest_run_suite(struct htest_suite *suite, FILE *log);
  * Pass a test. Optionally pass a message. Semantically equivalent to
  * returning without a failure from the unit's `run` function.
  */
-noreturn void htest_pass(struct htest *test, const char *msg);
+noreturn void htest_pass(struct htest *test, const char *fmt, ...);
 
 /*
  * Skip a test. Optionally pass a message.
  */
-noreturn void htest_skip(struct htest *test, const char *msg);
+noreturn void htest_skip(struct htest *test, const char *fmt, ...);
 
 /*
  * Fail a test. Optionally pass a message. Semantically equivalent to
  * a failed assertion.
  */
-noreturn void htest_fail(struct htest *test, const char *msg);
+noreturn void htest_fail(struct htest *test, const char *fmt, ...);
 
-void __htest_assert(const struct htest_assertion *assertion);
-void __htest_log(enum htest_log_level level, FILE *log, const char *fmt, ...);
+void htest_error(struct htest *test, const char *fmt, ...) __printf(2, 3);
+void htest_warn(struct htest *test, const char *fmt, ...) __printf(2, 3);
+void htest_info(struct htest *test, const char *fmt, ...) __printf(2, 3);
 
-#define htest_log(level, target, fmt, ...)                            \
-    do {                                                              \
-        typeof(target) __target = (target);                           \
-        __htest_log((level), __target->log, fmt "\n", ##__VA_ARGS__); \
-    } while (0)
+void __htest_assert(struct htest_assertion *);
 
-#define htest_error(test, fmt, ...)                                    \
-    do {                                                               \
-        struct htest *__test = (test);                                 \
-        htest_log(HTEST_ERROR, __test, "    # %s: " fmt, __test->name, \
-                  ##__VA_ARGS__);                                      \
-    } while (0)
-
-#define htest_warn(test, fmt, ...)                                       \
-    do {                                                                 \
-        struct htest *__test = (test);                                   \
-        htest_log(HTEST_WARNING, __test, "    # %s: " fmt, __test->name, \
-                  ##__VA_ARGS__);                                        \
-    } while (0)
-
-#define htest_info(test, fmt, ...)                                    \
-    do {                                                              \
-        struct htest *__test = (test);                                \
-        htest_log(HTEST_INFO, __test, "    # %s: " fmt, __test->name, \
-                  ##__VA_ARGS__);                                     \
-    } while (0)
-
-#define __HTEST_ASSERT(_test, _result, _message) \
-    __htest_assert(&(struct htest_assertion){    \
-        .test = (_test),                         \
-        .result = (_result),                     \
-        .message = (_message),                   \
-        .file = __FILE__,                        \
-        .line = __LINE__,                        \
-        .func = __func__,                        \
+#define __HTEST_ASSERT(_test, _pass, _message) \
+    __htest_assert(&(struct htest_assertion){  \
+        .test = (_test),                       \
+        .passed = (_pass),                     \
+        .message = (_message),                 \
+        .file = __FILE__,                      \
+        .line = __LINE__,                      \
+        .func = __func__,                      \
     })
 
 #define HTEST_ASSERT(test, cond)                                               \

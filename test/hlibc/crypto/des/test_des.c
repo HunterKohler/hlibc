@@ -1,12 +1,10 @@
 /*
  * Copyright (C) 2021-2022 John Hunter Kohler <jhunterkohler@gmail.com>
- *
- * Begins with individual by hand cases, then uses larger testing vector
- * for integration testing.
  */
 #include <stdio.h>
-#include <hlibc/string.h>
 #include <hlibc/crypto/des.h>
+#include <hlibc/bit.h>
+#include <hlibc/string.h>
 #include <htest/htest.h>
 
 struct des_test_case {
@@ -22,10 +20,6 @@ struct des_test_set {
 };
 
 /*
- * Test vectors for DES Electronic Code Book (ECB) implementation, derived from:
- * "Validating the Correctness of Hardware Implementations of the NBS Data
- * Encryption Standard" NBS Special Publication 500-20, 1980.
- *
  * Reference: https://archive.org/details/validatingcorrec00gait/
  */
 struct des_test_set des_test_vector[] = {
@@ -229,7 +223,11 @@ struct des_test_set des_test_vector[] = {
 static void test_des_init(struct htest *test)
 {
     struct des_context ctx;
-    uint64_t key = 0xC805C0F6E49D349C;
+
+    /*
+     * Schedule 'manually' calculated for tests.
+     */
+    uint64_t key = cpu_to_be64(0xC805C0F6E49D349C);
     uint64_t ks[16] = {
         0x778797518A35, 0xBA5F29B0C20C, 0xC93B69903686, 0x81FEDDBC22A1,
         0x557FC2326A43, 0x72FDE136A112, 0xD9E547A52542, 0x61C79F6CA242,
@@ -237,7 +235,7 @@ static void test_des_init(struct htest *test)
         0x627DC342583A, 0x79ED7185193C, 0xC5E59B811AF0, 0x8E63EED96240,
     };
 
-    des_init(&ctx, key);
+    des_init(&ctx, &key);
 
     for (int i = 0; i < 16; i++) {
         HTEST_ASSERT_EQ(test, ks[i], ctx.ks[i]);
@@ -247,27 +245,82 @@ static void test_des_init(struct htest *test)
 static void run_des_test_case(struct htest *test, struct des_test_case *tc)
 {
     struct des_context ctx;
-    des_init(&ctx, tc->key);
 
-    uint64_t cipher = des_encrypt(&ctx, tc->plain);
-    uint64_t plain = des_decrypt(&ctx, cipher);
+    uint8_t key[8];
+    uint8_t plain[8];
+    uint8_t cipher[8];
+    uint8_t dest_plain[8];
+    uint8_t dest_cipher[8];
 
-    HTEST_ASSERT_EQ(test, cipher, tc->cipher);
-    HTEST_ASSERT_EQ(test, plain, tc->plain);
+    put_unaligned_be64(tc->key, key);
+    put_unaligned_be64(tc->plain, plain);
+    put_unaligned_be64(tc->cipher, cipher);
+
+    des_init(&ctx, key);
+
+    des_encrypt(&ctx, plain, dest_cipher);
+    des_decrypt(&ctx, cipher, dest_plain);
+
+    HTEST_ASSERT_MEM_EQ(test, plain, dest_plain, 8);
+    HTEST_ASSERT_MEM_EQ(test, cipher, dest_cipher, 8);
 }
 
-static void test_des_test_vector(struct htest *test)
+static void test_des_encrypt(struct htest *test)
 {
-    for (int i = 0; i < array_size(des_test_vector); i++) {
-        for (int j = 0; j < des_test_vector[i].size; j++) {
-            run_des_test_case(test, des_test_vector[i].cases + j);
+    for (struct des_test_set *tset = des_test_vector;
+         tset < array_end(des_test_vector); tset++) {
+        for (struct des_test_case *tc = tset->cases;
+             tc < tset->cases + tset->size; tc++) {
+            uint8_t key[8];
+            uint8_t plain[8];
+            uint8_t cipher[8];
+            uint8_t dest[8];
+
+            put_unaligned_be64(tc->key, key);
+            put_unaligned_be64(tc->plain, plain);
+            put_unaligned_be64(tc->cipher, cipher);
+
+            struct des_context ctx;
+
+            des_init(&ctx, key);
+            des_encrypt(&ctx, plain, dest);
+
+            HTEST_ASSERT_MEM_EQ(test, dest, cipher, 8);
+        }
+    }
+}
+
+static void test_des_encrypt(struct htest *test)
+{
+    for (struct des_test_set *tset = des_test_vector;
+         tset < array_end(des_test_vector); tset++) {
+        for (struct des_test_case *tc = tset->cases;
+             tc < tset->cases + tset->size; tc++) {
+            uint8_t key[8];
+            uint8_t plain[8];
+            uint8_t cipher[8];
+            uint8_t dest[8];
+
+            put_unaligned_be64(tc->key, key);
+            put_unaligned_be64(tc->plain, plain);
+            put_unaligned_be64(tc->cipher, cipher);
+
+            struct des_context ctx;
+
+            des_init(&ctx, key);
+            des_decrypt(&ctx, cipher, dest);
+
+            HTEST_ASSERT_MEM_EQ(test, dest, plain, 8);
         }
     }
 }
 
 struct htest_unit des_test_units[] = {
     HTEST_UNIT(test_des_init),
-    HTEST_UNIT(test_des_test_vector),
+    HTEST_UNIT(test_des_encrypt),
+    HTEST_UNIT(test_des_decrypt),
+    // HTEST_UNIT(test_des_ecb_encrypt),
+    // HTEST_UNIT(test_des_ecb_decrypt),
     {},
 };
 
